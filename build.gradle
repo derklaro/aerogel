@@ -1,0 +1,85 @@
+/*
+ * This file is part of aerogel, licensed under the MIT License (MIT).
+ *
+ * Copyright (c) 2021 Pasqual K. and contributors
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+plugins {
+  id 'org.cadixdev.licenser' version '0.6.1' apply false
+}
+
+allprojects {
+  group 'com.github.derklaro'
+  version '1.0.0-SNAPSHOT'
+}
+
+subprojects {
+  apply plugin: 'checkstyle'
+  apply plugin: 'java-library'
+  apply plugin: 'maven-publish'
+  apply plugin: 'org.cadixdev.licenser'
+
+  repositories {
+    mavenCentral()
+  }
+
+  dependencies {
+    // testing
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.0-RC1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.0-RC1'
+    // bug spotting
+    compileOnly group: 'org.jetbrains', name: 'annotations', version: '22.0.0'
+  }
+
+  test {
+    useJUnitPlatform()
+  }
+
+  compileJava {
+    sourceCompatibility = '8'
+    targetCompatibility = '8'
+
+    options.encoding = 'UTF-8'
+  }
+
+  publishing {
+    publications {
+      maven(MavenPublication) {
+        from(components.java)
+      }
+    }
+  }
+
+  checkstyle {
+    toolVersion = '9.0'
+  }
+
+  tasks.withType(Checkstyle) {
+    maxErrors = 0
+    maxWarnings = 0
+    configFile = project.rootProject.file('checkstyle.xml')
+  }
+
+  license {
+    include '**/*.java'
+    header = project.rootProject.file('license_header.txt')
+  }
+}
