@@ -31,16 +31,31 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotate every class or factory method you only want one instance to be created of and then reused. The instance will
- * be saved in one {@link Injector} which means creating multiple, non-associated {@link Injector}s may still result in
- * duplicate construction or factory method calls.
+ * Binds the annotated method as a factory method for the return type of the method. Any type from which the return type
+ * extends or implements are bound to that factory as well. Factory methods are not preferred over actual bindings
+ * supplied to the associated {@link Injector}. Arguments supplied to the factory methods are taken from the associated
+ * {@link Injector}. Please note that in order for this annotation to work the annotation scanning must get enabled when
+ * building an injector instance.
  *
  * @author Pasqual K.
  * @since 1.0
  */
 @Documented
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
-public @interface Singleton {
+public @interface Factory {
 
+  /**
+   * If {@code true} all super types of the method's return type are bound to that factory method as well. For example,
+   * if class {@code Abc} extends from {@code Abcd} and the factory method looks something like the following:
+   * <code>
+   * {@literal @}Factory public static Abc newAbc(DateTime now) { return new Abc(now); }
+   * </code>
+   * any instance of {@code Abcd} requested via the {@link Injector} will be taken generated from the factory method as
+   * long as there is no specific binding for the type {@code Abcd} in the factory. This setting defaults for simplicity
+   * reasons to {@code false}.
+   *
+   * @return if the super types of the method return type should be included when constructing via the factory method.
+   */
+  boolean includeSuper() default false;
 }

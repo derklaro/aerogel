@@ -81,7 +81,7 @@ public @interface Inject {
    * is missing, it will still result in an exception because the invocation can not proceed and there is no way to
    * provide the requested instance.
    *
-   * @return if the value to inject is required.
+   * @return if the value to inject is not required.
    */
   boolean optional() default false;
 }

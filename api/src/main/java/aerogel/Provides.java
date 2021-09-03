@@ -24,6 +24,33 @@
 
 package aerogel;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * Defines which type the annotated class is bound to. It will be used when type lookups are made to find the class
+ * implementing or extending the required abstract instance. It works like {@link ProvidedBy} in the opposite direction.
+ * Please note that in order for this annotation to work the annotation scanning must get enabled when building an
+ * injector instance.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
+@Documented
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface Provides {
 
+  /**
+   * Defines which class this instance should be bound to. This defaults to {@link Object} which indicates that all
+   * class implementations and extension should be bound to the class. If specific values are provided, only these
+   * values will be bound to the class.
+   *
+   * @return the types to which the annotated class should get bound.
+   */
+  @NotNull Class<?>[] value() default Object.class;
 }

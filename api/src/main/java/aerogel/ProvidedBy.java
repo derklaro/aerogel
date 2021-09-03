@@ -24,6 +24,33 @@
 
 package aerogel;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * Defines which implementation should be used when injecting a type instance of the given class. In fact the injector
+ * will only use the type this annotation references and ignores every other manually bound value to the class.
+ * Interfaces and abstract classes which you want to injection need at least one bound instance. You can define them
+ * using one of: {@link Provides}, {@link ProvidedBy} or {@link Factory}. Binding an instance manually is possible as
+ * well.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
+@Documented
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface ProvidedBy {
 
+  /**
+   * Get the implementation class to which the annotated class is bound. Every other instance bound manually to the
+   * injecting interface will be ignored by the injector in favor of this method's return value.
+   *
+   * @return the implementation class to which the annotated class is bound.
+   */
+  @NotNull Class<?> value();
 }
