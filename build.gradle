@@ -33,6 +33,8 @@ plugins {
 group 'com.github.derklaro'
 version '1.0.0-SNAPSHOT'
 
+defaultTasks 'build', 'checkLicenses', 'test', 'jar'
+
 repositories {
   mavenLocal()
   mavenCentral()
