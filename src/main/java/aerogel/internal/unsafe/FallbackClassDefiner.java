@@ -22,4 +22,29 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel.internal.unsafe;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.NotNull;
+
+final class FallbackClassDefiner implements ClassDefiner {
+
+  private final Map<ClassLoader, DefiningClassLoader> cache = new ConcurrentHashMap<>();
+
+  @Override
+  public @NotNull Class<?> defineClass(@NotNull String name, @NotNull Class<?> parent, byte[] bytecode) {
+    return this.cache.computeIfAbsent(parent.getClassLoader(), DefiningClassLoader::new).defineClass(name, bytecode);
+  }
+
+  private static final class DefiningClassLoader extends ClassLoader {
+
+    public DefiningClassLoader(ClassLoader parent) {
+      super(parent);
+    }
+
+    public @NotNull Class<?> defineClass(@NotNull String name, byte[] byteCode) {
+      return super.defineClass(name, byteCode, 0, byteCode.length);
+    }
+  }
+}

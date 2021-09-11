@@ -22,4 +22,35 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel.internal.utility;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public final class ToStringHelper {
+
+  private final StringBuilder stringBuilder;
+
+  public ToStringHelper(@NotNull Object instance) {
+    this.stringBuilder = new StringBuilder(instance.getClass().getCanonicalName()).append("(");
+  }
+
+  public static @NotNull ToStringHelper from(@NotNull Object instance) {
+    return new ToStringHelper(instance);
+  }
+
+  public @NotNull ToStringHelper putField(@NotNull String name, @Nullable Object value) {
+    this.stringBuilder.append(name).append('=').append(value).append(", ");
+    return this;
+  }
+
+  public @NotNull String toString() {
+    // remove the last comma if there is one
+    int lastFieldIndex = this.stringBuilder.lastIndexOf(",");
+    if (lastFieldIndex != -1) {
+      this.stringBuilder.delete(lastFieldIndex, this.stringBuilder.length());
+    }
+    // complete the toString generation
+    return this.stringBuilder.append(")").toString();
+  }
+}

@@ -22,3 +22,18 @@
  * THE SOFTWARE.
  */
 
+package aerogel.internal.asm.primitive;
+
+import org.jetbrains.annotations.NotNull;
+import org.objectweb.asm.MethodVisitor;
+
+public interface PrimitiveEmitter {
+
+  void box(@NotNull MethodVisitor mv);
+
+  void unbox(@NotNull MethodVisitor mv);
+
+  void storeToStack(@NotNull MethodVisitor mv, int stackIndex);
+
+  void loadFromStack(@NotNull MethodVisitor mv, int stackIndex);
+}

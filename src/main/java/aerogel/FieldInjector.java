@@ -22,4 +22,13 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel;
+
+import org.jetbrains.annotations.NotNull;
+
+public interface FieldInjector<T> {
+
+ ///@NotNull Pointer<T> pointer();
+
+  int injectFields(@NotNull InjectionContext context);
+}

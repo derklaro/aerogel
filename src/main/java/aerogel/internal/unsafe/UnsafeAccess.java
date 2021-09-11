@@ -22,4 +22,38 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel.internal.unsafe;
+
+import java.lang.reflect.Field;
+
+final class UnsafeAccess {
+
+  static final Class<?> UNSAFE_CLASS;
+  static final Object THE_UNSAFE_INSTANCE;
+
+  static {
+    Class<?> unsafeClass = null;
+    Object theUnsafeInstance = null;
+
+    try {
+      // get the unsafe class
+      unsafeClass = Class.forName("sun.misc.Unsafe");
+      // get the unsafe instance
+      Field theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
+      theUnsafeField.setAccessible(true);
+      theUnsafeInstance = theUnsafeField.get(null);
+    } catch (Exception ignored) {
+    }
+    // assign to the static final fields
+    UNSAFE_CLASS = unsafeClass;
+    THE_UNSAFE_INSTANCE = theUnsafeInstance;
+  }
+
+  private UnsafeAccess() {
+    throw new UnsupportedOperationException();
+  }
+
+  static boolean isAvailable() {
+    return UNSAFE_CLASS != null && THE_UNSAFE_INSTANCE != null;
+  }
+}

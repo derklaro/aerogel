@@ -22,27 +22,12 @@
  * THE SOFTWARE.
  */
 
-plugins {
-  id 'com.github.johnrengelman.shadow' version '7.0.0'
-}
+package aerogel.internal.utility;
 
-dependencies {
-  implementation project(':api')
-  implementation group: 'net.bytebuddy', name: 'byte-buddy', version: '1.11.14'
-}
+import org.jetbrains.annotations.NotNull;
 
-shadowJar {
-  // base settings of the output jar
-  archiveVersion.set(null)
-  archiveClassifier.set(null)
-  archiveBaseName.set('aerogel')
-  // relocate byte-buddy to prevent compatibility issues
-  relocate 'net.bytebuddy', 'aerogel.relocate.bytebuddy'
-  // auto remove all classes which we don't need in the final jar
-  minimize()
-}
+@FunctionalInterface
+public interface ExceptionalFunction<I, O, E extends Throwable> {
 
-tasks.withType(AbstractArchiveTask) {
-  reproducibleFileOrder = true
-  preserveFileTimestamps = false
+  @NotNull O apply(@NotNull I in) throws E;
 }

@@ -22,4 +22,33 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel.internal.context;
+
+import aerogel.Element;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.function.Predicate;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+final class ElementStack {
+
+  private final Deque<Element> stack = new ArrayDeque<>();
+
+  public void push(@NotNull Element element) {
+    this.stack.push(element);
+  }
+
+  public boolean has(@NotNull Element element) {
+    return this.stack.contains(element);
+  }
+
+  public @Nullable Element filter(@NotNull Predicate<Element> filter) {
+    for (Element element : stack) {
+      if (filter.test(element)) {
+        return element;
+      }
+    }
+    return null;
+  }
+}

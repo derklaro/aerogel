@@ -29,6 +29,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import jakarta.inject.Scope;
 
 /**
  * Annotate every class or factory method you only want one instance to be created of and then reused. The instance will
@@ -38,6 +39,7 @@ import java.lang.annotation.Target;
  * @author Pasqual K.
  * @since 1.0
  */
+@Scope
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})

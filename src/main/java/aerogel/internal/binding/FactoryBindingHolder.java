@@ -22,4 +22,40 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel.internal.binding;
+
+import aerogel.Element;
+import aerogel.InjectionContext;
+import aerogel.Injector;
+import aerogel.internal.codegen.FactoryMethodInstanceMaker;
+import aerogel.internal.codegen.InstanceMaker;
+import java.lang.reflect.Method;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public final class FactoryBindingHolder extends AbstractBindingHolder {
+
+  private final InstanceMaker instanceMaker;
+
+  public FactoryBindingHolder(
+    @NotNull Element type,
+    @NotNull Element binding,
+    @NotNull Injector injector,
+    @NotNull Method factoryMethod
+  ) {
+    super(type, binding, injector);
+    this.instanceMaker = FactoryMethodInstanceMaker.forMethod(factoryMethod);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> @Nullable T get(@NotNull InjectionContext context) {
+    // construct the value
+    T value = (T) this.instanceMaker.getInstance(context);
+    // push the construction done notice to the context
+    context.constructDone(this.targetType, value);
+    context.constructDone(this.bindingType, value);
+    // return
+    return value;
+  }
+}

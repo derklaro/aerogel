@@ -22,4 +22,18 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel;
+
+import aerogel.internal.DefaultProvider;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+@FunctionalInterface
+public interface Provider<T> {
+
+  static @NotNull <C> Provider<C> of(@Nullable C provided) {
+    return new DefaultProvider<>(provided);
+  }
+
+  @Nullable T get();
+}

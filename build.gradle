@@ -23,63 +23,78 @@
  */
 
 plugins {
-  id 'org.cadixdev.licenser' version '0.6.1' apply false
+  id 'checkstyle'
+  id 'java-library'
+  id 'maven-publish'
+  id 'org.cadixdev.licenser' version '0.6.1'
+  id 'com.github.johnrengelman.shadow' version '7.0.0'
 }
 
-allprojects {
-  group 'com.github.derklaro'
-  version '1.0.0-SNAPSHOT'
+group 'com.github.derklaro'
+version '1.0.0-SNAPSHOT'
+
+repositories {
+  mavenLocal()
+  mavenCentral()
 }
 
-subprojects {
-  apply plugin: 'checkstyle'
-  apply plugin: 'java-library'
-  apply plugin: 'maven-publish'
-  apply plugin: 'org.cadixdev.licenser'
+dependencies {
+  // runtime dependencies
+  implementation group: 'org.ow2.asm', name: 'asm', version: '9.2'
+  implementation group: 'jakarta.inject', name: 'jakarta.inject-api', version: '2.0.0'
+  // testing
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.0-RC1'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.0-RC1'
+  // bug spotting
+  compileOnly group: 'org.jetbrains', name: 'annotations', version: '22.0.0'
+}
 
-  repositories {
-    mavenCentral()
-  }
+test {
+  useJUnitPlatform()
+}
 
-  dependencies {
-    // testing
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.0-RC1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.0-RC1'
-    // bug spotting
-    compileOnly group: 'org.jetbrains', name: 'annotations', version: '22.0.0'
-  }
+compileJava {
+  sourceCompatibility = '8'
+  targetCompatibility = '8'
 
-  test {
-    useJUnitPlatform()
-  }
+  options.encoding = 'UTF-8'
+}
 
-  compileJava {
-    sourceCompatibility = '8'
-    targetCompatibility = '8'
-
-    options.encoding = 'UTF-8'
-  }
-
-  publishing {
-    publications {
-      maven(MavenPublication) {
-        from(components.java)
-      }
+publishing {
+  publications {
+    maven(MavenPublication) {
+      from components.java
     }
   }
+}
 
-  checkstyle {
-    toolVersion = '9.0'
-  }
+checkstyle {
+  toolVersion = '9.0'
+}
 
-  tasks.withType(Checkstyle) {
-    maxErrors = 0
-    maxWarnings = 0
-    configFile = project.rootProject.file('checkstyle.xml')
-  }
+tasks.withType(Checkstyle) {
+  maxErrors = 0
+  maxWarnings = 0
+  configFile = project.rootProject.file('checkstyle.xml')
+}
 
-  license {
-    include '**/*.java'
-    header = project.rootProject.file('license_header.txt')
-  }
+license {
+  include '**/*.java'
+  header = project.rootProject.file('license_header.txt')
+}
+
+shadowJar {
+  // base settings of the output jar
+  archiveVersion.set(null)
+  archiveClassifier.set(null)
+  archiveBaseName.set('aerogel')
+  // relocate internal dependencies to prevent compatibility issues
+  relocate 'org.objectweb.asm', 'aerogel.relocate.asm'
+  // auto remove all classes which we don't need in the final jar
+  minimize()
+}
+
+tasks.withType(AbstractArchiveTask) {
+  reproducibleFileOrder = true
+  preserveFileTimestamps = false
 }

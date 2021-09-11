@@ -22,4 +22,14 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel.internal.codegen;
+
+import aerogel.InjectionContext;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+@FunctionalInterface
+public interface InstanceMaker {
+
+  @Nullable Object getInstance(@NotNull InjectionContext context);
+}

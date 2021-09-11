@@ -22,4 +22,29 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel.internal.unsafe;
+
+import org.jetbrains.annotations.NotNull;
+
+public final class ClassDefiners {
+
+  private static final ClassDefiner DEFINER;
+
+  static {
+    if (LookupClassDefiner.isAvailable()) {
+      DEFINER = new LookupClassDefiner();
+    } else if (UnsafeClassDefiner.isAvailable()) {
+      DEFINER = new UnsafeClassDefiner();
+    } else {
+      DEFINER = new FallbackClassDefiner();
+    }
+  }
+
+  private ClassDefiners() {
+    throw new UnsupportedOperationException();
+  }
+
+  public static @NotNull ClassDefiner getDefiner() {
+    return DEFINER;
+  }
+}

@@ -22,4 +22,12 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel.internal.unsafe;
+
+import org.jetbrains.annotations.NotNull;
+
+@FunctionalInterface
+public interface ClassDefiner {
+
+  @NotNull Class<?> defineClass(@NotNull String name, @NotNull Class<?> parent, byte[] bytecode);
+}

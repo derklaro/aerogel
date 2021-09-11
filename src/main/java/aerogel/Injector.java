@@ -22,4 +22,34 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel;
+
+import aerogel.internal.DefaultInjector;
+import java.lang.reflect.Type;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public interface Injector {
+
+  static @NotNull Injector newInjector() {
+    return new DefaultInjector(null);
+  }
+
+  @Nullable Injector parent();
+
+  @NotNull Injector newChildInjector();
+
+  @NotNull Injector install(@NotNull BindingConstructor constructor);
+
+  @NotNull Injector install(@NotNull BindingConstructor... constructors);
+
+  @NotNull Injector install(@NotNull Iterable<BindingConstructor> constructors);
+
+  @NotNull BindingHolder binding(@NotNull Type target);
+
+  @NotNull BindingHolder binding(@NotNull Element element);
+
+  @Nullable BindingHolder bindingOrNull(@NotNull Element element);
+
+  @Nullable BindingHolder fastBinding(@NotNull Element element);
+}

@@ -22,4 +22,35 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel.internal.binding;
+
+import aerogel.Element;
+import aerogel.InjectionContext;
+import aerogel.Injector;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public final class ImmediateBindingHolder extends AbstractBindingHolder {
+
+  private final Object result;
+
+  public ImmediateBindingHolder(
+    @NotNull Element targetType,
+    @NotNull Element bindingType,
+    @NotNull Injector injector,
+    @Nullable Object result
+  ) {
+    super(targetType, bindingType, injector);
+    this.result = result;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> @Nullable T get(@NotNull InjectionContext context) {
+    // just notify that this is done
+    context.constructDone(this.targetType, this.result);
+    context.constructDone(this.bindingType, this.result);
+    // return
+    return (T) this.result;
+  }
+}

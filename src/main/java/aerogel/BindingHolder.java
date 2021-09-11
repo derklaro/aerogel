@@ -22,4 +22,20 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public interface BindingHolder {
+
+  @NotNull Injector injector();
+
+  @NotNull Element type();
+
+  @NotNull Element binding();
+
+  @Nullable <T> T get();
+
+  @Nullable <T> T get(@NotNull InjectionContext context);
+}

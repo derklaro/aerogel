@@ -22,4 +22,17 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel;
+
+import org.jetbrains.annotations.NotNull;
+
+public interface Invoker<T> {
+
+ // @NotNull Pointer<T> pointer();
+
+  @NotNull String methodName();
+
+  @NotNull Class<?>[] argumentTypes();
+
+  void invokeMethod(@NotNull InjectionContext context);
+}

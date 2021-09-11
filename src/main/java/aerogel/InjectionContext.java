@@ -24,6 +24,30 @@
 
 package aerogel;
 
-public interface Injector {
+import aerogel.internal.DefaultInjectionContextBuilder;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+public interface InjectionContext {
+
+  Object NIL = new Object();
+
+  static @NotNull Builder builder() {
+    return new DefaultInjectionContextBuilder();
+  }
+
+  @NotNull Injector injector();
+
+  @Nullable <T> T findInstance(@NotNull Element element);
+
+  void constructDone(@NotNull Element element, @Nullable Object result);
+
+  interface Builder {
+
+    @NotNull Builder injector(@NotNull Injector injector);
+
+    @NotNull <T> Builder override(@NotNull Element element, @Nullable T instance);
+
+    @NotNull InjectionContext build();
+  }
 }

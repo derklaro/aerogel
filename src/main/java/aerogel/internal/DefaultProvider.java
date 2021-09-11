@@ -22,4 +22,21 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel.internal;
+
+import aerogel.Provider;
+import org.jetbrains.annotations.Nullable;
+
+public final class DefaultProvider<T> implements Provider<T> {
+
+  private final T provided;
+
+  public DefaultProvider(T provided) {
+    this.provided = provided;
+  }
+
+  @Override
+  public @Nullable T get() {
+    return this.provided;
+  }
+}

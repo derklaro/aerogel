@@ -22,4 +22,34 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel;
+
+import aerogel.internal.DefaultElement;
+import java.lang.reflect.Type;
+import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+public interface Element {
+
+  static @NotNull Element ofType(@NotNull Type type) {
+    return Element.named(null, type);
+  }
+
+  static @NotNull Element named(@Nullable String requiredName, @NotNull Type type) {
+    return new DefaultElement(requiredName, Objects.requireNonNull(type));
+  }
+
+  @Nullable String requiredName();
+
+  @NotNull Type componentType();
+
+  @Override
+  @NotNull String toString();
+
+  @Override
+  int hashCode();
+
+  @Override
+  boolean equals(@NotNull Object other);
+}

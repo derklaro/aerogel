@@ -22,4 +22,25 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel.internal.utility;
+
+import org.jetbrains.annotations.NotNull;
+
+public final class Preconditions {
+
+  private Preconditions() {
+    throw new UnsupportedOperationException();
+  }
+
+  public static void checkArgument(boolean argument, @NotNull String errorMessage) {
+    if (!argument) {
+      throw new UnsupportedOperationException(errorMessage);
+    }
+  }
+
+  public static void checkArgument(boolean argument, @NotNull String errorMessageFormat, Object... args) {
+    if (!argument) {
+      throw new IllegalStateException(String.format(errorMessageFormat, args));
+    }
+  }
+}
