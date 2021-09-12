@@ -173,7 +173,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       // loop and search for every field we should inject
       for (Field field : this.instanceFields) {
         if (this.fieldMatches(field, settings, instance)) {
-          this.injectField(null, field);
+          this.injectField(instance, field);
         }
       }
     }
