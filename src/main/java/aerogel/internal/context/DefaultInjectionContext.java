@@ -74,8 +74,11 @@ public final class DefaultInjectionContext implements InjectionContext {
       });
       // if there is no proxyable type - break
       requireNonNull(proxyable, "No proxyable element in the stack - no circular dependency management possible");
-      // push a proxy of the type to the stack
-      this.knownTypes.put(proxyable, InjectionTimeProxy.makeProxy((Class<?>) proxyable.componentType()));
+      // check if a type is already known - no proxy needed
+      if (!this.knownTypes.containsKey(proxyable)) {
+        // push a proxy of the type to the stack
+        this.knownTypes.put(proxyable, InjectionTimeProxy.makeProxy((Class<?>) proxyable.componentType()));
+      }
     }
     // push the element we want to construct to the stack
     this.elementStack.push(element);
