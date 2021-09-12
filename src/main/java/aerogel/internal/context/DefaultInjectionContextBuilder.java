@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package aerogel.internal;
+package aerogel.internal.context;
 
 import aerogel.Element;
 import aerogel.InjectionContext;

@@ -24,30 +24,53 @@
 
 package aerogel;
 
-import aerogel.internal.context.DefaultInjectionContextBuilder;
+import aerogel.internal.member.DefaultMemberInjectionSettingsBuilder;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public interface InjectionContext {
-
-  Object NIL = new Object();
+public interface MemberInjectionSettings {
 
   static @NotNull Builder builder() {
-    return new DefaultInjectionContextBuilder();
+    return new DefaultMemberInjectionSettingsBuilder();
   }
 
-  @NotNull Injector injector();
+  boolean injectPrivateMethods();
 
-  @Nullable <T> T findInstance(@NotNull Element element);
+  boolean injectStaticMethods();
 
-  void constructDone(@NotNull Element element, @Nullable Object result);
+  boolean injectInstanceMethods();
+
+  boolean injectInheritedMethods();
+
+  boolean injectPrivateFields();
+
+  boolean injectStaticFields();
+
+  boolean injectInstanceFields();
+
+  boolean injectInheritedFields();
+
+  boolean injectOnlyUninitializedFields();
 
   interface Builder {
 
-    @NotNull Builder injector(@NotNull Injector injector);
+    @NotNull Builder injectPrivateMethods(boolean injectPrivateMethods);
 
-    @NotNull <T> Builder override(@NotNull Element element, @Nullable T instance);
+    @NotNull Builder injectStaticMethods(boolean injectStaticMethods);
 
-    @NotNull InjectionContext build();
+    @NotNull Builder injectInstanceMethods(boolean injectInstanceMethods);
+
+    @NotNull Builder injectInheritedMethods(boolean injectInheritedMethods);
+
+    @NotNull Builder injectPrivateFields(boolean injectPrivateFields);
+
+    @NotNull Builder injectStaticFields(boolean injectStaticFields);
+
+    @NotNull Builder injectInstanceFields(boolean injectInstanceFields);
+
+    @NotNull Builder injectInheritedFields(boolean injectInheritedFields);
+
+    @NotNull Builder injectOnlyUninitializedFields(boolean injectOnlyUninitializedFields);
+
+    @NotNull MemberInjectionSettings build();
   }
 }

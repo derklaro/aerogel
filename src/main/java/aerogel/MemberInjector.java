@@ -25,10 +25,27 @@
 package aerogel;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public interface FieldInjector<T> {
+public interface MemberInjector {
 
- ///@NotNull Pointer<T> pointer();
+  @NotNull Injector injector();
 
-  int injectFields(@NotNull InjectionContext context);
+  @NotNull Class<?> targetClass();
+
+  void inject();
+
+  void inject(@NotNull MemberInjectionSettings settings);
+
+  void inject(@NotNull Object instance);
+
+  void inject(@NotNull Object instance, @NotNull MemberInjectionSettings settings);
+
+  void injectField(@NotNull String name);
+
+  void injectField(@NotNull Object instance, @NotNull String name);
+
+  @Nullable Object injectMethod(@NotNull String name, @NotNull Class<?>... parameterTypes);
+
+  @Nullable Object injectMethod(@NotNull Object instance, @NotNull String name, @NotNull Class<?>... parameterTypes);
 }

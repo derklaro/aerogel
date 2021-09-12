@@ -44,7 +44,7 @@ import org.jetbrains.annotations.NotNull;
  *     {@code @Inject} will be used before checking for no-args constructors.
  *   </li>
  *   <li>
- *     Methods: every method which gets called by an {@link Invoker} can be annotated with {@code @Inject}. It will
+ *     Methods: every method which gets called by an {@link MemberInjector} can be annotated with {@code @Inject}. It will
  *     indicate that the method requests the injection of types from the associated {@link Injector}. Passed instances
  *     to the invoker are preferred over instances provided by the {@link Injector}.
  *   </li>

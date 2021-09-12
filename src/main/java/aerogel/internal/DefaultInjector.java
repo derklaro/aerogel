@@ -28,7 +28,9 @@ import aerogel.BindingConstructor;
 import aerogel.BindingHolder;
 import aerogel.Element;
 import aerogel.Injector;
+import aerogel.MemberInjector;
 import aerogel.internal.binding.ConstructingBindingHolder;
+import aerogel.internal.member.DefaultMemberInjector;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.Objects;
@@ -85,6 +87,11 @@ public final class DefaultInjector implements Injector {
     }
     // for chaining
     return this;
+  }
+
+  @Override
+  public @NotNull MemberInjector memberInjector(@NotNull Class<?> memberHolderClass) {
+    return new DefaultMemberInjector(this, memberHolderClass);
   }
 
   @Override
