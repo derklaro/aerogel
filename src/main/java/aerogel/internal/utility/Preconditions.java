@@ -40,7 +40,7 @@ public final class Preconditions {
 
   public static void checkArgument(boolean argument, @NotNull String errorMessageFormat, Object... args) {
     if (!argument) {
-      throw new IllegalStateException(String.format(errorMessageFormat, args));
+      throw new UnsupportedOperationException(String.format(errorMessageFormat, args));
     }
   }
 }
