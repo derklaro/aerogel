@@ -24,18 +24,18 @@
 
 package aerogel;
 
+import jakarta.inject.Scope;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import jakarta.inject.Scope;
 import org.jetbrains.annotations.NotNull;
 
 @Scope
 @Documented
-@Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.PARAMETER, ElementType.FIELD})
 public @interface Name {
 
   @NotNull String value();

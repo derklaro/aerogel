@@ -94,12 +94,24 @@ public final class DefaultInjectionContext implements InjectionContext {
     if (current != null) {
       // if the current known element is proxied assign it to the delegate handler
       if (current instanceof InjectionTimeProxyable) {
+        this.injectMembers(element, result); // inject before making the proxy available
         ((InjectionTimeProxyable) current).setDelegate(result);
       }
     } else {
       // store to the known types as there is no reference yet
       checkArgument(!(result instanceof InjectionTimeProxyable), "Unable to store a proxy handler instance");
       this.knownTypes.put(element, result);
+      this.injectMembers(element, result);
+    }
+  }
+
+  private void injectMembers(@NotNull Element element, @Nullable Object result) {
+    // if we do have an instance we can do the member injection directly
+    if (result != null) {
+      this.injector.memberInjector(result.getClass()).inject(result);
+    } else if (element.componentType() instanceof Class<?>) {
+      // only if the component type is a class we can at least inject the static members
+      this.injector.memberInjector((Class<?>) element.componentType()).inject();
     }
   }
 }
