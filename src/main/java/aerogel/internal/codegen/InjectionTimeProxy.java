@@ -37,6 +37,7 @@ import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
@@ -53,6 +54,7 @@ import java.lang.reflect.Modifier;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -69,6 +71,22 @@ public final class InjectionTimeProxy {
   // stuff for the Objects class
   private static final String OBJECTS_NAME = Type.getInternalName(Objects.class);
   private static final String ENSURE_NOT_NULL_DESC = methodDesc(Object.class, Object.class, String.class);
+  // the standard methods from the object class: toString, equals & hashCode
+  private static final Method EQUALS;
+  private static final Method TO_STRING;
+  private static final Method HASH_CODE;
+
+  static {
+    try {
+      // lookup toString, equals & hashCode
+      TO_STRING = Object.class.getMethod("toString");
+      HASH_CODE = Object.class.getMethod("hashCode");
+      EQUALS = Object.class.getMethod("equals", Object.class);
+    } catch (NoSuchMethodException exception) {
+      // cannot happen - just explode
+      throw new ExceptionInInitializerError(exception);
+    }
+  }
 
   private InjectionTimeProxy() {
     throw new UnsupportedOperationException();
@@ -136,6 +154,11 @@ public final class InjectionTimeProxy {
     mv.visitMaxs(0, 0);
     mv.visitEnd();
 
+    // visit the standard methods from the object class: toString, equals & hashCode first
+    visitMethod(cw, EQUALS, proxyName, Object.class, interType);
+    visitMethod(cw, TO_STRING, proxyName, Object.class, interType);
+    visitMethod(cw, HASH_CODE, proxyName, Object.class, interType);
+
     // visit each non-final method of the class and delegate it to the reference downstream when available
     Class<?> clazz = interfaceClass;
     do {
@@ -144,38 +167,8 @@ public final class InjectionTimeProxy {
         if (Modifier.isStatic(method.getModifiers())) {
           continue;
         }
-
-        // strip off all invalid modifiers like abstract or native
-        int mod = Modifier.isPublic(method.getModifiers()) ? ACC_PUBLIC : ACC_PROTECTED;
-        // store the method descriptor - we need it to invoke the downstream class
-        String methodDesc = Type.getMethodDescriptor(method);
-        // visit the method and copy each parameter of it
-        mv = cw.visitMethod(mod, method.getName(), methodDesc, null, null);
-        mv.visitCode();
-        // first check if we are able to call the method on the delegate object
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKEVIRTUAL, proxyName, "ensureCallable", "()V", false);
-        // load the delegate object to the stack
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitFieldInsn(GETFIELD, proxyName, "delegate", OBJECT_DESC);
-        mv.visitTypeInsn(CHECKCAST, interType.getInternalName());
-        // load each argument from the stack - some arguments are bigger than other - keep track of the reader index
-        int ri = 1;
-        for (Class<?> type : method.getParameterTypes()) {
-          // ensure that the correct opcode is used to load a primitive type
-          if (type.isPrimitive()) {
-            ri += AsmPrimitives.load(type, mv, ri);
-          } else {
-            mv.visitVarInsn(ALOAD, ri++);
-          }
-        }
-        // invoke the method
-        mv.visitMethodInsn(INVOKEVIRTUAL, Type.getInternalName(clazz), method.getName(), methodDesc, false);
-        // ensure that we use the correct return type
-        mv.visitInsn(Type.getType(method.getReturnType()).getOpcode(IRETURN));
-        // finish the method
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
+        // visit & implement the method
+        visitMethod(cw, method, proxyName, clazz, interType);
       }
     } while ((clazz = clazz.getSuperclass()) != null);
 
@@ -192,6 +185,51 @@ public final class InjectionTimeProxy {
     } catch (ReflectiveOperationException exception) {
       throw new RuntimeException(exception);
     }
+  }
+
+  private static void visitMethod(
+    @NotNull ClassVisitor cw,
+    @NotNull Method method,
+    @NotNull String proxyName,
+    @NotNull Class<?> declaring,
+    @NotNull Type interType
+  ) {
+    // strip off all invalid modifiers like abstract or native
+    int mod = Modifier.isPublic(method.getModifiers()) ? ACC_PUBLIC : ACC_PROTECTED;
+    // store the method descriptor - we need it to invoke the downstream class
+    String methodDesc = Type.getMethodDescriptor(method);
+    // visit the method and copy each parameter of it
+    MethodVisitor mv = cw.visitMethod(mod, method.getName(), methodDesc, null, null);
+    mv.visitCode();
+    // first check if we are able to call the method on the delegate object
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitMethodInsn(INVOKEVIRTUAL, proxyName, "ensureCallable", "()V", false);
+    // load the delegate object to the stack
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitFieldInsn(GETFIELD, proxyName, "delegate", OBJECT_DESC);
+    mv.visitTypeInsn(CHECKCAST, interType.getInternalName());
+    // load each argument from the stack - some arguments are bigger than other - keep track of the reader index
+    int ri = 1;
+    for (Class<?> type : method.getParameterTypes()) {
+      // ensure that the correct opcode is used to load a primitive type
+      if (type.isPrimitive()) {
+        ri += AsmPrimitives.load(type, mv, ri);
+      } else {
+        mv.visitVarInsn(ALOAD, ri++);
+      }
+    }
+    // invoke the method
+    mv.visitMethodInsn(
+      declaring.isInterface() ? INVOKEINTERFACE : INVOKEVIRTUAL,
+      Type.getInternalName(declaring),
+      method.getName(),
+      methodDesc,
+      declaring.isInterface());
+    // ensure that we use the correct return type
+    mv.visitInsn(Type.getType(method.getReturnType()).getOpcode(IRETURN));
+    // finish the method
+    mv.visitMaxs(0, 0);
+    mv.visitEnd();
   }
 
   public interface InjectionTimeProxyable {
