@@ -64,6 +64,7 @@ public final class FactoryMethodInstanceMaker {
     throw new UnsupportedOperationException();
   }
 
+  // @todo: should factory methods support singletons? I feel like this is right but on the other hand the factory method should handle that?
   public static @NotNull InstanceMaker forMethod(@NotNull Method method) {
     // extract the wrapping class of the method
     Class<?> ct = method.getDeclaringClass();
