@@ -27,15 +27,13 @@ package aerogel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface BindingHolder {
+public interface BindingHolder extends Provider<Object> {
 
   @NotNull Injector injector();
 
   @NotNull Element type();
 
   @NotNull Element binding();
-
-  @Nullable <T> T get();
 
   @Nullable <T> T get(@NotNull InjectionContext context);
 }

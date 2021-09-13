@@ -264,7 +264,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     try {
       // lookup the instance we need to set
       String name = JakartaBridge.nameOf(field);
-      Object fieldValue = this.injector.binding(Element.named(name, field.getGenericType())).get();
+      Object fieldValue = this.injector.instance(Element.named(name, field.getGenericType()));
       // set the field using the collected parameter
       field.set(instance, fieldValue);
     } catch (IllegalAccessException exception) {
@@ -282,7 +282,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       // find for every type an instance in the parent injector
       for (int i = 0; i < params.length; i++) {
         String name = JakartaBridge.nameOf(params[i]); // the name of the element (can be null)
-        paramInstances[i] = this.injector.binding(Element.named(name, params[i].getParameterizedType())).get();
+        paramInstances[i] = this.injector.instance(Element.named(name, params[i].getParameterizedType()));
       }
       // return the collected instances
       return paramInstances;

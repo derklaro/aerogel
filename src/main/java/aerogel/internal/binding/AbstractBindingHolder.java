@@ -60,7 +60,7 @@ public abstract class AbstractBindingHolder implements BindingHolder {
   }
 
   @Override
-  public <T> @Nullable T get() {
+  public @Nullable Object get() {
     return this.get(InjectionContext.builder().injector(this.injector).build());
   }
 }

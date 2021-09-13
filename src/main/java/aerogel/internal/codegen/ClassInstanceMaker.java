@@ -59,8 +59,10 @@ import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_8;
 
+import aerogel.BindingHolder;
 import aerogel.Element;
 import aerogel.InjectionContext;
+import aerogel.Injector;
 import aerogel.Provider;
 import aerogel.internal.asm.AsmPrimitives;
 import aerogel.internal.jakarta.JakartaBridge;
@@ -84,13 +86,18 @@ public final class ClassInstanceMaker {
   static final String HOLDER_DESC = org.objectweb.asm.Type.getDescriptor(AtomicReference.class);
   static final String HOLDER_NAME = org.objectweb.asm.Type.getInternalName(AtomicReference.class);
   // the injection context
+  static final String INJECTOR = "injector";
   static final String FIND_INSTANCE = "findInstance";
+  static final String INJECTOR_DESC = methodDesc(Injector.class);
   static final String FIND_INSTANCE_DESC = methodDesc(Object.class, Element.class);
   static final String INJ_CONTEXT_DESC = org.objectweb.asm.Type.getDescriptor(InjectionContext.class);
   static final String INJ_CONTEXT_NAME = org.objectweb.asm.Type.getInternalName(InjectionContext.class);
+  // the injector
+  static final String INJECTOR_BINDING = "binding";
+  static final String INJECTOR_NAME = org.objectweb.asm.Type.getInternalName(Injector.class);
+  static final String INJECTOR_BINDING_DESC = methodDesc(BindingHolder.class, Element.class);
   // the provider wrapping stuff
-  static final String OF_PROV_DESC = methodDesc(Provider.class, Object.class);
-  static final String PROV_NAME = org.objectweb.asm.Type.getInternalName(Provider.class);
+  static final String PROVIDER_NAME = org.objectweb.asm.Type.getInternalName(Provider.class);
   static final String JAKARTA_BRIDGE = org.objectweb.asm.Type.getInternalName(JakartaBridge.class);
   static final String PROV_JAKARTA_DESC = methodDesc(jakarta.inject.Provider.class, Provider.class);
   // other stuff
@@ -216,6 +223,10 @@ public final class ClassInstanceMaker {
 
     // load the injection context to the stack
     mv.visitVarInsn(ALOAD, 1);
+    // if we need a Provider we do need to call the binding(Element) method in the injector class - load the injector
+    if (provider) {
+      mv.visitMethodInsn(INVOKEINTERFACE, INJ_CONTEXT_NAME, INJECTOR, INJECTOR_DESC, true);
+    }
     // visit the name of the parameter
     if (name == null) {
       mv.visitInsn(ACONST_NULL);
@@ -229,25 +240,26 @@ public final class ClassInstanceMaker {
     mv.visitInsn(AALOAD);
     // convert to an element
     mv.visitMethodInsn(INVOKESTATIC, ELEMENT_DESC, "named", methodDesc(Element.class, String.class, Type.class), true);
-    // get its value from the injection context
-    mv.visitMethodInsn(INVOKEINTERFACE, INJ_CONTEXT_NAME, FIND_INSTANCE, FIND_INSTANCE_DESC, true);
-    // unwrap the primitive type if needed
-    if (type.isPrimitive()) {
-      typeWriterIndex.addAndGet(AsmPrimitives.storeUnbox(type, mv, 2 + typeWriterIndex.get()));
-    } else {
-      mv.visitTypeInsn(CHECKCAST, intName(type));
-    }
-    // wrap into a provider if needed
+    // get its value from the injection context, or just the binding if a Provider is requested
     if (provider) {
-      // wrap the type into a provider
-      mv.visitMethodInsn(INVOKESTATIC, PROV_NAME, "of", OF_PROV_DESC, true);
-      // a jakarta provider needs special wrapping
+      // get the binding from the injector
+      mv.visitMethodInsn(INVOKEINTERFACE, INJECTOR_NAME, INJECTOR_BINDING, INJECTOR_BINDING_DESC, true);
+      mv.visitTypeInsn(CHECKCAST, PROVIDER_NAME);
+      // bridge to a jakarta provider if needed
       if (jakartaProvider) {
         mv.visitMethodInsn(INVOKESTATIC, JAKARTA_BRIDGE, "bridgeJakartaProvider", PROV_JAKARTA_DESC, false);
       }
+    } else {
+      mv.visitMethodInsn(INVOKEINTERFACE, INJ_CONTEXT_NAME, FIND_INSTANCE, FIND_INSTANCE_DESC, true);
+      // cast to the required type if the type is not primitive (that will be handled by AsmPrimitives.storeUnbox)
+      if (!type.isPrimitive()) {
+        mv.visitTypeInsn(CHECKCAST, intName(type));
+      }
     }
-    if (!type.isPrimitive()) {
-      // store relative to the index of the parameter
+    // unwrap the primitive type if needed - a provider could cause a type mismatch here so ignore that check
+    if (!provider && type.isPrimitive()) {
+      typeWriterIndex.addAndGet(AsmPrimitives.storeUnbox(type, mv, 2 + typeWriterIndex.get()));
+    } else {
       mv.visitVarInsn(ASTORE, 2 + typeWriterIndex.getAndIncrement());
     }
     // return the extracted generic type

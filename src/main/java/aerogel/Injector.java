@@ -39,6 +39,10 @@ public interface Injector {
 
   @NotNull Injector newChildInjector();
 
+  <T> T instance(@NotNull Class<T> type);
+
+  <T> T instance(@NotNull Element element);
+
   @NotNull Injector install(@NotNull BindingConstructor constructor);
 
   @NotNull Injector install(@NotNull BindingConstructor... constructors);

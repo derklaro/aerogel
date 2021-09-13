@@ -59,6 +59,17 @@ public final class DefaultInjector implements Injector {
   }
 
   @Override
+  public <T> T instance(@NotNull Class<T> type) {
+    return this.instance(Element.ofType(type));
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> T instance(@NotNull Element element) {
+    return (T) this.binding(element).get();
+  }
+
+  @Override
   public @NotNull Injector install(@NotNull BindingConstructor constructor) {
     Objects.requireNonNull(constructor, "constructor");
     // construct the binding
