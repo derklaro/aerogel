@@ -46,11 +46,10 @@ import org.jetbrains.annotations.NotNull;
 public @interface Provides {
 
   /**
-   * Defines which class this instance should be bound to. This defaults to {@link Object} which indicates that all
-   * class implementations and extension should be bound to the class. If specific values are provided, only these
-   * values will be bound to the class.
+   * Defines which class this instance should be bound to. The given type must be super interface or class of the
+   * annotated class in order for this annotation to work correctly.
    *
-   * @return the types to which the annotated class should get bound.
+   * @return the type to which the annotated class should get bound.
    */
-  @NotNull Class<?>[] value() default Object.class;
+  @NotNull Class<?> value();
 }

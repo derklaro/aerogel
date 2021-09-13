@@ -40,6 +40,7 @@ import java.lang.annotation.Target;
  * @author Pasqual K.
  * @since 1.0
  */
+// @todo: find a good way to implement this
 @Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

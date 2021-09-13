@@ -27,14 +27,29 @@ package aerogel.internal;
 import aerogel.Provider;
 import org.jetbrains.annotations.Nullable;
 
-public final class DefaultProvider<T> implements Provider<T> {
+/**
+ * Represents a provider which will always return a fixed value bound to the type {@code T}.
+ *
+ * @param <T> the type of the element this provider returns.
+ * @author Pasqual K.
+ * @since 1.0
+ */
+public final class ImmediateProvider<T> implements Provider<T> {
 
   private final T provided;
 
-  public DefaultProvider(T provided) {
+  /**
+   * Constructs a new immediate provider.
+   *
+   * @param provided the element which should be returned by a call to {@link #get()}.
+   */
+  public ImmediateProvider(T provided) {
     this.provided = provided;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @Nullable T get() {
     return this.provided;

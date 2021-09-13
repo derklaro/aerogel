@@ -24,7 +24,7 @@
 
 package aerogel;
 
-import jakarta.inject.Scope;
+import jakarta.inject.Qualifier;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -32,11 +32,34 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.jetbrains.annotations.NotNull;
 
-@Scope
+/**
+ * Represents a specific name qualified object registered in an {@link Injector}. This allows you to inject a specific
+ * instance which was bound to the name earlier and separate instances.
+ *
+ * <p>For example:
+ *
+ * <pre>
+ *   public class Company {
+ *     &#064;Inject
+ *     public Company(&#064;Name("John Wick") Employee johnWick, &#064;Name("Peter Parker") Employee spiderMan) {
+ *
+ *     }
+ *   }
+ * </pre>
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
+@Qualifier
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.PARAMETER, ElementType.FIELD})
 public @interface Name {
 
+  /**
+   * Get the name the parameter or field is bound to.
+   *
+   * @return the name the parameter or field is bound to.
+   */
   @NotNull String value();
 }

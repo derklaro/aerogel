@@ -29,8 +29,6 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import jakarta.inject.Qualifier;
-import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents the main injection marker during the runtime for {@link Injector}s. This annotation can be added to the
@@ -44,37 +42,20 @@ import org.jetbrains.annotations.NotNull;
  *     {@code @Inject} will be used before checking for no-args constructors.
  *   </li>
  *   <li>
- *     Methods: every method which gets called by an {@link MemberInjector} can be annotated with {@code @Inject}. It will
- *     indicate that the method requests the injection of types from the associated {@link Injector}. Passed instances
- *     to the invoker are preferred over instances provided by the {@link Injector}.
- *   </li>
- *   <li>
- *     Fields: every field in a class can be initialized by using {@link FieldInjector#inject(Object)}. Any field
- *     annotated with {@code @Inject} in the passed instance will get it's value rewritten to the one provided by the
- *     associated {@link Injector}. Passed instances to the invoker are preferred over instances provided by the {@link Injector}.
+ *     Methods/Fields: every method or field which is not abstract (for method) or not final (for fields) can be annotated
+ *     with {@link Inject}. This will cause an injector to inject the annotated field/method when construing an instance
+ *     of the target class. All these methods and fields will be available for direct injection using a
+ *     {@link MemberInjector} as well.
  *   </li>
  * </ul>
  *
  * @author Pasqual K.
  * @since 1.0
  */
-@Qualifier
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.FIELD})
 public @interface Inject {
-
-  /**
-   * The name to use when injecting an instance. The name can be set when providing an instance to an {@link Injector},
-   * or using any other annotation marking an instance as injectable such as {@link Provides} or {@link ProvidedBy}. If
-   * an instance has no name set the default value will be the name of the member to inject, for example the name of the
-   * field which is annotated by this annotation. If no name can be resolved or no binding with the name exists the
-   * injection will fail if the name is explicitly supplied, if not the injector will fall back to use an instance of
-   * the type annotated, for example the field type.
-   *
-   * @return the name of the injected instance to use, falls back to no name by default.
-   */
-  @NotNull String name() default "";
 
   /**
    * If true the injector will only do the injection when all types can be collected which are required to proceed and
@@ -85,5 +66,6 @@ public @interface Inject {
    *
    * @return if the value to inject is not required.
    */
+  // @todo: implement this in the member injector
   boolean optional() default false;
 }
