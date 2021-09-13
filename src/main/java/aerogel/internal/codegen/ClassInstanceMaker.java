@@ -149,16 +149,7 @@ public final class ClassInstanceMaker {
     mv.visitCode();
     // if this is a singleton check first if the instance is already loaded
     if (singleton) {
-      Label nonNullDimension = new Label();
-      // check if the singleton value is already there
-      mv.visitVarInsn(ALOAD, 0);
-      mv.visitFieldInsn(GETFIELD, proxyName, HOLDER, HOLDER_DESC);
-      mv.visitMethodInsn(INVOKEVIRTUAL, HOLDER_NAME, "get", "()" + OBJECT_DESC, false);
-      mv.visitInsn(DUP);
-      // if (value != null) then
-      mv.visitJumpInsn(IFNULL, nonNullDimension);
-      mv.visitInsn(ARETURN);
-      mv.visitLabel(nonNullDimension);
+      visitSingletonHolder(mv, proxyName);
     }
     // check if the constructor does take arguments (if not that makes the life easier)
     if (target.getParameterCount() == 0) {
@@ -174,7 +165,7 @@ public final class ClassInstanceMaker {
       types = NO_TYPE;
     } else {
       // store all parameters to the stack
-      types = storeParameters(target, proxyName, mv);
+      types = storeParameters(target, proxyName, mv, singleton);
       // begin the instance creation
       mv.visitTypeInsn(NEW, intName(ct));
       mv.visitInsn(DUP);
@@ -263,7 +254,12 @@ public final class ClassInstanceMaker {
     return generic;
   }
 
-  static @NotNull Type[] storeParameters(@NotNull Executable exec, @NotNull String name, @NotNull MethodVisitor mv) {
+  static @NotNull Type[] storeParameters(
+    @NotNull Executable exec,
+    @NotNull String name,
+    @NotNull MethodVisitor mv,
+    boolean singleton
+  ) {
     // create an element for each parameter of the constructor
     Parameter[] parameters = exec.getParameters();
     // init the types directly while unboxing the parameters
@@ -272,6 +268,10 @@ public final class ClassInstanceMaker {
     AtomicInteger writerIndex = new AtomicInteger(0);
     for (int i = 0; i < parameters.length; i++) {
       types[i] = unpackParameter(name, mv, parameters[i], writerIndex, i);
+      // add a check if the singleton instance was created as a side effect after each parameter
+      if (singleton) {
+        visitSingletonHolder(mv, name);
+      }
     }
     // return the types for later re-use
     return types;
@@ -318,5 +318,18 @@ public final class ClassInstanceMaker {
     mv.visitInsn(DUP2);
     // set the value in the reference
     mv.visitMethodInsn(INVOKEVIRTUAL, HOLDER_NAME, "set", descToMethodDesc(OBJECT_DESC, void.class), false);
+  }
+
+  private static void visitSingletonHolder(@NotNull MethodVisitor mv, @NotNull String proxyName) {
+    Label nonNullDimension = new Label();
+    // check if the singleton value is already there
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitFieldInsn(GETFIELD, proxyName, HOLDER, HOLDER_DESC);
+    mv.visitMethodInsn(INVOKEVIRTUAL, HOLDER_NAME, "get", "()" + OBJECT_DESC, false);
+    mv.visitInsn(DUP);
+    // if (value != null) then
+    mv.visitJumpInsn(IFNULL, nonNullDimension);
+    mv.visitInsn(ARETURN);
+    mv.visitLabel(nonNullDimension);
   }
 }

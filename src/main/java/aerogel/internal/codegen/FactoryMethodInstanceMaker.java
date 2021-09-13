@@ -103,7 +103,7 @@ public final class FactoryMethodInstanceMaker {
       types = NO_TYPE;
     } else {
       // store all parameters to the stack
-      types = storeParameters(method, proxyName, mv);
+      types = storeParameters(method, proxyName, mv, false);
       // load all parameters
       loadParameters(types, mv);
       // invoke the method with these arguments
