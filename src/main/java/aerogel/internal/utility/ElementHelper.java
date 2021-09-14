@@ -53,7 +53,7 @@ public final class ElementHelper {
     // extract all annotations
     Annotation[] qualifierAnnotations = extractQualifierAnnotations(field.getDeclaredAnnotations());
     // create an element based on the information
-    return Element.ofType(type).requireName(name).requireAnnotations(qualifierAnnotations);
+    return Element.get(type).requireName(name).requireAnnotations(qualifierAnnotations);
   }
 
   public static @NotNull Element buildElement(@NotNull Parameter parameter) {
@@ -66,7 +66,7 @@ public final class ElementHelper {
     // extract all annotations
     Annotation[] qualifierAnnotations = extractQualifierAnnotations(parameter.getDeclaredAnnotations());
     // create an element based on the information
-    return Element.ofType(type).requireName(name).requireAnnotations(qualifierAnnotations);
+    return Element.get(type).requireName(name).requireAnnotations(qualifierAnnotations);
   }
 
   public static Annotation @NotNull [] extractQualifierAnnotations(Annotation @NotNull [] annotations) {

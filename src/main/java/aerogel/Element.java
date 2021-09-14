@@ -35,7 +35,7 @@ import org.jetbrains.annotations.UnmodifiableView;
 
 public interface Element {
 
-  static @NotNull Element ofType(@NotNull Type type) {
+  static @NotNull Element get(@NotNull Type type) {
     Objects.requireNonNull(type, "A type is required to construct an element");
     return new DefaultElement(type);
   }
@@ -49,9 +49,9 @@ public interface Element {
 
   @NotNull Element requireName(@Nullable String name);
 
-  @NotNull Element requireAnnotations(Annotation @NotNull ... annotations);
+  @NotNull Element requireAnnotations(@NotNull Annotation... annotations);
 
-  @NotNull Element requireAnnotations(Class<?> @NotNull ... annotationTypes);
+  @NotNull Element requireAnnotations(@NotNull Class<?>... annotationTypes);
 
   @Override
   @NotNull String toString();

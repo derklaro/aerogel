@@ -38,7 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Don't use this class directly, use {@link Element#ofType(Type)} instead.
+ * Don't use this class directly, use {@link Element#get(Type)} instead.
  *
  * @author Pasqual K.
  * @since 1.0
@@ -97,7 +97,7 @@ public final class DefaultElement implements Element {
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Element requireAnnotations(Annotation @NotNull ... annotations) {
+  public @NotNull Element requireAnnotations(@NotNull Annotation... annotations) {
     // create a new annotation comparer for every annotation
     for (Annotation annotation : annotations) {
       this.annotationComparer.add(AnnotationComparerMaker.make(annotation));
@@ -110,7 +110,7 @@ public final class DefaultElement implements Element {
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Element requireAnnotations(Class<?> @NotNull ... annotationTypes) {
+  public @NotNull Element requireAnnotations(@NotNull Class<?>... annotationTypes) {
     // create a new annotation comparer for every annotation
     for (Class<?> annotationType : annotationTypes) {
       this.annotationComparer.add(AnnotationComparerMaker.make(annotationType));

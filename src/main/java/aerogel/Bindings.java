@@ -77,7 +77,7 @@ public interface Bindings {
 
   @Contract(pure = true)
   static @NotNull BindingConstructor factory(@NotNull Method factoryMethod) {
-    return factory(Element.ofType(factoryMethod.getGenericReturnType()), factoryMethod);
+    return factory(Element.get(factoryMethod.getGenericReturnType()), factoryMethod);
   }
 
   @Contract(pure = true)
@@ -90,7 +90,7 @@ public interface Bindings {
 
     return injector -> new FactoryBindingHolder(
       type,
-      Element.ofType(factoryMethod.getGenericReturnType()),
+      Element.get(factoryMethod.getGenericReturnType()),
       injector,
       factoryMethod);
   }

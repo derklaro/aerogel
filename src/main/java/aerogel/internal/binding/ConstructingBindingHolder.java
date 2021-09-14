@@ -64,7 +64,7 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     ProvidedBy provided = type.getAnnotation(ProvidedBy.class);
     // create a binding holder based on the information
     if (provided != null) {
-      return create(injector, element, Element.ofType(provided.value()));
+      return create(injector, element, Element.get(provided.value()));
     } else {
       // check if we can construct the type
       ReflectionUtils.ensureInstantiable(type);

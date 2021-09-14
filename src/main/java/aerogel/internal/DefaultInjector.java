@@ -60,7 +60,7 @@ public final class DefaultInjector implements Injector {
 
   @Override
   public <T> T instance(@NotNull Class<T> type) {
-    return this.instance(Element.ofType(type));
+    return this.instance(Element.get(type));
   }
 
   @Override
@@ -107,7 +107,7 @@ public final class DefaultInjector implements Injector {
 
   @Override
   public @NotNull BindingHolder binding(@NotNull Type target) {
-    return this.binding(Element.ofType(target));
+    return this.binding(Element.get(target));
   }
 
   @Override

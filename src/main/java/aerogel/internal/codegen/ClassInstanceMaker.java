@@ -259,7 +259,7 @@ public final class ClassInstanceMaker {
       mv.visitVarInsn(ASTORE, 2 + typeWriterIndex.getAndIncrement());
     }
     // return the extracted generic type
-    return Element.ofType(generic)
+    return Element.get(generic)
       .requireName(name)
       .requireAnnotations(qualifiedAnnotations);
   }
