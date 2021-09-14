@@ -24,12 +24,45 @@
 
 package aerogel;
 
+import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Identifies qualifier annotations. These annotations are used for annotation matching in an {@link Injector}. See
+ * {@link Element#requireAnnotations(Class[])} and {@link Element#requireAnnotations(Annotation...)}.
+ * <p>
+ * A qualifier annotation...
+ *
+ * <ul>
+ *   <li>... must be annotated with {@literal @}Qualifier.</li>
+ *   <li>... must be {@literal @}Retention(RetentionPolicy.RUNTIME).</li>
+ *   <li>... can have attributes (will be matched in the runtime differently).</li>
+ * </ul>
+ *
+ * <p>A custom qualifier annotation can look like:
+ *
+ * <pre>
+ *   &#064;aerogel.Qualifier
+ *   &#064;java.lang.annotation.Documented
+ *   &#064;java.lang.annotation.Retention(RUNTIME)
+ *   public @interface Employee {
+ *     Type type() default NORMAL;
+ *
+ *     public enum Type {
+ *       SENIOR,
+ *       NORMAL,
+ *       GONE
+ *     }
+ *   }
+ * </pre>
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.ANNOTATION_TYPE)
