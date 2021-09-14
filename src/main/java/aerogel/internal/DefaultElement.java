@@ -24,33 +24,40 @@
 
 package aerogel.internal;
 
+import aerogel.AnnotationComparer;
 import aerogel.Element;
 import aerogel.internal.utility.ToStringHelper;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Don't use this class directly, use {@link Element#ofType(Type)} and {@link Element#named(String, Type)} instead.
+ * Don't use this class directly, use {@link Element#ofType(Type)} instead.
  *
  * @author Pasqual K.
  * @since 1.0
  */
 public final class DefaultElement implements Element {
 
-  private final String requiredName;
   private final Type componentType;
+  private final List<AnnotationComparer> annotationComparer;
+
+  private String requiredName;
 
   /**
    * Constructs a new default element type instance.
    *
-   * @param requiredName  the name required by the element or {@code null} if no name is required.
    * @param componentType the type of the element.
    */
-  public DefaultElement(@Nullable String requiredName, @NotNull Type componentType) {
-    this.requiredName = requiredName;
+  public DefaultElement(@NotNull Type componentType) {
     this.componentType = componentType;
+    this.annotationComparer = new CopyOnWriteArrayList<>();
   }
 
   /**
@@ -73,6 +80,49 @@ public final class DefaultElement implements Element {
    * {@inheritDoc}
    */
   @Override
+  public @NotNull Collection<AnnotationComparer> annotationComparer() {
+    return Collections.unmodifiableCollection(this.annotationComparer);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull Element requireName(@Nullable String name) {
+    this.requiredName = name;
+    return this;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull Element requireAnnotations(Annotation @NotNull ... annotations) {
+    // create a new annotation comparer for every annotation
+    for (Annotation annotation : annotations) {
+      this.annotationComparer.add(AnnotationComparerMaker.make(annotation));
+    }
+    // for chaining
+    return this;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull Element requireAnnotations(Class<?> @NotNull ... annotationTypes) {
+    // create a new annotation comparer for every annotation
+    for (Class<?> annotationType : annotationTypes) {
+      this.annotationComparer.add(AnnotationComparerMaker.make(annotationType));
+    }
+    // for chaining
+    return this;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public @NotNull String toString() {
     return ToStringHelper.from(this)
       .putField("requiredName", this.requiredName)
@@ -85,7 +135,7 @@ public final class DefaultElement implements Element {
    */
   @Override
   public int hashCode() {
-    return Objects.hash(this.requiredName, this.componentType);
+    return Objects.hash(this.requiredName, this.componentType, this.annotationComparer);
   }
 
   /**
@@ -100,7 +150,26 @@ public final class DefaultElement implements Element {
       return false;
     }
     DefaultElement that = (DefaultElement) o;
-    return Objects.equals(this.requiredName, that.requiredName)
-      && Objects.equals(this.componentType, that.componentType);
+    // compare the common fields - type & name
+    if (!this.componentType.equals(that.componentType) || !Objects.equals(this.requiredName, that.requiredName)) {
+      return false;
+    }
+    // compare the annotation strategies
+    // save an iterator if they are either both empty
+    if (this.annotationComparer.isEmpty() && that.annotationComparer.isEmpty()) {
+      return true;
+    }
+    // or not the same size
+    if (this.annotationComparer.size() != that.annotationComparer.size()) {
+      return false;
+    }
+    // check every comparer
+    for (int i = 0; i < this.annotationComparer.size(); i++) {
+      if (!this.annotationComparer.get(i).equals(that.annotationComparer.get(i))) {
+        return false;
+      }
+    }
+    // every annotation comparer equals as well
+    return true;
   }
 }

@@ -24,11 +24,12 @@
 
 package aerogel.internal.member;
 
-import aerogel.Element;
 import aerogel.Injector;
 import aerogel.MemberInjectionSettings;
 import aerogel.MemberInjector;
+import aerogel.Provider;
 import aerogel.internal.jakarta.JakartaBridge;
+import aerogel.internal.utility.ElementHelper;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -262,9 +263,20 @@ public final class DefaultMemberInjector implements MemberInjector {
 
   private void injectField(@Nullable Object instance, @NotNull Field field) {
     try {
-      // lookup the instance we need to set
-      String name = JakartaBridge.nameOf(field);
-      Object fieldValue = this.injector.instance(Element.named(name, field.getGenericType()));
+      Object fieldValue;
+      // check if the field is a provider
+      if (JakartaBridge.isProvider(field.getType())) {
+        Provider<?> provider = this.injector.binding(ElementHelper.buildElement(field));
+        // check if the provider is a jakarta provider
+        if (JakartaBridge.needsProviderWrapping(field.getType())) {
+          fieldValue = JakartaBridge.bridgeJakartaProvider(provider);
+        } else {
+          fieldValue = provider;
+        }
+      } else {
+        // just needs the direct instance of the field type
+        fieldValue = this.injector.instance(ElementHelper.buildElement(field));
+      }
       // set the field using the collected parameter
       field.set(instance, fieldValue);
     } catch (IllegalAccessException exception) {
@@ -281,8 +293,20 @@ public final class DefaultMemberInjector implements MemberInjector {
       Object[] paramInstances = new Object[params.length];
       // find for every type an instance in the parent injector
       for (int i = 0; i < params.length; i++) {
-        String name = JakartaBridge.nameOf(params[i]); // the name of the element (can be null)
-        paramInstances[i] = this.injector.instance(Element.named(name, params[i].getParameterizedType()));
+        // check if the parameter is a provider
+        if (JakartaBridge.isProvider(params[i].getType())) {
+          // we only need the binding, not the direct instance then
+          Provider<?> provider = this.injector.binding(ElementHelper.buildElement(params[i]));
+          // check if the provider is a jakarta provider
+          if (JakartaBridge.needsProviderWrapping(params[i].getType())) {
+            paramInstances[i] = JakartaBridge.bridgeJakartaProvider(provider);
+          } else {
+            paramInstances[i] = provider;
+          }
+        } else {
+          // we do need the direct instance of the type
+          paramInstances[i] = this.injector.instance(ElementHelper.buildElement(params[i]));
+        }
       }
       // return the collected instances
       return paramInstances;

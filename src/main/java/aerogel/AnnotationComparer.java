@@ -24,41 +24,32 @@
 
 package aerogel;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.Annotation;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Represents a specific name qualified object registered in an {@link Injector}. This allows you to inject a specific
- * instance which was bound to the name earlier and separate instances.
+ * Allows to compare an annotation from element against this holder. This may be done in different ways. By using...
  *
- * <p>For example:
+ * <ul>
+ *   <li>... by comparing the type of the annotation.</li>
+ *   <li>... an annotation instance to compare the instances against each other.</li>
+ *   <li>... any way you can implement ;)</li>
+ * </ul>
  *
- * <pre>
- *   public class Company {
- *     &#064;Inject
- *     public Company(&#064;Name("John Wick") Employee johnWick, &#064;Name("Peter Parker") Employee spiderMan) {
- *
- *     }
- *   }
- * </pre>
+ * <p>Every {@link Element} holds annotation comparer which can be accessed through {@link Element#annotationComparer()}
+ * and added via {@link Element#requireAnnotations(Annotation...)} and {@link Element#requireAnnotations(Class[])}.</p>
  *
  * @author Pasqual K.
  * @since 1.0
  */
-@Qualifier
-@Documented
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.PARAMETER, ElementType.FIELD})
-public @interface Name {
+@FunctionalInterface
+public interface AnnotationComparer {
 
   /**
-   * Get the name the parameter or field is bound to.
+   * Checks if comparer holds the same annotation instance as provided to this method.
    *
-   * @return the name the parameter or field is bound to.
+   * @param annotation the annotation to check.
+   * @return if the annotation in this provider and the annotation provided do equal.
    */
-  @NotNull String value();
+  boolean doesEqual(@NotNull Annotation annotation);
 }

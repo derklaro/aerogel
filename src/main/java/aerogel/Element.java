@@ -25,24 +25,33 @@
 package aerogel;
 
 import aerogel.internal.DefaultElement;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
 
 public interface Element {
 
   static @NotNull Element ofType(@NotNull Type type) {
-    return Element.named(null, type);
-  }
-
-  static @NotNull Element named(@Nullable String requiredName, @NotNull Type type) {
-    return new DefaultElement(requiredName, Objects.requireNonNull(type));
+    Objects.requireNonNull(type, "A type is required to construct an element");
+    return new DefaultElement(type);
   }
 
   @Nullable String requiredName();
 
   @NotNull Type componentType();
+
+  @UnmodifiableView
+  @NotNull Collection<AnnotationComparer> annotationComparer();
+
+  @NotNull Element requireName(@Nullable String name);
+
+  @NotNull Element requireAnnotations(Annotation @NotNull ... annotations);
+
+  @NotNull Element requireAnnotations(Class<?> @NotNull ... annotationTypes);
 
   @Override
   @NotNull String toString();

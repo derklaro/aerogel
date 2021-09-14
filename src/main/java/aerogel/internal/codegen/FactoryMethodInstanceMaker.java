@@ -28,15 +28,15 @@ import static aerogel.internal.asm.AsmUtils.INSTANCE_MAKER;
 import static aerogel.internal.asm.AsmUtils.OBJECT;
 import static aerogel.internal.asm.AsmUtils.PRIVATE_FINAL;
 import static aerogel.internal.asm.AsmUtils.PUBLIC_FINAL;
-import static aerogel.internal.asm.AsmUtils.TYPES;
-import static aerogel.internal.asm.AsmUtils.TYPES_DEC;
 import static aerogel.internal.asm.AsmUtils.beginConstructor;
 import static aerogel.internal.asm.AsmUtils.descToMethodDesc;
 import static aerogel.internal.asm.AsmUtils.intName;
 import static aerogel.internal.asm.AsmUtils.methodDesc;
+import static aerogel.internal.codegen.ClassInstanceMaker.ELEMENTS;
+import static aerogel.internal.codegen.ClassInstanceMaker.ELEMENT_DESC;
 import static aerogel.internal.codegen.ClassInstanceMaker.GET_INSTANCE;
 import static aerogel.internal.codegen.ClassInstanceMaker.INJ_CONTEXT_DESC;
-import static aerogel.internal.codegen.ClassInstanceMaker.NO_TYPE;
+import static aerogel.internal.codegen.ClassInstanceMaker.NO_ELEMENT;
 import static aerogel.internal.codegen.ClassInstanceMaker.defineAndConstruct;
 import static aerogel.internal.codegen.ClassInstanceMaker.loadParameters;
 import static aerogel.internal.codegen.ClassInstanceMaker.storeParameters;
@@ -49,9 +49,9 @@ import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_8;
 
+import aerogel.Element;
 import aerogel.internal.asm.AsmPrimitives;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -69,7 +69,7 @@ public final class FactoryMethodInstanceMaker {
     // extract the wrapping class of the method
     Class<?> ct = method.getDeclaringClass();
     // the types used for the class init
-    Type[] types;
+    Element[] elements;
     // make a proxy name for the class
     String proxyName = String.format(
       PROXY_CLASS_NAME_FORMAT,
@@ -82,12 +82,12 @@ public final class FactoryMethodInstanceMaker {
     // target Java 8 classes as the minimum requirement
     cw.visit(V1_8, PUBLIC_FINAL | ACC_SUPER, proxyName, null, OBJECT, INSTANCE_MAKER);
     // adds the type[] fields to the class
-    cw.visitField(PRIVATE_FINAL, TYPES, TYPES_DEC, null, null).visitEnd();
+    cw.visitField(PRIVATE_FINAL, ELEMENTS, ELEMENT_DESC, null, null).visitEnd();
 
-    mv = beginConstructor(cw, descToMethodDesc(TYPES_DEC, void.class));
+    mv = beginConstructor(cw, descToMethodDesc(ELEMENT_DESC, void.class));
     // assign the type field
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitFieldInsn(PUTFIELD, proxyName, TYPES, TYPES_DEC);
+    mv.visitFieldInsn(PUTFIELD, proxyName, ELEMENTS, ELEMENT_DESC);
     mv.visitInsn(RETURN);
     // constructor is done
     mv.visitMaxs(0, 0);
@@ -101,12 +101,12 @@ public final class FactoryMethodInstanceMaker {
       // just call the method (which must always be a static method)
       mv.visitMethodInsn(INVOKESTATIC, intName(ct), method.getName(), methodDesc(method), ct.isInterface());
       // no types needed for the invocation
-      types = NO_TYPE;
+      elements = NO_ELEMENT;
     } else {
       // store all parameters to the stack
-      types = storeParameters(method, proxyName, mv, false);
+      elements = storeParameters(method, proxyName, mv, false);
       // load all parameters
-      loadParameters(types, mv);
+      loadParameters(elements, mv);
       // invoke the method with these arguments
       mv.visitMethodInsn(INVOKESTATIC, intName(ct), method.getName(), methodDesc(method), ct.isInterface());
     }
@@ -123,6 +123,6 @@ public final class FactoryMethodInstanceMaker {
 
     cw.visitEnd();
     // construct
-    return defineAndConstruct(cw, proxyName, ct, types);
+    return defineAndConstruct(cw, proxyName, ct, elements);
   }
 }

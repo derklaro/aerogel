@@ -27,8 +27,10 @@ package aerogel.internal.jakarta;
 import aerogel.Inject;
 import aerogel.Name;
 import aerogel.Provider;
+import aerogel.Qualifier;
 import aerogel.Singleton;
 import jakarta.inject.Named;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,6 +47,16 @@ public final class JakartaBridge {
 
   public static boolean isSingleton(@NotNull AnnotatedElement element) {
     return element.isAnnotationPresent(Singleton.class) || element.isAnnotationPresent(jakarta.inject.Singleton.class);
+  }
+
+  public static boolean isQualifierAnnotation(@NotNull Annotation annotation) {
+    Class<? extends Annotation> type = annotation.annotationType();
+    return type.isAnnotationPresent(Qualifier.class) || type.isAnnotationPresent(jakarta.inject.Qualifier.class);
+  }
+
+  public static boolean isNotNameAnnotation(@NotNull Annotation annotation) {
+    Class<? extends Annotation> type = annotation.annotationType();
+    return !type.equals(Name.class) && !type.equals(Named.class);
   }
 
   public static @Nullable String nameOf(@NotNull AnnotatedElement element) {

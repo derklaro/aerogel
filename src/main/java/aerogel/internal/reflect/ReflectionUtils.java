@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class ReflectionUtils {
 
@@ -58,7 +59,9 @@ public final class ReflectionUtils {
   }
 
   public static @NotNull Class<?> genericSuperTypeAsClass(@NotNull Type type) {
-    return (Class<?>) genericSuperType(type);
+    Type superType = genericSuperType(type);
+    // @todo: this is just shit - unbox the type correctly
+    return superType instanceof Class<?> ? (Class<?>) superType : null;
   }
 
   public static boolean isPrimitive(@NotNull Type type) {

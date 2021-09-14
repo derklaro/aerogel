@@ -30,8 +30,6 @@ import static aerogel.internal.asm.AsmUtils.OBJECT;
 import static aerogel.internal.asm.AsmUtils.OBJECT_DESC;
 import static aerogel.internal.asm.AsmUtils.PRIVATE_FINAL;
 import static aerogel.internal.asm.AsmUtils.PUBLIC_FINAL;
-import static aerogel.internal.asm.AsmUtils.TYPES;
-import static aerogel.internal.asm.AsmUtils.TYPES_DEC;
 import static aerogel.internal.asm.AsmUtils.beginConstructor;
 import static aerogel.internal.asm.AsmUtils.consDesc;
 import static aerogel.internal.asm.AsmUtils.descToMethodDesc;
@@ -41,7 +39,6 @@ import static aerogel.internal.asm.AsmUtils.pushInt;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SUPER;
-import static org.objectweb.asm.Opcodes.ACONST_NULL;
 import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.ASTORE;
@@ -68,6 +65,8 @@ import aerogel.internal.asm.AsmPrimitives;
 import aerogel.internal.jakarta.JakartaBridge;
 import aerogel.internal.reflect.ReflectionUtils;
 import aerogel.internal.unsafe.ClassDefiners;
+import aerogel.internal.utility.ElementHelper;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
@@ -100,11 +99,13 @@ public final class ClassInstanceMaker {
   static final String PROVIDER_NAME = org.objectweb.asm.Type.getInternalName(Provider.class);
   static final String JAKARTA_BRIDGE = org.objectweb.asm.Type.getInternalName(JakartaBridge.class);
   static final String PROV_JAKARTA_DESC = methodDesc(jakarta.inject.Provider.class, Provider.class);
+  // the element access stuff
+  static final String ELEMENTS = "elements";
+  static final Element[] NO_ELEMENT = new Element[0];
+  static final String ELEMENT_DESC = org.objectweb.asm.Type.getDescriptor(Element[].class);
   // other stuff
-  static final Type[] NO_TYPE = new Type[0];
   static final String GET_INSTANCE = "getInstance";
   static final String PROXY_CLASS_NAME_FORMAT = "%s$Invoker_%d";
-  static final String ELEMENT_DESC = org.objectweb.asm.Type.getInternalName(Element.class);
 
   private ClassInstanceMaker() {
     throw new UnsupportedOperationException();
@@ -114,7 +115,7 @@ public final class ClassInstanceMaker {
     // extract the wrapping class of the constructor
     Class<?> ct = target.getDeclaringClass();
     // the types used for the class init
-    Type[] types;
+    Element[] elements;
     // make a proxy name for the class
     String proxyName = String.format(
       PROXY_CLASS_NAME_FORMAT,
@@ -127,17 +128,17 @@ public final class ClassInstanceMaker {
     cw.visit(V1_8, PUBLIC_FINAL | ACC_SUPER, proxyName, null, OBJECT, INSTANCE_MAKER);
 
     // adds the type[] fields to the class
-    cw.visitField(PRIVATE_FINAL, TYPES, TYPES_DEC, null, null).visitEnd();
+    cw.visitField(PRIVATE_FINAL, ELEMENTS, ELEMENT_DESC, null, null).visitEnd();
     // if this is a singleton add the atomic reference field which will hold that instance later
     if (singleton) {
       cw.visitField(PRIVATE_FINAL, HOLDER, HOLDER_DESC, null, null).visitEnd();
     }
 
     // visit the constructor
-    mv = beginConstructor(cw, descToMethodDesc(TYPES_DEC, void.class));
+    mv = beginConstructor(cw, descToMethodDesc(ELEMENT_DESC, void.class));
     // assign the type field
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitFieldInsn(PUTFIELD, proxyName, TYPES, TYPES_DEC);
+    mv.visitFieldInsn(PUTFIELD, proxyName, ELEMENTS, ELEMENT_DESC);
     // assign the singleton AtomicReference field if this is a singleton
     if (singleton) {
       mv.visitVarInsn(ALOAD, 0);
@@ -169,15 +170,15 @@ public final class ClassInstanceMaker {
         appendSingletonWrite(mv, proxyName);
       }
       // no types for the class init are required
-      types = NO_TYPE;
+      elements = NO_ELEMENT;
     } else {
       // store all parameters to the stack
-      types = storeParameters(target, proxyName, mv, singleton);
+      elements = storeParameters(target, proxyName, mv, singleton);
       // begin the instance creation
       mv.visitTypeInsn(NEW, intName(ct));
       mv.visitInsn(DUP);
       // load all elements from the stack
-      loadParameters(types, mv);
+      loadParameters(elements, mv);
       // instantiate the constructor with the parameters
       mv.visitMethodInsn(INVOKESPECIAL, intName(ct), CONSTRUCTOR_NAME, consDesc(target), false);
       // if this is a singleton store the value in the AtomicReference
@@ -194,14 +195,15 @@ public final class ClassInstanceMaker {
     // finish & define the class
     cw.visitEnd();
     // construct
-    return defineAndConstruct(cw, proxyName, ct, types);
+    return defineAndConstruct(cw, proxyName, ct, elements);
   }
 
-  static @NotNull Type unpackParameter(
+  static @NotNull Element unpackParameter(
     @NotNull String ot,
     @NotNull MethodVisitor mv,
     @NotNull Parameter parameter,
     @NotNull AtomicInteger typeWriterIndex,
+    @NotNull Annotation[] annotations,
     int index
   ) {
     // collect general information about the parameter we want to load
@@ -209,6 +211,8 @@ public final class ClassInstanceMaker {
     // if the type is wrapped in a provider
     boolean provider = JakartaBridge.isProvider(parameter.getType());
     boolean jakartaProvider = JakartaBridge.needsProviderWrapping(parameter.getType());
+    // filter out all qualifier annotations
+    Annotation[] qualifiedAnnotations = ElementHelper.extractQualifierAnnotations(annotations);
     // the type of the parameter is important as we do need to consider either to push the real type of the super type later
     Type generic;
     Class<?> type;
@@ -227,19 +231,11 @@ public final class ClassInstanceMaker {
     if (provider) {
       mv.visitMethodInsn(INVOKEINTERFACE, INJ_CONTEXT_NAME, INJECTOR, INJECTOR_DESC, true);
     }
-    // visit the name of the parameter
-    if (name == null) {
-      mv.visitInsn(ACONST_NULL);
-    } else {
-      mv.visitLdcInsn(name);
-    }
-    // read the type from the class intern array
+    // read the element from the class intern array
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitFieldInsn(GETFIELD, ot, TYPES, TYPES_DEC);
+    mv.visitFieldInsn(GETFIELD, ot, ELEMENTS, ELEMENT_DESC);
     pushInt(mv, index);
     mv.visitInsn(AALOAD);
-    // convert to an element
-    mv.visitMethodInsn(INVOKESTATIC, ELEMENT_DESC, "named", methodDesc(Element.class, String.class, Type.class), true);
     // get its value from the injection context, or just the binding if a Provider is requested
     if (provider) {
       // get the binding from the injector
@@ -263,10 +259,12 @@ public final class ClassInstanceMaker {
       mv.visitVarInsn(ASTORE, 2 + typeWriterIndex.getAndIncrement());
     }
     // return the extracted generic type
-    return generic;
+    return Element.ofType(generic)
+      .requireName(name)
+      .requireAnnotations(qualifiedAnnotations);
   }
 
-  static @NotNull Type[] storeParameters(
+  static @NotNull Element[] storeParameters(
     @NotNull Executable exec,
     @NotNull String name,
     @NotNull MethodVisitor mv,
@@ -275,26 +273,26 @@ public final class ClassInstanceMaker {
     // create an element for each parameter of the constructor
     Parameter[] parameters = exec.getParameters();
     // init the types directly while unboxing the parameters
-    Type[] types = new Type[parameters.length];
+    Element[] elements = new Element[parameters.length];
     // stores the current writer index as some types need more space on the stack
     AtomicInteger writerIndex = new AtomicInteger(0);
     for (int i = 0; i < parameters.length; i++) {
-      types[i] = unpackParameter(name, mv, parameters[i], writerIndex, i);
+      elements[i] = unpackParameter(name, mv, parameters[i], writerIndex, parameters[i].getDeclaredAnnotations(), i);
       // add a check if the singleton instance was created as a side effect after each parameter
       if (singleton) {
         visitSingletonHolder(mv, name);
       }
     }
     // return the types for later re-use
-    return types;
+    return elements;
   }
 
-  static void loadParameters(@NotNull Type[] types, @NotNull MethodVisitor mv) {
+  static void loadParameters(@NotNull Element[] types, @NotNull MethodVisitor mv) {
     int readerIndex = 0;
-    for (Type type : types) {
+    for (Element element : types) {
       // primitive types need to get loaded in another way from the stack than objects
-      if (ReflectionUtils.isPrimitive(type)) {
-        readerIndex += AsmPrimitives.load((Class<?>) type, mv, 2 + readerIndex);
+      if (ReflectionUtils.isPrimitive(element.componentType())) {
+        readerIndex += AsmPrimitives.load((Class<?>) element.componentType(), mv, 2 + readerIndex);
       } else {
         mv.visitVarInsn(ALOAD, 2 + readerIndex++);
       }
@@ -305,15 +303,15 @@ public final class ClassInstanceMaker {
     @NotNull ClassWriter cw,
     @NotNull String name,
     @NotNull Class<?> parent,
-    @NotNull Type[] types
+    @NotNull Element[] elements
   ) {
     Class<?> defined = ClassDefiners.getDefiner().defineClass(name, parent, cw.toByteArray());
     // instantiate the class
     try {
-      Constructor<?> ctx = defined.getDeclaredConstructor(Type[].class);
+      Constructor<?> ctx = defined.getDeclaredConstructor(Element[].class);
       ctx.setAccessible(true);
 
-      return (InstanceMaker) ctx.newInstance((Object) types);
+      return (InstanceMaker) ctx.newInstance((Object) elements);
     } catch (ReflectiveOperationException exception) {
       throw new RuntimeException(exception);
     }

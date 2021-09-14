@@ -36,17 +36,18 @@ import static org.objectweb.asm.Opcodes.IRETURN;
 import static org.objectweb.asm.Opcodes.SIPUSH;
 
 import aerogel.internal.codegen.InstanceMaker;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 public final class AsmUtils {
-
-  public static final String TYPES = "type";
-  public static final String TYPES_DEC = org.objectweb.asm.Type.getDescriptor(java.lang.reflect.Type[].class);
 
   public static final String CONSTRUCTOR_NAME = "<init>";
   public static final String STATIC_INITIALIZER_NAME = "<clinit>";
@@ -114,5 +115,12 @@ public final class AsmUtils {
     mv.visitMethodInsn(INVOKESPECIAL, OBJECT, CONSTRUCTOR_NAME, "()V", false);
     // only the common code - more may be needed
     return mv;
+  }
+
+  public static void dumpClassWriter(@NotNull Path target, @NotNull ClassWriter classWriter) {
+    try {
+      Files.write(target, classWriter.toByteArray());
+    } catch (IOException ignored) {
+    }
   }
 }

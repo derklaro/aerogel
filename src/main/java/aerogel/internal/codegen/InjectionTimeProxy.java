@@ -29,6 +29,7 @@ import static aerogel.internal.asm.AsmUtils.OBJECT_DESC;
 import static aerogel.internal.asm.AsmUtils.PUBLIC_FINAL;
 import static aerogel.internal.asm.AsmUtils.beginConstructor;
 import static aerogel.internal.asm.AsmUtils.methodDesc;
+import static aerogel.internal.asm.AsmUtils.returnOpCode;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -40,7 +41,6 @@ import static org.objectweb.asm.Opcodes.ICONST_1;
 import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
-import static org.objectweb.asm.Opcodes.IRETURN;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_8;
@@ -92,6 +92,7 @@ public final class InjectionTimeProxy {
     throw new UnsupportedOperationException();
   }
 
+  @SuppressWarnings("unchecked")
   public static <T> @NotNull T makeProxy(@NotNull Class<T> interfaceClass) {
     // get the type of the interface class
     Type interType = Type.getType(interfaceClass);
@@ -180,7 +181,7 @@ public final class InjectionTimeProxy {
     try {
       Constructor<?> ctx = definedClass.getDeclaredConstructor();
       ctx.setAccessible(true);
-      //noinspection unchecked
+
       return (T) ctx.newInstance();
     } catch (ReflectiveOperationException exception) {
       throw new RuntimeException(exception);
@@ -226,7 +227,7 @@ public final class InjectionTimeProxy {
       methodDesc,
       declaring.isInterface());
     // ensure that we use the correct return type
-    mv.visitInsn(Type.getType(method.getReturnType()).getOpcode(IRETURN));
+    mv.visitInsn(returnOpCode(method.getReturnType()));
     // finish the method
     mv.visitMaxs(0, 0);
     mv.visitEnd();
