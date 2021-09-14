@@ -60,6 +60,18 @@ import java.lang.annotation.Target;
  *   }
  * </pre>
  *
+ * <p>It can then be used as follows for injection when a binding was created for the {@code NORMAL} and {@code SENIOR}
+ * employee type:
+ *
+ * <pre>
+ *   public class Company {
+ *     &#064;Inject
+ *     public Company(&#064;Employee Employee johnWick, &#064;Employee(type = Type.SENIOR) Employee spiderMan) {
+ *
+ *     }
+ *   }
+ * </pre>
+ *
  * @author Pasqual K.
  * @since 1.0
  */
