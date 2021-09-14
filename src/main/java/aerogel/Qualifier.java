@@ -34,8 +34,8 @@ import java.lang.annotation.Target;
 /**
  * Identifies qualifier annotations. These annotations are used for annotation matching in an {@link Injector}. See
  * {@link Element#requireAnnotations(Class[])} and {@link Element#requireAnnotations(Annotation...)}.
- * <p>
- * A qualifier annotation...
+ *
+ * <p>A qualifier annotation...
  *
  * <ul>
  *   <li>... must be annotated with {@literal @}Qualifier.</li>
