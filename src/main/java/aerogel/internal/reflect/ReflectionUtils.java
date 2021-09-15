@@ -25,6 +25,8 @@
 package aerogel.internal.reflect;
 
 import aerogel.internal.utility.ExceptionalFunction;
+import java.lang.reflect.Array;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -33,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public final class ReflectionUtils {
 
@@ -55,13 +56,24 @@ public final class ReflectionUtils {
   }
 
   public static @NotNull Type genericSuperType(@NotNull Type type) {
-    return ((ParameterizedType) type).getActualTypeArguments()[0];
+    return type instanceof ParameterizedType ? ((ParameterizedType) type).getActualTypeArguments()[0] : type;
   }
 
   public static @NotNull Class<?> genericSuperTypeAsClass(@NotNull Type type) {
     Type superType = genericSuperType(type);
-    // @todo: this is just shit - unbox the type correctly
-    return superType instanceof Class<?> ? (Class<?>) superType : null;
+    // check if the type is a normal class
+    if (superType instanceof Class<?>) {
+      return (Class<?>) superType;
+    } else if (superType instanceof GenericArrayType) {
+      // unbox the component type, create an array of that type and use it's class
+      Class<?> genericType = genericSuperTypeAsClass(((GenericArrayType) superType).getGenericComponentType());
+      return Array.newInstance(genericType, 0).getClass();
+    } else if (superType instanceof ParameterizedType) {
+      // the raw type is always of type class - the internet is not sure why exactly this is a type
+      return (Class<?>) ((ParameterizedType) superType).getRawType();
+    }
+    // every other type implementation can not be exactly found - ignored them
+    throw new IllegalArgumentException("Unsupported type " + superType + " to unbox");
   }
 
   public static boolean isPrimitive(@NotNull Type type) {
