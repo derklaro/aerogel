@@ -24,6 +24,7 @@
 
 package aerogel.internal.member;
 
+import aerogel.InjectionContext;
 import aerogel.Injector;
 import aerogel.MemberInjectionSettings;
 import aerogel.MemberInjector;
@@ -133,12 +134,17 @@ public final class DefaultMemberInjector implements MemberInjector {
 
   @Override
   public void inject(@NotNull MemberInjectionSettings settings) {
+    this.inject(settings, (InjectionContext) null);
+  }
+
+  @Override
+  public void inject(@NotNull MemberInjectionSettings settings, @Nullable InjectionContext context) {
     // check if we need to inject all static methods
     if (settings.injectStaticMethods()) {
       // loop and search for every method we should inject
       for (Method method : this.staticMethods) {
         if (this.methodMatches(method, settings)) {
-          this.injectMethod(null, method);
+          this.injectMethod(null, method, context);
         }
       }
     }
@@ -147,7 +153,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       // loop and search for every field we should inject
       for (Field field : this.staticFields) {
         if (this.fieldMatches(field, settings, null)) {
-          this.injectField(null, field);
+          this.injectField(null, field, context);
         }
       }
     }
@@ -160,13 +166,22 @@ public final class DefaultMemberInjector implements MemberInjector {
 
   @Override
   public void inject(@NotNull Object instance, @NotNull MemberInjectionSettings settings) {
-    this.inject(settings); // injects static members if enabled
+    this.inject(instance, settings, null);
+  }
+
+  @Override
+  public void inject(
+    @NotNull Object instance,
+    @NotNull MemberInjectionSettings settings,
+    @Nullable InjectionContext context
+  ) {
+    this.inject(settings, context); // injects static members if enabled
     // check if we need to inject instance methods
     if (settings.injectInstanceMethods()) {
       // loop and search for every method we should inject
       for (Method method : this.instanceMethods) {
         if (this.methodMatches(method, settings)) {
-          this.injectMethod(instance, method);
+          this.injectMethod(instance, method, context);
         }
       }
     }
@@ -175,7 +190,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       // loop and search for every field we should inject
       for (Field field : this.instanceFields) {
         if (this.fieldMatches(field, settings, instance)) {
-          this.injectField(instance, field);
+          this.injectField(instance, field, context);
         }
       }
     }
@@ -186,7 +201,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     // try to find a static field with the given name and inject that
     for (Field field : this.staticFields) {
       if (field.getName().equals(name)) {
-        this.injectField(null, field);
+        this.injectField(null, field, null);
         return; // a field name is unique
       }
     }
@@ -199,14 +214,14 @@ public final class DefaultMemberInjector implements MemberInjector {
     // try to find a static field with the given name and inject that
     for (Field field : this.staticFields) {
       if (field.getName().equals(name)) {
-        this.injectField(null, field);
+        this.injectField(null, field, null);
         return; // a field name is unique
       }
     }
     // try to find an instance field with the given name and inject that
     for (Field field : this.instanceFields) {
       if (field.getName().equals(name)) {
-        this.injectField(instance, field);
+        this.injectField(instance, field, null);
         return; // a field name is unique
       }
     }
@@ -219,7 +234,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     // try to find a static method with the given name and inject that
     for (Method method : this.staticMethods) {
       if (method.getName().equals(name) && Arrays.equals(method.getParameterTypes(), parameterTypes)) {
-        return this.injectMethod(null, method);
+        return this.injectMethod(null, method, null);
       }
     }
     // no such method found
@@ -235,13 +250,13 @@ public final class DefaultMemberInjector implements MemberInjector {
     // try to find a static method with the given name and inject that
     for (Method method : this.staticMethods) {
       if (method.getName().equals(name) && Arrays.equals(method.getParameterTypes(), params)) {
-        return this.injectMethod(null, method);
+        return this.injectMethod(null, method, null);
       }
     }
     // try to find an instance method with the given name and inject that
     for (Method method : this.instanceMethods) {
       if (method.getName().equals(name) && Arrays.equals(method.getParameterTypes(), params)) {
-        return this.injectMethod(instance, method);
+        return this.injectMethod(instance, method, null);
       }
     }
     // no such method found
@@ -252,21 +267,27 @@ public final class DefaultMemberInjector implements MemberInjector {
       this.targetClass));
   }
 
-  private @Nullable Object injectMethod(@Nullable Object instance, @NotNull Method method) {
+  private @Nullable Object injectMethod(
+    @Nullable Object instance,
+    @NotNull Method method,
+    @Nullable InjectionContext context
+  ) {
     try {
       // invoke the method using the collected parameters
-      return method.invoke(instance, this.lookupParamInstances(method));
+      return method.invoke(instance, this.lookupParamInstances(method, context));
     } catch (IllegalAccessException | InvocationTargetException exception) {
       throw new IllegalArgumentException("Unable to invoke method", exception);
     }
   }
 
-  private void injectField(@Nullable Object instance, @NotNull Field field) {
+  private void injectField(@Nullable Object instance, @NotNull Field field, @Nullable InjectionContext context) {
     try {
       Object fieldValue;
       // check if the field is a provider
       if (JakartaBridge.isProvider(field.getType())) {
-        Provider<?> provider = this.injector.binding(ElementHelper.buildElement(field));
+        Provider<?> provider = context == null
+          ? this.injector.binding(ElementHelper.buildElement(field))
+          : context.injector().binding(ElementHelper.buildElement(field));
         // check if the provider is a jakarta provider
         if (JakartaBridge.needsProviderWrapping(field.getType())) {
           fieldValue = JakartaBridge.bridgeJakartaProvider(provider);
@@ -275,7 +296,9 @@ public final class DefaultMemberInjector implements MemberInjector {
         }
       } else {
         // just needs the direct instance of the field type
-        fieldValue = this.injector.instance(ElementHelper.buildElement(field));
+        fieldValue = context == null
+          ? this.injector.instance(ElementHelper.buildElement(field))
+          : context.findInstance(ElementHelper.buildElement(field));
       }
       // set the field using the collected parameter
       field.set(instance, fieldValue);
@@ -284,7 +307,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     }
   }
 
-  private Object @NotNull [] lookupParamInstances(@NotNull Executable executable) {
+  private Object @NotNull [] lookupParamInstances(@NotNull Executable executable, @Nullable InjectionContext context) {
     // check if we need to collect parameters at all
     if (executable.getParameterCount() == 0) {
       return NO_PARAMS;
@@ -296,7 +319,9 @@ public final class DefaultMemberInjector implements MemberInjector {
         // check if the parameter is a provider
         if (JakartaBridge.isProvider(params[i].getType())) {
           // we only need the binding, not the direct instance then
-          Provider<?> provider = this.injector.binding(ElementHelper.buildElement(params[i]));
+          Provider<?> provider = context == null
+            ? this.injector.binding(ElementHelper.buildElement(params[i]))
+            : context.injector().binding(ElementHelper.buildElement(params[i]));
           // check if the provider is a jakarta provider
           if (JakartaBridge.needsProviderWrapping(params[i].getType())) {
             paramInstances[i] = JakartaBridge.bridgeJakartaProvider(provider);
@@ -305,7 +330,9 @@ public final class DefaultMemberInjector implements MemberInjector {
           }
         } else {
           // we do need the direct instance of the type
-          paramInstances[i] = this.injector.instance(ElementHelper.buildElement(params[i]));
+          paramInstances[i] = context == null
+            ? this.injector.instance(ElementHelper.buildElement(params[i]))
+            : context.findInstance(ElementHelper.buildElement(params[i]));
         }
       }
       // return the collected instances

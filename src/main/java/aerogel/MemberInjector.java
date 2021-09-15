@@ -37,9 +37,13 @@ public interface MemberInjector {
 
   void inject(@NotNull MemberInjectionSettings settings);
 
+  void inject(@NotNull MemberInjectionSettings settings, @Nullable InjectionContext context);
+
   void inject(@NotNull Object instance);
 
   void inject(@NotNull Object instance, @NotNull MemberInjectionSettings settings);
+
+  void inject(@NotNull Object instance, @NotNull MemberInjectionSettings settings, @Nullable InjectionContext context);
 
   void injectField(@NotNull String name);
 

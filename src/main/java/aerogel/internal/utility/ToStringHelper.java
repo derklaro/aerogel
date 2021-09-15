@@ -24,6 +24,7 @@
 
 package aerogel.internal.utility;
 
+import java.util.Collection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,11 +33,35 @@ public final class ToStringHelper {
   private final StringBuilder stringBuilder;
 
   public ToStringHelper(@NotNull Object instance) {
-    this.stringBuilder = new StringBuilder(instance.getClass().getCanonicalName()).append("(");
+    this.stringBuilder = new StringBuilder(instance.getClass().getSimpleName()).append("(");
   }
 
   public static @NotNull ToStringHelper from(@NotNull Object instance) {
     return new ToStringHelper(instance);
+  }
+
+  public @NotNull ToStringHelper putCollection(@NotNull String name, @Nullable Collection<?> value) {
+    // check if the collection is empty or null - use an empty array separator then
+    if (value == null || value.isEmpty()) {
+      return this.putField(name, "[]");
+    } else {
+      // join the elements of the array together
+      StringBuilder builder = new StringBuilder().append('[');
+      for (Object entry : value) {
+        // skip null objects - we don't need them in the toString value
+        if (entry != null) {
+          builder.append(entry).append(", ");
+        }
+      }
+      // check if there were more than 1 non-null element
+      if (builder.length() == 1) {
+        // no elements added to the builder - treat as an empty collection
+        return this.putField(name, "[]");
+      } else {
+        // remove the last ', ' and add the closing ']'
+        return this.putField(name, builder.delete(builder.length() - 2, builder.length()).append(']').toString());
+      }
+    }
   }
 
   public @NotNull ToStringHelper putField(@NotNull String name, @Nullable Object value) {

@@ -25,11 +25,12 @@
 package aerogel.internal.context;
 
 import static aerogel.internal.utility.Preconditions.checkArgument;
-import static java.util.Objects.requireNonNull;
 
+import aerogel.AerogelException;
 import aerogel.Element;
 import aerogel.InjectionContext;
 import aerogel.Injector;
+import aerogel.MemberInjectionSettings;
 import aerogel.internal.codegen.InjectionTimeProxy;
 import aerogel.internal.codegen.InjectionTimeProxy.InjectionTimeProxyable;
 import java.util.HashMap;
@@ -38,6 +39,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class DefaultInjectionContext implements InjectionContext {
+
+  private static final MemberInjectionSettings ALL_MEMBERS = MemberInjectionSettings.builder().build();
 
   private final Injector injector;
   private final ElementStack elementStack;
@@ -61,7 +64,8 @@ public final class DefaultInjectionContext implements InjectionContext {
     if (this.knownTypes.containsKey(element)) {
       return (T) this.knownTypes.get(element);
     }
-    // assign the first type we need to construct
+    // check if we already tried to construct the element (which is a clear sign for circular dependencies over object
+    // construction - we need to try to tackle that)
     if (this.elementStack.has(element)) {
       // check for an element in the stack which is proxyable if we already travelled over this element
       Element proxyable = this.elementStack.filter(stackElement -> {
@@ -73,7 +77,12 @@ public final class DefaultInjectionContext implements InjectionContext {
         return false;
       });
       // if there is no proxyable type - break
-      requireNonNull(proxyable, "No proxyable element in the stack - no circular dependency management possible");
+      if (proxyable == null) {
+        throw AerogelException.forMessageWithoutStack(String.format(
+          "Unable to construct element %s because there is no type on the path which can be proxied: %s",
+          element,
+          this.elementStack.dumpWalkingStack(element)));
+      }
       // check if a type is already known - no proxy needed
       if (!this.knownTypes.containsKey(proxyable)) {
         // push a proxy of the type to the stack
@@ -101,17 +110,17 @@ public final class DefaultInjectionContext implements InjectionContext {
       // store to the known types as there is no reference yet
       checkArgument(!(result instanceof InjectionTimeProxyable), "Unable to store a proxy handler instance");
       this.knownTypes.put(element, result);
-      this.injectMembers(element, result);
+      this.injectMembers(element, result); // inject after storing to prevent infinite loops
     }
   }
 
   private void injectMembers(@NotNull Element element, @Nullable Object result) {
     // if we do have an instance we can do the member injection directly
     if (result != null) {
-      this.injector.memberInjector(result.getClass()).inject(result);
+      this.injector.memberInjector(result.getClass()).inject(result, ALL_MEMBERS, this);
     } else if (element.componentType() instanceof Class<?>) {
       // only if the component type is a class we can at least inject the static members
-      this.injector.memberInjector((Class<?>) element.componentType()).inject();
+      this.injector.memberInjector((Class<?>) element.componentType()).inject(ALL_MEMBERS, this);
     }
   }
 }

@@ -27,11 +27,14 @@ package aerogel.internal.context;
 import aerogel.Element;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 final class ElementStack {
+
+  private static final String PATH_CHAINER = " => ";
 
   private final Deque<Element> stack = new ArrayDeque<>();
 
@@ -50,5 +53,24 @@ final class ElementStack {
       }
     }
     return null;
+  }
+
+  public @NotNull String dumpWalkingStack(@NotNull Element last) {
+    // no element - no stack
+    if (this.stack.isEmpty()) {
+      return "";
+    } else {
+      // build the stack using a reversed iterator - the first added element should be the first of the chain
+      StringBuilder stringBuilder = new StringBuilder();
+      Iterator<Element> reversedIterator = this.stack.descendingIterator();
+      // walk over the stack elements - start with the firstly added one
+      while (reversedIterator.hasNext()) {
+        stringBuilder.append(reversedIterator.next()).append(PATH_CHAINER);
+      }
+      // append the last element (or current one)
+      stringBuilder.append(last);
+      // convert to chain builder to a string
+      return stringBuilder.toString();
+    }
   }
 }

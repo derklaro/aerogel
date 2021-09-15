@@ -121,6 +121,14 @@ public final class AnnotationComparerMaker {
     public int hashCode() {
       return this.annotationType.hashCode();
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+      return '@' + this.annotationType.getName();
+    }
   }
 
   /**
@@ -171,6 +179,14 @@ public final class AnnotationComparerMaker {
     @Override
     public int hashCode() {
       return this.annotation.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+      return this.annotation.toString();
     }
   }
 }
