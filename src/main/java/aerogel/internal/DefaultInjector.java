@@ -24,12 +24,14 @@
 
 package aerogel.internal;
 
+import aerogel.AerogelException;
 import aerogel.BindingConstructor;
 import aerogel.BindingHolder;
 import aerogel.Element;
 import aerogel.Injector;
 import aerogel.MemberInjector;
 import aerogel.internal.binding.ConstructingBindingHolder;
+import aerogel.internal.binding.ImmediateBindingHolder;
 import aerogel.internal.member.DefaultMemberInjector;
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -40,14 +42,22 @@ import org.jetbrains.annotations.Nullable;
 
 public final class DefaultInjector implements Injector {
 
+  /**
+   * Represents the injector element without any annotations or a name which makes it special
+   */
+  private static final Element INJECTOR_ELEMENT = Element.get(Injector.class);
+
   private final Injector parent;
   private final Map<Element, BindingHolder> bindings;
   private final Map<Class<?>, MemberInjector> cachedMemberInjectors;
+  // represents the binding for this injector
+  private final ImmediateBindingHolder injectorBinding;
 
   public DefaultInjector(@Nullable Injector parent) {
     this.parent = parent;
     this.bindings = new ConcurrentHashMap<>();
     this.cachedMemberInjectors = new ConcurrentHashMap<>();
+    this.injectorBinding = new ImmediateBindingHolder(INJECTOR_ELEMENT, INJECTOR_ELEMENT, this, this);
   }
 
   @Override
@@ -130,6 +140,15 @@ public final class DefaultInjector implements Injector {
       this.bindings.putIfAbsent(element, holder);
       // return the looked-up holder
       return holder;
+    }
+    // check if the element has special parameters - in this case we will strictly not mock the element
+    if (element.requiredName() != null || !element.annotationComparer().isEmpty()) {
+      throw AerogelException.forMessageWithoutStack(
+        "Element " + element + " has special properties, unable to make a runtime binding for it");
+    }
+    // check if the element is of the type Injector - return us for it
+    if (INJECTOR_ELEMENT.equals(element)) {
+      return this.injectorBinding;
     }
     // create a constructing holder for the class - we can not support other binding types
     holder = ConstructingBindingHolder.create(this, element);
