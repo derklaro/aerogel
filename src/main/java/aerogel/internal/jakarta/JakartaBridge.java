@@ -49,6 +49,11 @@ public final class JakartaBridge {
     return element.isAnnotationPresent(Singleton.class) || element.isAnnotationPresent(jakarta.inject.Singleton.class);
   }
 
+  public static boolean isOptional(@NotNull AnnotatedElement element) {
+    Inject inject = element.getAnnotation(Inject.class);
+    return inject != null && inject.optional();
+  }
+
   public static boolean isQualifierAnnotation(@NotNull Annotation annotation) {
     Class<? extends Annotation> type = annotation.annotationType();
     return type.isAnnotationPresent(Qualifier.class) || type.isAnnotationPresent(jakarta.inject.Qualifier.class);

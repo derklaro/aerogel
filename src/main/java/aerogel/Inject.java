@@ -66,6 +66,5 @@ public @interface Inject {
    *
    * @return if the value to inject is not required.
    */
-  // @todo: implement this in the member injector
   boolean optional() default false;
 }

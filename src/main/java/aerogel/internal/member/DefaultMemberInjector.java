@@ -76,6 +76,7 @@ public final class DefaultMemberInjector implements MemberInjector {
   private final Collection<InjectableMethod> instanceMethods;
 
   // static member injection should only be done once, never twice
+  // @todo: notify the parent member injectors to not inject the static members again
   private final AtomicBoolean didStaticFieldInjection = new AtomicBoolean();
   private final AtomicBoolean didStaticSupertypeFieldInjection = new AtomicBoolean();
 
@@ -409,8 +410,14 @@ public final class DefaultMemberInjector implements MemberInjector {
     @Nullable InjectionContext context
   ) {
     try {
-      // invoke the method using the collected parameters
-      return method.method.invoke(instance, this.lookupParamInstances(method, context));
+      // lookup the parameters for the method injection - null means we should skip the injection
+      Object[] params = this.lookupParamInstances(method, context);
+      if (params != null) {
+        // invoke the method using the collected parameters
+        return method.method.invoke(instance, params);
+      }
+      // return null if we didn't invoke the method
+      return null;
     } catch (IllegalAccessException | InvocationTargetException exception) {
       throw new IllegalArgumentException("Unable to invoke method", exception);
     }
@@ -440,14 +447,17 @@ public final class DefaultMemberInjector implements MemberInjector {
           ? this.injector.instance(ElementHelper.buildElement(injectable.field, injectable.annotations))
           : context.findInstance(ElementHelper.buildElement(injectable.field, injectable.annotations));
       }
-      // set the field using the collected parameter
-      injectable.field.set(instance, fieldValue);
+      // check if we got a field value - skip the set if the field is optional
+      if (fieldValue != null || !injectable.optional) {
+        // set the field using the collected parameter
+        injectable.field.set(instance, fieldValue);
+      }
     } catch (IllegalAccessException exception) {
       throw new IllegalArgumentException("Unable to set field value", exception);
     }
   }
 
-  private Object @NotNull [] lookupParamInstances(
+  private @Nullable Object[] lookupParamInstances(
     @NotNull InjectableMethod injectable,
     @Nullable InjectionContext context
   ) {
@@ -477,6 +487,10 @@ public final class DefaultMemberInjector implements MemberInjector {
           paramInstances[i] = context == null
             ? this.injector.instance(element)
             : context.findInstance(element);
+          // check if the parameter is null and the method is optional - skip the method injection in that case
+          if (paramInstances[i] == null && injectable.optional) {
+            return null;
+          }
         }
       }
       // return the collected instances
@@ -517,12 +531,14 @@ public final class DefaultMemberInjector implements MemberInjector {
   private static final class InjectableMethod {
 
     private final Method method;
+    private final boolean optional;
     private final Parameter[] parameters;
     private final Class<?>[] parameterTypes;
     private final Annotation[][] parameterAnnotations;
 
     public InjectableMethod(@NotNull Method method) {
       this.method = method;
+      this.optional = JakartaBridge.isOptional(method);
       this.parameters = method.getParameters(); // prevents copy of these
       this.parameterTypes = method.getParameterTypes(); // prevents copy of these
       this.parameterAnnotations = method.getParameterAnnotations(); // prevents copy of these
@@ -532,10 +548,12 @@ public final class DefaultMemberInjector implements MemberInjector {
   private static final class InjectableField {
 
     private final Field field;
+    private final boolean optional;
     private final Annotation[] annotations;
 
     public InjectableField(@NotNull Field field) {
       this.field = field;
+      this.optional = JakartaBridge.isOptional(field);
       this.annotations = field.getDeclaredAnnotations(); // prevents copy of these
     }
   }

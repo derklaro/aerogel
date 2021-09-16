@@ -77,6 +77,8 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
   ) {
     // read the type from the bound element
     Class<?> type = ReflectionUtils.rawType(bound.componentType());
+    // check if we can construct the type
+    ReflectionUtils.ensureInstantiable(type);
     // get the injection class data from the component type
     boolean singleton = JakartaBridge.isSingleton(type);
     Constructor<?> injectionPoint = InjectionClassLookup.findInjectableConstructor(type);

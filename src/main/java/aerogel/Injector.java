@@ -45,8 +45,6 @@ public interface Injector {
 
   @NotNull Injector install(@NotNull BindingConstructor constructor);
 
-  @NotNull Injector install(@NotNull BindingConstructor... constructors);
-
   @NotNull Injector install(@NotNull Iterable<BindingConstructor> constructors);
 
   @NotNull MemberInjector memberInjector(@NotNull Class<?> memberHolderClass);

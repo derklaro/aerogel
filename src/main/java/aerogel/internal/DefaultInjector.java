@@ -83,16 +83,6 @@ public final class DefaultInjector implements Injector {
   }
 
   @Override
-  public @NotNull Injector install(@NotNull BindingConstructor... constructors) {
-    // install all constructors
-    for (BindingConstructor constructor : constructors) {
-      this.install(constructor);
-    }
-    // for chaining
-    return this;
-  }
-
-  @Override
   public @NotNull Injector install(@NotNull Iterable<BindingConstructor> constructors) {
     // install all constructors
     for (BindingConstructor constructor : constructors) {
