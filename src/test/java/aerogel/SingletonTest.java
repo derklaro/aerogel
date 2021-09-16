@@ -22,12 +22,32 @@
  * THE SOFTWARE.
  */
 
-package aerogel.internal.utility;
+package aerogel;
 
-import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-@FunctionalInterface
-public interface ExceptionalFunction<I, O, E extends Throwable> {
+public class SingletonTest {
 
-  @NotNull O apply(@NotNull I in) throws E;
+  @Test
+  void testConstructingSingleton() {
+    Injector injector = Injector.newInjector();
+    injector.install(Bindings.constructing(Element.get(StringHolder.class)));
+
+    StringHolder value = injector.instance(StringHolder.class);
+    Assertions.assertNotNull(value);
+    Assertions.assertEquals("test", value.test);
+
+    StringHolder value2 = injector.instance(StringHolder.class);
+    Assertions.assertNotNull(value2);
+    Assertions.assertEquals("test", value2.test);
+
+    Assertions.assertEquals(value.hashCode(), value2.hashCode());
+  }
+
+  @Singleton
+  private static final class StringHolder {
+
+    private final String test = "test";
+  }
 }

@@ -24,7 +24,6 @@
 
 package aerogel.internal.reflect;
 
-import aerogel.internal.utility.ExceptionalFunction;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Member;
@@ -32,9 +31,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 
 public final class ReflectionUtils {
@@ -60,14 +57,14 @@ public final class ReflectionUtils {
     return type instanceof ParameterizedType ? ((ParameterizedType) type).getActualTypeArguments()[0] : type;
   }
 
-  public static @NotNull Class<?> genericSuperTypeAsClass(@NotNull Type type) {
+  public static @NotNull Class<?> rawType(@NotNull Type type) {
     Type superType = genericSuperType(type);
     // check if the type is a normal class
     if (superType instanceof Class<?>) {
       return (Class<?>) superType;
     } else if (superType instanceof GenericArrayType) {
       // unbox the component type, create an array of that type and use it's class
-      Class<?> genericType = genericSuperTypeAsClass(((GenericArrayType) superType).getGenericComponentType());
+      Class<?> genericType = rawType(((GenericArrayType) superType).getGenericComponentType());
       return Array.newInstance(genericType, 0).getClass();
     } else if (superType instanceof ParameterizedType) {
       // the raw type is always of type class - the internet is not sure why exactly this is a type
@@ -111,30 +108,6 @@ public final class ReflectionUtils {
       result.add(currentClass);
     } while ((currentClass = currentClass.getSuperclass()) != Object.class);
     // return the result
-    return result;
-  }
-
-  public static @NotNull <T extends Member, O> Collection<O> collectMembers(
-    @NotNull Class<?> clazz,
-    @NotNull Predicate<T> filter,
-    @NotNull ExceptionalFunction<Class<?>, T[], ReflectiveOperationException> extractor,
-    @NotNull ExceptionalFunction<T, O, IllegalAccessException> then
-  ) {
-    // result
-    Collection<O> result = new ArrayList<>();
-    // the class we are working on
-    do {
-      try {
-        for (T t : extractor.apply(clazz)) {
-          if (filter.test(t)) {
-            result.add(then.apply(t));
-          }
-        }
-      } catch (ReflectiveOperationException exception) {
-        throw new RuntimeException("Exception extracting information from " + clazz, exception);
-      }
-    } while ((clazz = clazz.getSuperclass()) != Object.class);
-    // and... done
     return result;
   }
 }

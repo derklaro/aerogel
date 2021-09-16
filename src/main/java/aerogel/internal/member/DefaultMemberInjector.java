@@ -380,7 +380,6 @@ public final class DefaultMemberInjector implements MemberInjector {
       // loop and search for every method we should inject
       for (InjectableMethod injectable : this.staticMethods) {
         if (preTester.test(injectable.method) && this.methodMatches(injectable.method, settings)) {
-          System.out.println("Injecting method " + injectable.method);
           this.injectMethod(null, injectable, context);
         }
       }

@@ -24,12 +24,9 @@
 
 package aerogel.internal.reflect;
 
+import aerogel.AerogelException;
 import aerogel.internal.jakarta.JakartaBridge;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
-import java.util.Collection;
-import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 
 public final class InjectionClassLookup {
@@ -38,55 +35,40 @@ public final class InjectionClassLookup {
     throw new UnsupportedOperationException();
   }
 
-  public static @NotNull InjectionClassData lookup(@NotNull Class<?> clazz) {
-    // lookup the injectable constructor
-    Constructor<?> injectableConstructor = null;
-    for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
-      // check for the presence of an @Inject annotation
+  public static @NotNull Constructor<?> findInjectableConstructor(@NotNull Class<?> clazz) {
+    // prevents copy of the constructors array
+    Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+    // the target constructor we should use for injection
+    Constructor<?> injectionPoint = null;
+    // loop over the constructors - look for the constructors which are annotated as @Inject
+    for (Constructor<?> constructor : constructors) {
+      // check if the constructor is annotated as @Inject
       if (JakartaBridge.isInjectable(constructor)) {
-        // this constructor is the one the injection should be done on
-        injectableConstructor = constructor;
-        break;
-      } else if (constructor.getParameterCount() == 0) {
-        // this might be a good constructor but there might be a directly annotated one - no break
-        injectableConstructor = constructor;
+        // check if we already found a constructor - only one is allowed per class
+        if (injectionPoint != null) {
+          throw AerogelException.forMessage(
+            "Class " + clazz.getName() + " declared multiple constructors which are annotated as @Inject.");
+        }
+        // the constructor is our injection point
+        injectionPoint = constructor;
       }
     }
-    // check if a constructor was found
-    Objects.requireNonNull(injectableConstructor, "No injectable constructor in class " + clazz);
-    // extract all methods
-    Collection<MethodHandle> allMethods = ReflectionUtils.collectMembers(
-      clazz,
-      $ -> true,
-      Class::getDeclaredMethods,
-      method -> {
-        method.setAccessible(true);
-        return MethodHandles.lookup().unreflect(method);
-      });
-    // extract all methods which are annotated as @Inject
-    Collection<MethodHandle> injectMethods = ReflectionUtils.collectMembers(
-      clazz,
-      JakartaBridge::isInjectable,
-      Class::getDeclaredMethods,
-      method -> {
-        method.setAccessible(true);
-        return MethodHandles.lookup().unreflect(method);
-      });
-    // extract all fields which are annotated as @Inject
-    Collection<MethodHandle> injectFields = ReflectionUtils.collectMembers(
-      clazz,
-      JakartaBridge::isInjectable,
-      Class::getDeclaredFields,
-      field -> {
-        field.setAccessible(true);
-        return MethodHandles.lookup().unreflectSetter(field);
-      });
-    // create the resulting class data
-    return new InjectionClassData(
-      clazz,
-      injectableConstructor,
-      allMethods,
-      injectFields,
-      injectMethods);
+    // check if we found an injectable constructor
+    if (injectionPoint == null) {
+      // no constructor was found yet - check for a constructor with 0 arguments
+      for (Constructor<?> constructor : constructors) {
+        if (constructor.getParameterCount() == 0) {
+          // there might only be one constructor without a parameter - assign and break
+          injectionPoint = constructor;
+          break;
+        }
+      }
+    }
+    // check if we now have an injection point - throw an exception if not
+    if (injectionPoint == null) {
+      throw AerogelException.forMessage("No injectable constructor in class " + clazz.getName());
+    }
+    // the constructor we filtered out is our injection point
+    return injectionPoint;
   }
 }

@@ -219,7 +219,7 @@ public final class ClassInstanceMaker {
     Class<?> type;
     if (provider) {
       generic = ReflectionUtils.genericSuperType(parameter.getParameterizedType());
-      type = ReflectionUtils.genericSuperTypeAsClass(parameter.getParameterizedType());
+      type = ReflectionUtils.rawType(ReflectionUtils.genericSuperType(parameter.getParameterizedType()));
     } else {
       // just use the type of the parameter
       type = parameter.getType();
