@@ -45,8 +45,11 @@ dependencies {
   implementation group: 'org.ow2.asm', name: 'asm', version: '9.2'
   implementation group: 'jakarta.inject', name: 'jakarta.inject-api', version: '2.0.0'
   // testing
-  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.0'
-  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.0'
+  testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.0'
+  testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.0'
+  testRuntimeOnly group: 'org.junit.vintage', name: 'junit-vintage-engine', version: '5.8.0'
+  // testing of the jakarta integration
+  testImplementation group: 'jakarta.inject', name: 'jakarta.inject-tck', version: '2.0.1'
   // bug spotting
   compileOnly group: 'org.jetbrains', name: 'annotations', version: '22.0.0'
 }

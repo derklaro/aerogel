@@ -37,7 +37,7 @@ public final class DefaultMemberInjectionSettingsBuilder implements MemberInject
   private boolean injectStaticFields = true;
   private boolean injectInstanceFields = true;
   private boolean injectInheritedFields = true;
-  private boolean injectOnlyUninitializedFields = true;
+  private boolean injectOnlyUninitializedFields;
 
   @Override
   public @NotNull MemberInjectionSettings.Builder injectPrivateMethods(boolean injectPrivateMethods) {

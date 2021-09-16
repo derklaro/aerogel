@@ -183,6 +183,7 @@ public final class ClassInstanceMaker {
       mv.visitMethodInsn(INVOKESPECIAL, intName(ct), CONSTRUCTOR_NAME, consDesc(target), false);
       // if this is a singleton store the value in the AtomicReference
       if (singleton) {
+        // @todo: we should not put null into there - we need to keep track if the object was created already (and it's null)
         appendSingletonWrite(mv, proxyName);
       }
     }

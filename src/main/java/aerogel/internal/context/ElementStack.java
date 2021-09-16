@@ -38,6 +38,10 @@ final class ElementStack {
 
   private final Deque<Element> stack = new ArrayDeque<>();
 
+  public void dry() {
+    this.stack.clear();
+  }
+
   public void push(@NotNull Element element) {
     this.stack.push(element);
   }

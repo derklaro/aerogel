@@ -33,6 +33,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 
@@ -76,8 +77,41 @@ public final class ReflectionUtils {
     throw new IllegalArgumentException("Unsupported type " + superType + " to unbox");
   }
 
+  public static boolean isPackagePrivate(@NotNull Member member) {
+    int mod = member.getModifiers();
+    return !Modifier.isPublic(mod) && !Modifier.isProtected(mod) && !Modifier.isPrivate(mod);
+  }
+
+  public static @NotNull String shortVisibilitySummary(@NotNull Member member) {
+    // check if the member is package private
+    // in this case we need to make the visibility summary unique by suffixing with the package name as the method
+    // cannot be overridden by any type outside that package
+    if (isPackagePrivate(member)) {
+      return "package-private" + member.getDeclaringClass().getPackage().getName();
+    }
+    // check if the method is private
+    // in this case we need to make the visibility summary unique by suffixing with the declaring class name as the
+    // method cannot be "overridden" by any type outside the declaring class
+    if (Modifier.isPrivate(member.getModifiers())) {
+      return "private" + member.getDeclaringClass().getName();
+    }
+    // the method is either public or protected - it can be overridden by any inheritance
+    return "public";
+  }
+
   public static boolean isPrimitive(@NotNull Type type) {
     return type instanceof Class<?> && ((Class<?>) type).isPrimitive();
+  }
+
+  public static @NotNull List<Class<?>> hierarchyTree(@NotNull Class<?> startingPoint) {
+    List<Class<?>> result = new ArrayList<>();
+    // add all super classes of the class
+    Class<?> currentClass = startingPoint;
+    do {
+      result.add(currentClass);
+    } while ((currentClass = currentClass.getSuperclass()) != Object.class);
+    // return the result
+    return result;
   }
 
   public static @NotNull <T extends Member, O> Collection<O> collectMembers(

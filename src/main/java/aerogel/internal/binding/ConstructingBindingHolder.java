@@ -91,8 +91,7 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
         "Unable to create dynamic binding for non-class " + bound.componentType());
     }
     // get the injection class data from the component type
-    boolean singleton = JakartaBridge.isSingleton((Class<?>) type.componentType())
-      || JakartaBridge.isSingleton((Class<?>) bound.componentType());
+    boolean singleton = JakartaBridge.isSingleton((Class<?>) bound.componentType());
     InjectionClassData data = InjectionClassLookup.lookup((Class<?>) bound.componentType());
     // create the holder
     return new ConstructingBindingHolder(type, bound, injector, data, singleton);
@@ -104,8 +103,8 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     // construct the value
     T value = (T) this.constructor.getInstance(context);
     // push the construction done notice to the context
-    context.constructDone(this.targetType, value);
-    context.constructDone(this.bindingType, value);
+    context.constructDone(this.targetType, value, false);
+    context.constructDone(this.bindingType, value, true);
     // return
     return value;
   }

@@ -51,6 +51,8 @@ public interface Injector {
 
   @NotNull MemberInjector memberInjector(@NotNull Class<?> memberHolderClass);
 
+  @Nullable MemberInjector fastMemberInjector(@NotNull Class<?> memberHolderClass);
+
   @NotNull BindingHolder binding(@NotNull Type target);
 
   @NotNull BindingHolder binding(@NotNull Element element);

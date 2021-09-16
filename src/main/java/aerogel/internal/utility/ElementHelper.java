@@ -43,7 +43,7 @@ public final class ElementHelper {
     throw new UnsupportedOperationException();
   }
 
-  public static @NotNull Element buildElement(@NotNull Field field) {
+  public static @NotNull Element buildElement(@NotNull Field field, @NotNull Annotation[] annotations) {
     // extract the requested name
     String name = JakartaBridge.nameOf(field);
     // extract the needed type
@@ -51,12 +51,12 @@ public final class ElementHelper {
       ? ReflectionUtils.genericSuperType(field.getGenericType())
       : field.getGenericType();
     // extract all annotations
-    Annotation[] qualifierAnnotations = extractQualifierAnnotations(field.getDeclaredAnnotations());
+    Annotation[] qualifierAnnotations = extractQualifierAnnotations(annotations);
     // create an element based on the information
     return Element.get(type).requireName(name).requireAnnotations(qualifierAnnotations);
   }
 
-  public static @NotNull Element buildElement(@NotNull Parameter parameter) {
+  public static @NotNull Element buildElement(@NotNull Parameter parameter, @NotNull Annotation[] annotations) {
     // extract the requested name
     String name = JakartaBridge.nameOf(parameter);
     // extract the needed type
@@ -64,7 +64,7 @@ public final class ElementHelper {
       ? ReflectionUtils.genericSuperType(parameter.getParameterizedType())
       : parameter.getParameterizedType();
     // extract all annotations
-    Annotation[] qualifierAnnotations = extractQualifierAnnotations(parameter.getDeclaredAnnotations());
+    Annotation[] qualifierAnnotations = extractQualifierAnnotations(annotations);
     // create an element based on the information
     return Element.get(type).requireName(name).requireAnnotations(qualifierAnnotations);
   }

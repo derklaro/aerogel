@@ -42,10 +42,12 @@ public final class DefaultInjector implements Injector {
 
   private final Injector parent;
   private final Map<Element, BindingHolder> bindings;
+  private final Map<Class<?>, MemberInjector> cachedMemberInjectors;
 
   public DefaultInjector(@Nullable Injector parent) {
     this.parent = parent;
     this.bindings = new ConcurrentHashMap<>();
+    this.cachedMemberInjectors = new ConcurrentHashMap<>();
   }
 
   @Override
@@ -101,8 +103,26 @@ public final class DefaultInjector implements Injector {
   }
 
   @Override
-  public @NotNull MemberInjector memberInjector(@NotNull Class<?> memberHolderClass) {
-    return new DefaultMemberInjector(this, memberHolderClass);
+  public @NotNull MemberInjector memberInjector(@NotNull Class<?> memberClazz) {
+    // try to find the member injector in one of the parent injectors
+    Injector injector = this;
+    do {
+      // check if the injector has a cached member injector for the class - in this case use that one
+      MemberInjector memberInjector = injector.fastMemberInjector(memberClazz);
+      if (memberInjector != null) {
+        return memberInjector;
+      }
+    } while ((injector = injector.parent()) != null);
+    // construct a new member injector as neither this nor the parent injectors have a cached member injector instance
+    MemberInjector memberInjector = new DefaultMemberInjector(this, memberClazz);
+    this.cachedMemberInjectors.putIfAbsent(memberClazz, memberInjector); // putIfAbsent for concurrency reasons
+    // return the newly created injector
+    return memberInjector;
+  }
+
+  @Override
+  public @Nullable MemberInjector fastMemberInjector(@NotNull Class<?> memberHolderClass) {
+    return this.cachedMemberInjectors.get(memberHolderClass);
   }
 
   @Override

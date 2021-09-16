@@ -53,8 +53,8 @@ public final class FactoryBindingHolder extends AbstractBindingHolder {
     // construct the value
     T value = (T) this.instanceMaker.getInstance(context);
     // push the construction done notice to the context
-    context.constructDone(this.targetType, value);
-    context.constructDone(this.bindingType, value);
+    context.constructDone(this.targetType, value, false);
+    context.constructDone(this.bindingType, value, true);
     // return
     return value;
   }

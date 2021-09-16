@@ -40,7 +40,7 @@ public interface InjectionContext {
 
   @Nullable <T> T findInstance(@NotNull Element element);
 
-  void constructDone(@NotNull Element element, @Nullable Object result);
+  void constructDone(@NotNull Element element, @Nullable Object result, boolean doInjectMembers);
 
   interface Builder {
 

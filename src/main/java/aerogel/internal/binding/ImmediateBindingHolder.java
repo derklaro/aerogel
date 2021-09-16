@@ -48,8 +48,8 @@ public final class ImmediateBindingHolder extends AbstractBindingHolder {
   @SuppressWarnings("unchecked")
   public <T> @Nullable T get(@NotNull InjectionContext context) {
     // just notify that this is done
-    context.constructDone(this.targetType, this.result);
-    context.constructDone(this.bindingType, this.result);
+    context.constructDone(this.targetType, this.result, false);
+    context.constructDone(this.bindingType, this.result, true);
     // return
     return (T) this.result;
   }

@@ -46,6 +46,8 @@ public final class DefaultInjectionContext implements InjectionContext {
   private final ElementStack elementStack;
   private final Map<Element, Object> knownTypes;
 
+  private volatile Element currentElement;
+
   public DefaultInjectionContext(@NotNull Injector injector, @NotNull Map<Element, Object> overriddenTypes) {
     this.injector = injector;
     this.elementStack = new ElementStack();
@@ -66,7 +68,9 @@ public final class DefaultInjectionContext implements InjectionContext {
     }
     // check if we already tried to construct the element (which is a clear sign for circular dependencies over object
     // construction - we need to try to tackle that)
-    if (this.elementStack.has(element)) {
+    if (this.currentElement == null) {
+      this.currentElement = element;
+    } else if (this.elementStack.has(element)) {
       // check for an element in the stack which is proxyable if we already travelled over this element
       Element proxyable = this.elementStack.filter(stackElement -> {
         // check if the component type is a class - only then we can check for a proxyable type
@@ -96,21 +100,32 @@ public final class DefaultInjectionContext implements InjectionContext {
   }
 
   @Override
-  public void constructDone(@NotNull Element element, @Nullable Object result) {
+  public void constructDone(@NotNull Element element, @Nullable Object result, boolean doInjectMembers) {
     // read the current type from the map
     Object current = this.knownTypes.get(element);
     // check if there is a need to re-assign the instance
     if (current != null) {
       // if the current known element is proxied assign it to the delegate handler
       if (current instanceof InjectionTimeProxyable) {
-        this.injectMembers(element, result); // inject before making the proxy available
+        if (doInjectMembers) {
+          this.injectMembers(element, result); // inject before making the proxy available
+        }
         ((InjectionTimeProxyable) current).setDelegate(result);
       }
     } else {
       // store to the known types as there is no reference yet
       checkArgument(!(result instanceof InjectionTimeProxyable), "Unable to store a proxy handler instance");
       this.knownTypes.put(element, result);
-      this.injectMembers(element, result); // inject after storing to prevent infinite loops
+      if (doInjectMembers) {
+        this.injectMembers(element, result); // inject after storing to prevent infinite loops
+      }
+    }
+    // dry the stack if we constructed the element we were working on
+    if (this.currentElement != null && this.currentElement.equals(element)) {
+      this.knownTypes.clear();
+      this.elementStack.dry();
+      // reset the element so that the next element will be pushed as the current one when calling findInstance
+      this.currentElement = null;
     }
   }
 
