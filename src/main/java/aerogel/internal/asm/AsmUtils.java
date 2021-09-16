@@ -35,7 +35,6 @@ import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.IRETURN;
 import static org.objectweb.asm.Opcodes.SIPUSH;
 
-import aerogel.internal.codegen.InstanceMaker;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -57,7 +56,6 @@ public final class AsmUtils {
 
   public static final String OBJECT = Type.getInternalName(Object.class);
   public static final String OBJECT_DESC = Type.getDescriptor(Object.class);
-  public static final String[] INSTANCE_MAKER = new String[]{Type.getInternalName(InstanceMaker.class)};
 
   private AsmUtils() {
     throw new UnsupportedOperationException();

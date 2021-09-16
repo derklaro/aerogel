@@ -24,7 +24,6 @@
 
 package aerogel.internal.codegen;
 
-import static aerogel.internal.asm.AsmUtils.INSTANCE_MAKER;
 import static aerogel.internal.asm.AsmUtils.OBJECT;
 import static aerogel.internal.asm.AsmUtils.PRIVATE_FINAL;
 import static aerogel.internal.asm.AsmUtils.PUBLIC_FINAL;
@@ -36,6 +35,7 @@ import static aerogel.internal.codegen.ClassInstanceMaker.ELEMENTS;
 import static aerogel.internal.codegen.ClassInstanceMaker.ELEMENT_DESC;
 import static aerogel.internal.codegen.ClassInstanceMaker.GET_INSTANCE;
 import static aerogel.internal.codegen.ClassInstanceMaker.INJ_CONTEXT_DESC;
+import static aerogel.internal.codegen.ClassInstanceMaker.INSTANCE_MAKER;
 import static aerogel.internal.codegen.ClassInstanceMaker.NO_ELEMENT;
 import static aerogel.internal.codegen.ClassInstanceMaker.defineAndConstruct;
 import static aerogel.internal.codegen.ClassInstanceMaker.loadParameters;

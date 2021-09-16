@@ -25,7 +25,6 @@
 package aerogel.internal.codegen;
 
 import static aerogel.internal.asm.AsmUtils.CONSTRUCTOR_NAME;
-import static aerogel.internal.asm.AsmUtils.INSTANCE_MAKER;
 import static aerogel.internal.asm.AsmUtils.OBJECT;
 import static aerogel.internal.asm.AsmUtils.OBJECT_DESC;
 import static aerogel.internal.asm.AsmUtils.PRIVATE_FINAL;
@@ -46,7 +45,8 @@ import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.DUP2;
 import static org.objectweb.asm.Opcodes.GETFIELD;
-import static org.objectweb.asm.Opcodes.IFNULL;
+import static org.objectweb.asm.Opcodes.ICONST_1;
+import static org.objectweb.asm.Opcodes.IFEQ;
 import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
@@ -71,6 +71,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
@@ -80,10 +81,16 @@ import org.objectweb.asm.MethodVisitor;
 
 public final class ClassInstanceMaker {
 
+  // the super interface all instance makers must implement
+  static final String[] INSTANCE_MAKER = new String[]{org.objectweb.asm.Type.getInternalName(InstanceMaker.class)};
   // the holder for singleton instances
   static final String HOLDER = "holder";
   static final String HOLDER_DESC = org.objectweb.asm.Type.getDescriptor(AtomicReference.class);
   static final String HOLDER_NAME = org.objectweb.asm.Type.getInternalName(AtomicReference.class);
+  // the holder of the information if the singleton instance was ever set
+  static final String INSTANCE_THERE = "wasInstanceConstructed";
+  static final String INSTANCE_THERE_DESC = org.objectweb.asm.Type.getDescriptor(AtomicBoolean.class);
+  static final String INSTANCE_THERE_NAME = org.objectweb.asm.Type.getInternalName(AtomicBoolean.class);
   // the injection context
   static final String INJECTOR = "injector";
   static final String FIND_INSTANCE = "findInstance";
@@ -132,6 +139,7 @@ public final class ClassInstanceMaker {
     // if this is a singleton add the atomic reference field which will hold that instance later
     if (singleton) {
       cw.visitField(PRIVATE_FINAL, HOLDER, HOLDER_DESC, null, null).visitEnd();
+      cw.visitField(PRIVATE_FINAL, INSTANCE_THERE, INSTANCE_THERE_DESC, null, null).visitEnd();
     }
 
     // visit the constructor
@@ -141,11 +149,18 @@ public final class ClassInstanceMaker {
     mv.visitFieldInsn(PUTFIELD, proxyName, ELEMENTS, ELEMENT_DESC);
     // assign the singleton AtomicReference field if this is a singleton
     if (singleton) {
+      // create a new instance of the singleton holder
       mv.visitVarInsn(ALOAD, 0);
       mv.visitTypeInsn(NEW, HOLDER_NAME);
       mv.visitInsn(DUP);
       mv.visitMethodInsn(INVOKESPECIAL, HOLDER_NAME, CONSTRUCTOR_NAME, "()V", false);
       mv.visitFieldInsn(PUTFIELD, proxyName, HOLDER, HOLDER_DESC);
+      // create a new instance of the holder if the singleton instance was constructed
+      mv.visitVarInsn(ALOAD, 0);
+      mv.visitTypeInsn(NEW, INSTANCE_THERE_NAME);
+      mv.visitInsn(DUP);
+      mv.visitMethodInsn(INVOKESPECIAL, INSTANCE_THERE_NAME, CONSTRUCTOR_NAME, "()V", false);
+      mv.visitFieldInsn(PUTFIELD, proxyName, INSTANCE_THERE, INSTANCE_THERE_DESC);
     }
     // finish the constructor write
     mv.visitInsn(RETURN);
@@ -183,7 +198,6 @@ public final class ClassInstanceMaker {
       mv.visitMethodInsn(INVOKESPECIAL, intName(ct), CONSTRUCTOR_NAME, consDesc(target), false);
       // if this is a singleton store the value in the AtomicReference
       if (singleton) {
-        // @todo: we should not put null into there - we need to keep track if the object was created already (and it's null)
         appendSingletonWrite(mv, proxyName);
       }
     }
@@ -321,6 +335,18 @@ public final class ClassInstanceMaker {
   private static void appendSingletonWrite(@NotNull MethodVisitor mv, @NotNull String proxyName) {
     // temp store the previous return value
     mv.visitVarInsn(ASTORE, 2);
+    // inform the singleton holder that a value was computed
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitFieldInsn(GETFIELD, proxyName, INSTANCE_THERE, INSTANCE_THERE_DESC);
+    // set it to true
+    mv.visitInsn(ICONST_1);
+    mv.visitMethodInsn(
+      INVOKEVIRTUAL,
+      INSTANCE_THERE_NAME,
+      "set",
+      descToMethodDesc(org.objectweb.asm.Type.BOOLEAN_TYPE.getDescriptor(), void.class),
+      false);
+
     // load the reference field to the stack
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, proxyName, HOLDER, HOLDER_DESC);
@@ -332,15 +358,24 @@ public final class ClassInstanceMaker {
   }
 
   private static void visitSingletonHolder(@NotNull MethodVisitor mv, @NotNull String proxyName) {
-    Label nonNullDimension = new Label();
-    // check if the singleton value is already there
+    Label wasConstructedDimension = new Label();
+    // check if the value was already constructed
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitFieldInsn(GETFIELD, proxyName, INSTANCE_THERE, INSTANCE_THERE_DESC);
+    mv.visitMethodInsn(
+      INVOKEVIRTUAL,
+      INSTANCE_THERE_NAME,
+      "get",
+      "()" + org.objectweb.asm.Type.BOOLEAN_TYPE.getDescriptor(),
+      false);
+    // if (this.wasInstanceConstructed.get()) then
+    mv.visitJumpInsn(IFEQ, wasConstructedDimension);
+    // load the singleton holder to the stack
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, proxyName, HOLDER, HOLDER_DESC);
+    // load & return the singleton value stored in the holder
     mv.visitMethodInsn(INVOKEVIRTUAL, HOLDER_NAME, "get", "()" + OBJECT_DESC, false);
-    mv.visitInsn(DUP);
-    // if (value != null) then
-    mv.visitJumpInsn(IFNULL, nonNullDimension);
     mv.visitInsn(ARETURN);
-    mv.visitLabel(nonNullDimension);
+    mv.visitLabel(wasConstructedDimension);
   }
 }
