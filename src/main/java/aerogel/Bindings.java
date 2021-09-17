@@ -30,6 +30,7 @@ import static java.util.Objects.requireNonNull;
 import aerogel.internal.binding.ConstructingBindingHolder;
 import aerogel.internal.binding.FactoryBindingHolder;
 import aerogel.internal.binding.ImmediateBindingHolder;
+import aerogel.internal.jakarta.JakartaBridge;
 import aerogel.internal.reflect.Primitives;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -88,10 +89,16 @@ public interface Bindings {
     checkArgument(factoryMethod.getReturnType() != void.class, "Factory method must not return void");
     checkArgument(Modifier.isStatic(factoryMethod.getModifiers()), "Factory method need has to be static");
 
-    return injector -> new FactoryBindingHolder(
-      type,
-      Element.get(factoryMethod.getGenericReturnType()),
-      injector,
-      factoryMethod);
+    return injector -> {
+      // check if the return type is a singleton
+      boolean singleton = JakartaBridge.isSingleton(factoryMethod.getReturnType());
+      // create a new factory binding
+      return new FactoryBindingHolder(
+        type,
+        Element.get(factoryMethod.getGenericReturnType()),
+        injector,
+        factoryMethod,
+        singleton);
+    };
   }
 }

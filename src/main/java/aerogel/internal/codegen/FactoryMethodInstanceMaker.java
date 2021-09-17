@@ -25,28 +25,25 @@
 package aerogel.internal.codegen;
 
 import static aerogel.internal.asm.AsmUtils.OBJECT;
-import static aerogel.internal.asm.AsmUtils.PRIVATE_FINAL;
 import static aerogel.internal.asm.AsmUtils.PUBLIC_FINAL;
-import static aerogel.internal.asm.AsmUtils.beginConstructor;
 import static aerogel.internal.asm.AsmUtils.descToMethodDesc;
 import static aerogel.internal.asm.AsmUtils.intName;
 import static aerogel.internal.asm.AsmUtils.methodDesc;
-import static aerogel.internal.codegen.ClassInstanceMaker.ELEMENTS;
-import static aerogel.internal.codegen.ClassInstanceMaker.ELEMENT_DESC;
 import static aerogel.internal.codegen.ClassInstanceMaker.GET_INSTANCE;
 import static aerogel.internal.codegen.ClassInstanceMaker.INJ_CONTEXT_DESC;
 import static aerogel.internal.codegen.ClassInstanceMaker.INSTANCE_MAKER;
 import static aerogel.internal.codegen.ClassInstanceMaker.NO_ELEMENT;
+import static aerogel.internal.codegen.ClassInstanceMaker.appendSingletonWrite;
 import static aerogel.internal.codegen.ClassInstanceMaker.defineAndConstruct;
 import static aerogel.internal.codegen.ClassInstanceMaker.loadParameters;
 import static aerogel.internal.codegen.ClassInstanceMaker.storeParameters;
+import static aerogel.internal.codegen.ClassInstanceMaker.visitSingletonHolder;
+import static aerogel.internal.codegen.ClassInstanceMaker.writeConstructor;
+import static aerogel.internal.codegen.ClassInstanceMaker.writeFields;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SUPER;
-import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
-import static org.objectweb.asm.Opcodes.PUTFIELD;
-import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_8;
 
 import aerogel.Element;
@@ -64,8 +61,7 @@ public final class FactoryMethodInstanceMaker {
     throw new UnsupportedOperationException();
   }
 
-  // @todo: should factory methods support singletons? I feel like this is right but on the other hand the factory method should handle that?
-  public static @NotNull InstanceMaker forMethod(@NotNull Method method) {
+  public static @NotNull InstanceMaker forMethod(@NotNull Method method, boolean shouldBeSingleton) {
     // extract the wrapping class of the method
     Class<?> ct = method.getDeclaringClass();
     // the types used for the class init
@@ -81,21 +77,18 @@ public final class FactoryMethodInstanceMaker {
     ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
     // target Java 8 classes as the minimum requirement
     cw.visit(V1_8, PUBLIC_FINAL | ACC_SUPER, proxyName, null, OBJECT, INSTANCE_MAKER);
-    // adds the type[] fields to the class
-    cw.visitField(PRIVATE_FINAL, ELEMENTS, ELEMENT_DESC, null, null).visitEnd();
-
-    mv = beginConstructor(cw, descToMethodDesc(ELEMENT_DESC, void.class));
-    // assign the type field
-    mv.visitVarInsn(ALOAD, 1);
-    mv.visitFieldInsn(PUTFIELD, proxyName, ELEMENTS, ELEMENT_DESC);
-    mv.visitInsn(RETURN);
-    // constructor is done
-    mv.visitMaxs(0, 0);
-    mv.visitEnd();
+    // writes all necessary fields to the class
+    writeFields(cw, proxyName, shouldBeSingleton);
+    // write the constructor
+    writeConstructor(cw, proxyName, shouldBeSingleton);
 
     // visit the getInstance() method
     mv = cw.visitMethod(ACC_PUBLIC, GET_INSTANCE, descToMethodDesc(INJ_CONTEXT_DESC, Object.class), null, null);
     mv.visitCode();
+    // if this is a singleton check first if the instance is already loaded
+    if (shouldBeSingleton) {
+      visitSingletonHolder(mv, proxyName);
+    }
     // check if the constructor does take arguments (if not that makes the life easier)
     if (method.getParameterCount() == 0) {
       // just call the method (which must always be a static method)
@@ -104,11 +97,15 @@ public final class FactoryMethodInstanceMaker {
       elements = NO_ELEMENT;
     } else {
       // store all parameters to the stack
-      elements = storeParameters(method, proxyName, mv, false);
+      elements = storeParameters(method, proxyName, mv, shouldBeSingleton);
       // load all parameters
       loadParameters(elements, mv);
       // invoke the method with these arguments
       mv.visitMethodInsn(INVOKESTATIC, intName(ct), method.getName(), methodDesc(method), ct.isInterface());
+      // if this is a singleton store the value in the AtomicReference
+      if (shouldBeSingleton) {
+        appendSingletonWrite(mv, proxyName);
+      }
     }
     // if the return type of the class is primitive we need to box it as the next instance takes care
     // of the primitive / non-primitive conversion and the method signature indicates an object return type

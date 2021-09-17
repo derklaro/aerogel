@@ -41,10 +41,11 @@ public final class FactoryBindingHolder extends AbstractBindingHolder {
     @NotNull Element type,
     @NotNull Element binding,
     @NotNull Injector injector,
-    @NotNull Method factoryMethod
+    @NotNull Method factoryMethod,
+    boolean shouldBeSingleton
   ) {
     super(type, binding, injector);
-    this.instanceMaker = FactoryMethodInstanceMaker.forMethod(factoryMethod);
+    this.instanceMaker = FactoryMethodInstanceMaker.forMethod(factoryMethod, shouldBeSingleton);
   }
 
   @Override
