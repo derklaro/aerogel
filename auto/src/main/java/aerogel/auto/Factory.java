@@ -22,35 +22,27 @@
  * THE SOFTWARE.
  */
 
-package aerogel;
+package aerogel.auto;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import org.jetbrains.annotations.NotNull;
 
 /**
- * Defines which implementation should be used when injecting a type instance of the given class. In fact the injector
- * will only use the type this annotation references and ignores every other manually bound value to the class.
- * Interfaces and abstract classes which you want to injection need at least one bound instance. You can define them
- * using one of: {@code Provides}, {@link ProvidedBy} or {@code Factory}. Binding an instance manually is possible as
- * well.
+ * Binds the annotated method as a factory method for the return type of the method. Arguments supplied to the factory
+ * methods are taken from the associated {@link aerogel.Injector}. A factory method must be static and returning a type
+ * other than {@code void}. The can have any access modifier (public, protected, private, ...). Factory methods are
+ * singleton aware, meaning that if the return type is marked as {@link aerogel.Singleton} the factory method will only
+ * get called once per injector inheritance (child injectors will use the instantiated binding of parent injectors).
  *
  * @author Pasqual K.
  * @since 1.0
  */
 @Documented
-@Target(ElementType.TYPE)
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ProvidedBy {
+public @interface Factory {
 
-  /**
-   * Get the implementation class to which the annotated class is bound. Every other instance bound manually to the
-   * injecting interface will be ignored by the injector in favor of this method's return value.
-   *
-   * @return the implementation class to which the annotated class is bound.
-   */
-  @NotNull Class<?> value();
 }

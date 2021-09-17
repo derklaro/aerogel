@@ -23,69 +23,79 @@
  */
 
 plugins {
-  id 'checkstyle'
-  id 'java-library'
-  id 'maven-publish'
-  id 'org.cadixdev.licenser' version '0.6.1'
-  id 'com.github.johnrengelman.shadow' version '7.0.0'
+  id 'org.cadixdev.licenser' version '0.6.1' apply false
+  id 'com.github.johnrengelman.shadow' version '7.0.0' apply false
 }
 
-group 'com.github.derklaro'
-version '1.0.0-SNAPSHOT'
+allprojects {
+  group 'com.github.derklaro'
+  version '1.0.0-SNAPSHOT'
 
-defaultTasks 'build', 'checkLicenses', 'test', 'jar'
+  defaultTasks 'build', 'checkLicenses', 'test', 'jar'
 
-repositories {
-  mavenLocal()
-  mavenCentral()
-}
+  apply plugin: 'checkstyle'
+  apply plugin: 'java-library'
+  apply plugin: 'maven-publish'
+  apply plugin: 'org.cadixdev.licenser'
+  apply plugin: 'com.github.johnrengelman.shadow'
 
-dependencies {
-  // runtime dependencies
-  implementation group: 'org.ow2.asm', name: 'asm', version: '9.2'
-  implementation group: 'jakarta.inject', name: 'jakarta.inject-api', version: '2.0.0'
-  // testing
-  testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.0'
-  testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.0'
-  testRuntimeOnly group: 'org.junit.vintage', name: 'junit-vintage-engine', version: '5.8.0'
-  // testing of the jakarta integration
-  testImplementation group: 'jakarta.inject', name: 'jakarta.inject-tck', version: '2.0.1'
-  // bug spotting
-  compileOnly group: 'org.jetbrains', name: 'annotations', version: '22.0.0'
-}
+  repositories {
+    mavenLocal()
+    mavenCentral()
+  }
 
-test {
-  useJUnitPlatform()
-}
+  dependencies {
+    // runtime dependencies
+    implementation group: 'org.ow2.asm', name: 'asm', version: '9.2'
+    implementation group: 'jakarta.inject', name: 'jakarta.inject-api', version: '2.0.0'
+    // testing
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.0'
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.0'
+    testRuntimeOnly group: 'org.junit.vintage', name: 'junit-vintage-engine', version: '5.8.0'
+    // testing of the jakarta integration
+    testImplementation group: 'jakarta.inject', name: 'jakarta.inject-tck', version: '2.0.1'
+    // bug spotting
+    compileOnly group: 'org.jetbrains', name: 'annotations', version: '22.0.0'
+  }
 
-compileJava {
-  sourceCompatibility = '8'
-  targetCompatibility = '8'
+  test {
+    useJUnitPlatform()
+  }
 
-  options.encoding = 'UTF-8'
-}
+  compileJava {
+    sourceCompatibility = '8'
+    targetCompatibility = '8'
 
-publishing {
-  publications {
-    maven(MavenPublication) {
-      from components.java
+    options.encoding = 'UTF-8'
+  }
+
+  publishing {
+    publications {
+      maven(MavenPublication) {
+        from components.java
+      }
     }
   }
-}
 
-checkstyle {
-  toolVersion = '9.0'
-}
+  checkstyle {
+    toolVersion = '9.0'
+  }
 
-tasks.withType(Checkstyle) {
-  maxErrors = 0
-  maxWarnings = 0
-  configFile = project.rootProject.file('checkstyle.xml')
-}
+  tasks.withType(Checkstyle) {
+    maxErrors = 0
+    maxWarnings = 0
+    configFile = project.rootProject.file('checkstyle.xml')
+  }
 
-license {
-  include '**/*.java'
-  header = project.rootProject.file('license_header.txt')
+  license {
+    include '**/*.java'
+    header = project.rootProject.file('license_header.txt')
+  }
+
+  tasks.withType(AbstractArchiveTask) {
+    reproducibleFileOrder = true
+    preserveFileTimestamps = false
+  }
 }
 
 shadowJar {
@@ -97,9 +107,4 @@ shadowJar {
   relocate 'org.objectweb.asm', 'aerogel.relocate.asm'
   // auto remove all classes which we don't need in the final jar
   minimize()
-}
-
-tasks.withType(AbstractArchiveTask) {
-  reproducibleFileOrder = true
-  preserveFileTimestamps = false
 }

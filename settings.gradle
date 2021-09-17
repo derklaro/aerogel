@@ -23,3 +23,5 @@
  */
 
 rootProject.name = 'aerogel'
+
+include 'auto'

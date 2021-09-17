@@ -22,41 +22,34 @@
  * THE SOFTWARE.
  */
 
-package aerogel;
+package aerogel.auto;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * Binds the annotated method as a factory method for the return type of the method. Any type from which the return type
- * extends or implements are bound to that factory as well. Factory methods are not preferred over actual bindings
- * supplied to the associated {@link Injector}. Arguments supplied to the factory methods are taken from the associated
- * {@link Injector}. Please note that in order for this annotation to work the annotation scanning must get enabled when
+ * Defines which type the annotated class is bound to. It will be used when type lookups are made to find the class
+ * implementing or extending the required abstract instance. It works like {@link aerogel.ProvidedBy} in the opposite
+ * direction. Please note that in order for this annotation to work the annotation scanning must get enabled when
  * building an injector instance.
  *
  * @author Pasqual K.
  * @since 1.0
  */
-// @todo: find a good way to implement this
 @Documented
-@Target(ElementType.METHOD)
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Factory {
+public @interface Provides {
 
   /**
-   * If {@code true} all super types of the method's return type are bound to that factory method as well. For example,
-   * if class {@code Abc} extends from {@code Abcd} and the factory method looks something like the following:
-   * <code>
-   * {@literal @}Factory public static Abc newAbc(DateTime now) { return new Abc(now); }
-   * </code>
-   * any instance of {@code Abcd} requested via the {@link Injector} will be taken generated from the factory method as
-   * long as there is no specific binding for the type {@code Abcd} in the factory. This setting defaults for simplicity
-   * reasons to {@code false}.
+   * Defines which class this instance should be bound to. The given type must be super interface or class of the
+   * annotated class in order for this annotation to work correctly.
    *
-   * @return if the super types of the method return type should be included when constructing via the factory method.
+   * @return the type to which the annotated class should get bound.
    */
-  boolean includeSuper() default false;
+  @NotNull Class<?>[] value();
 }
