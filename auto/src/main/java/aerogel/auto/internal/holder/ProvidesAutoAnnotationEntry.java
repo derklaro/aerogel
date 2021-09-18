@@ -24,7 +24,7 @@
 
 package aerogel.auto.internal.holder;
 
-import static aerogel.auto.internal.holder.FactoryAutoAnnotationEntry.loadClass;
+import static aerogel.auto.internal.utility.ClassLoadingUtils.loadClass;
 
 import aerogel.AerogelException;
 import aerogel.BindingConstructor;

@@ -60,10 +60,12 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
     StandardOpenOption.CREATE,
     StandardOpenOption.WRITE};
   // the supported annotations of this processor
-  private static final Set<String> SUPPORTED_ANNOTATIONS = new HashSet<String>() {{
-    add(Factory.class.getCanonicalName());
-    add(Provides.class.getCanonicalName());
-  }};
+  private static final Set<String> SUPPORTED_ANNOTATIONS = new HashSet<>(2);
+
+  static {
+    SUPPORTED_ANNOTATIONS.add(Factory.class.getCanonicalName());
+    SUPPORTED_ANNOTATIONS.add(Provides.class.getCanonicalName());
+  }
 
   // all the entries this processor has found so far
   private final Set<AutoAnnotationEntry> foundEntries = new HashSet<>();

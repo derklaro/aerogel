@@ -24,6 +24,8 @@
 
 package aerogel.auto.internal.holder;
 
+import static aerogel.auto.internal.utility.ClassLoadingUtils.loadClass;
+
 import aerogel.AerogelException;
 import aerogel.BindingConstructor;
 import aerogel.Bindings;
@@ -64,10 +66,6 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
         .map(typeMirror -> typeMirror.asType().toString())
         .collect(Collectors.toSet());
     }
-  }
-
-  static @NotNull Class<?> loadClass(@NotNull String name) throws ClassNotFoundException {
-    return Class.forName(name, false, Thread.currentThread().getContextClassLoader());
   }
 
   @Override

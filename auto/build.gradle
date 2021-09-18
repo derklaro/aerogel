@@ -1,3 +1,7 @@
 dependencies {
   implementation rootProject
 }
+
+shadowJar {
+  dependsOn ':shadowJar'
+}
