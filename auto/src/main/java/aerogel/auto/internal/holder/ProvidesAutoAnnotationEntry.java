@@ -24,12 +24,13 @@
 
 package aerogel.auto.internal.holder;
 
-import static aerogel.auto.internal.holder.FactoryProcessedAnnotation.loadClass;
+import static aerogel.auto.internal.holder.FactoryAutoAnnotationEntry.loadClass;
 
 import aerogel.AerogelException;
 import aerogel.BindingConstructor;
 import aerogel.Bindings;
 import aerogel.Element;
+import aerogel.auto.AutoAnnotationEntry;
 import aerogel.auto.Provides;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -40,12 +41,17 @@ import java.util.stream.Collectors;
 import javax.lang.model.element.TypeElement;
 import org.jetbrains.annotations.NotNull;
 
-public final class ProvidesProcessedAnnotation implements ProcessedAnnotation {
+public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
 
   private final String bindingName;
   private final Set<String> bindings;
 
-  public ProvidesProcessedAnnotation(@NotNull TypeElement element, @NotNull Provides provides) {
+  public ProvidesAutoAnnotationEntry() {
+    this.bindingName = null;
+    this.bindings = null;
+  }
+
+  public ProvidesAutoAnnotationEntry(@NotNull TypeElement element, @NotNull Provides provides) {
     this.bindingName = element.getQualifiedName().toString();
     // we assume that provides has always at least one provided class
     this.bindings = Arrays.stream(provides.value()).map(Class::getName).collect(Collectors.toSet());

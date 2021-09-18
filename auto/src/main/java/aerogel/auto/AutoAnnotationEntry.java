@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package aerogel.auto.internal.holder;
+package aerogel.auto;
 
 import aerogel.BindingConstructor;
 import java.io.DataInputStream;
@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
-public interface ProcessedAnnotation {
+public interface AutoAnnotationEntry {
 
   void emit(@NotNull DataOutputStream out) throws IOException;
 

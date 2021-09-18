@@ -92,19 +92,19 @@ allprojects {
     header = project.rootProject.file('license_header.txt')
   }
 
+  shadowJar {
+    // base settings of the output jar
+    archiveVersion.set(null)
+    archiveClassifier.set(null)
+    archiveBaseName.set(project.name)
+    // relocate internal dependencies to prevent compatibility issues
+    relocate 'org.objectweb.asm', 'aerogel.relocate.asm'
+    // auto remove all classes which we don't need in the final jar
+    minimize()
+  }
+
   tasks.withType(AbstractArchiveTask) {
     reproducibleFileOrder = true
     preserveFileTimestamps = false
   }
-}
-
-shadowJar {
-  // base settings of the output jar
-  archiveVersion.set(null)
-  archiveClassifier.set(null)
-  archiveBaseName.set('aerogel')
-  // relocate internal dependencies to prevent compatibility issues
-  relocate 'org.objectweb.asm', 'aerogel.relocate.asm'
-  // auto remove all classes which we don't need in the final jar
-  minimize()
 }

@@ -22,4 +22,4 @@
 # THE SOFTWARE.
 #
 
-aerogel.auto.internal.AutoInjectAnnotationProcessor
+aerogel.auto.internal.processor.AutoInjectAnnotationProcessor

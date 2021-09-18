@@ -27,6 +27,7 @@ package aerogel.auto.internal.holder;
 import aerogel.AerogelException;
 import aerogel.BindingConstructor;
 import aerogel.Bindings;
+import aerogel.auto.AutoAnnotationEntry;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -38,13 +39,19 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import org.jetbrains.annotations.NotNull;
 
-public final class FactoryProcessedAnnotation implements ProcessedAnnotation {
+public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
 
   private final String methodName;
   private final String enclosingClass;
   private final Set<String> methodArguments;
 
-  public FactoryProcessedAnnotation(@NotNull ExecutableElement element) {
+  public FactoryAutoAnnotationEntry() {
+    this.methodName = null;
+    this.enclosingClass = null;
+    this.methodArguments = null;
+  }
+
+  public FactoryAutoAnnotationEntry(@NotNull ExecutableElement element) {
     this.methodName = element.getSimpleName().toString();
     // we assume that the executable element is a method element in which case the enclosing element is the declaring class
     this.enclosingClass = ((TypeElement) element.getEnclosingElement()).getQualifiedName().toString();

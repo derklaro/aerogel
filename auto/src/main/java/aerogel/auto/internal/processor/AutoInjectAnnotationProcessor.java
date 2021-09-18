@@ -22,13 +22,13 @@
  * THE SOFTWARE.
  */
 
-package aerogel.auto.internal;
+package aerogel.auto.internal.processor;
 
+import aerogel.auto.AutoAnnotationEntry;
 import aerogel.auto.Factory;
 import aerogel.auto.Provides;
-import aerogel.auto.internal.holder.FactoryProcessedAnnotation;
-import aerogel.auto.internal.holder.ProcessedAnnotation;
-import aerogel.auto.internal.holder.ProvidesProcessedAnnotation;
+import aerogel.auto.internal.holder.FactoryAutoAnnotationEntry;
+import aerogel.auto.internal.holder.ProvidesAutoAnnotationEntry;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -52,16 +52,21 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
 import org.jetbrains.annotations.NotNull;
 
-final class AutoInjectAnnotationProcessor extends AbstractProcessor {
+public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
 
   // represents the open options used to emit the data of a successful processing round
   private static final OpenOption[] OO = new OpenOption[]{
     StandardOpenOption.APPEND,
     StandardOpenOption.CREATE,
     StandardOpenOption.WRITE};
+  // the supported annotations of this processor
+  private static final Set<String> SUPPORTED_ANNOTATIONS = new HashSet<String>() {{
+    add(Factory.class.getCanonicalName());
+    add(Provides.class.getCanonicalName());
+  }};
 
   // all the entries this processor has found so far
-  private final Set<ProcessedAnnotation> foundEntries = new HashSet<>();
+  private final Set<AutoAnnotationEntry> foundEntries = new HashSet<>();
   // the uri of the file we want
   private Path targetFile;
 
@@ -93,6 +98,11 @@ final class AutoInjectAnnotationProcessor extends AbstractProcessor {
   }
 
   @Override
+  public Set<String> getSupportedAnnotationTypes() {
+    return SUPPORTED_ANNOTATIONS;
+  }
+
+  @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     // check if the processing round is over
     if (roundEnv.processingOver()) {
@@ -101,9 +111,11 @@ final class AutoInjectAnnotationProcessor extends AbstractProcessor {
         // the round is over - dump the current result and clear the cache
         try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(this.targetFile, OO))) {
           // emit every entry to the data output
-          for (ProcessedAnnotation entry : this.foundEntries) {
+          for (AutoAnnotationEntry entry : this.foundEntries) {
             entry.emit(out);
           }
+          // ready for the next round
+          this.foundEntries.clear();
         } catch (IOException exception) {
           throw new RuntimeException("Exception opening output file " + this.targetFile, exception);
         }
@@ -150,7 +162,7 @@ final class AutoInjectAnnotationProcessor extends AbstractProcessor {
         continue;
       }
       // valid method - emit that
-      this.foundEntries.add(new FactoryProcessedAnnotation(executableElement));
+      this.foundEntries.add(new FactoryAutoAnnotationEntry(executableElement));
     }
   }
 
@@ -184,7 +196,7 @@ final class AutoInjectAnnotationProcessor extends AbstractProcessor {
         continue;
       }
       // valid providing class - emit that
-      this.foundEntries.add(new ProvidesProcessedAnnotation((TypeElement) element, provides));
+      this.foundEntries.add(new ProvidesAutoAnnotationEntry((TypeElement) element, provides));
     }
   }
 }
