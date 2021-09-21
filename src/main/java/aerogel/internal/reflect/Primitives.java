@@ -55,8 +55,14 @@ public final class Primitives {
     if (type instanceof Class<?> && ((Class<?>) type).isPrimitive()) {
       return isOfBoxedType((Class<?>) type, boxed);
     }
-    // not a primitive type
-    return true;
+    // not a primitive type - check if the boxed type is null (in this case there is no check possible)
+    if (boxed == null) {
+      return true;
+    }
+    // get the raw super type of the given type
+    Type rawType = ReflectionUtils.rawType(type);
+    // check if the raw type equals to the given boxed type class
+    return boxed.getClass().equals(rawType);
   }
 
   public static boolean isOfBoxedType(@NotNull Class<?> primitive, @Nullable Object boxed) {

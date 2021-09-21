@@ -34,11 +34,15 @@ import aerogel.internal.binding.ConstructingBindingHolder;
 import aerogel.internal.binding.ImmediateBindingHolder;
 import aerogel.internal.member.DefaultMemberInjector;
 import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
 
 public final class DefaultInjector implements Injector {
 
@@ -60,27 +64,42 @@ public final class DefaultInjector implements Injector {
     this.injectorBinding = new ImmediateBindingHolder(INJECTOR_ELEMENT, INJECTOR_ELEMENT, this, this);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @Nullable Injector parent() {
     return this.parent;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Injector newChildInjector() {
     return new DefaultInjector(this);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
-  public <T> T instance(@NotNull Class<T> type) {
+  public <T> T instance(@NotNull Type type) {
     return this.instance(Element.get(type));
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   @SuppressWarnings("unchecked")
   public <T> T instance(@NotNull Element element) {
     return (T) this.binding(element).get();
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Injector install(@NotNull BindingConstructor constructor) {
     Objects.requireNonNull(constructor, "constructor");
@@ -92,6 +111,9 @@ public final class DefaultInjector implements Injector {
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Injector install(@NotNull Iterable<BindingConstructor> constructors) {
     // install all constructors
@@ -102,8 +124,12 @@ public final class DefaultInjector implements Injector {
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull MemberInjector memberInjector(@NotNull Class<?> memberClazz) {
+    Objects.requireNonNull(memberClazz, "memberClazz");
     // try to find the member injector in one of the parent injectors
     Injector injector = this;
     do {
@@ -120,16 +146,27 @@ public final class DefaultInjector implements Injector {
     return memberInjector;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @Nullable MemberInjector fastMemberInjector(@NotNull Class<?> memberHolderClass) {
+    Objects.requireNonNull(memberHolderClass, "memberHolderClass");
+    // read the cached instance from the class.
     return this.cachedMemberInjectors.get(memberHolderClass);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull BindingHolder binding(@NotNull Type target) {
     return this.binding(Element.get(target));
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull BindingHolder binding(@NotNull Element element) {
     Objects.requireNonNull(element, "element");
@@ -158,8 +195,12 @@ public final class DefaultInjector implements Injector {
     return holder;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @Nullable BindingHolder bindingOrNull(@NotNull Element element) {
+    Objects.requireNonNull(element, "element");
     // check if we have a cached bindingHolder
     BindingHolder bindingHolder = this.bindings.get(element);
     if (bindingHolder == null && this.parent != null) {
@@ -180,8 +221,41 @@ public final class DefaultInjector implements Injector {
     return bindingHolder;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @Nullable BindingHolder fastBinding(@NotNull Element element) {
+    Objects.requireNonNull(element, "element");
+    // read from the store
     return this.bindings.get(element);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @UnmodifiableView @NotNull Collection<BindingHolder> bindings() {
+    return Collections.unmodifiableCollection(this.bindings.values());
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @UnmodifiableView @NotNull Collection<BindingHolder> allBindings() {
+    // the resulting collection
+    Collection<BindingHolder> bindings = new HashSet<>(this.bindings.values());
+    // check if this injector has a parent
+    if (this.parent != null) {
+      // walk down the parent chain - add all of their bindings as well
+      Injector target = this.parent;
+      do {
+        // add all bindings to the result
+        bindings.addAll(target.bindings());
+      } while ((target = target.parent()) != null);
+    }
+    // the return value should be unmodifiable
+    return Collections.unmodifiableCollection(bindings);
   }
 }

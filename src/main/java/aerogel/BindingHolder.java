@@ -27,13 +27,46 @@ package aerogel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Represents a binding for a type. {@link #get()} and {@link #get(InjectionContext)} are responsible to execute the
+ * construction of the type in any way. Any binding can be injected into member if the member type is a provider. This
+ * is the reason why this class represents a provider as well.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public interface BindingHolder extends Provider<Object> {
 
+  /**
+   * Get the injector for which this binding was constructed.
+   *
+   * @return the injector for which this binding was constructed.
+   */
   @NotNull Injector injector();
 
+  /**
+   * Get the type of the element which is injectable by this binding. The type can for example be an interface whilst
+   * {@link #binding()} represents the implementation of it.
+   *
+   * @return the type of the element which is injectable by this binding.
+   */
   @NotNull Element type();
 
+  /**
+   * Get the type of the element which gets injected when this binding is requested.
+   *
+   * @return the type of the element which gets injected when this binding is requested.
+   */
   @NotNull Element binding();
 
-  @Nullable <T> T get(@NotNull InjectionContext context);
+  /**
+   * Get the value of this binding based on the information provided by the given {@code context}.
+   *
+   * @param context the context in which the injection is about to happen.
+   * @param <T>     the result type which this method should return. This should always be a subtype of {@link #type()}
+   *                and {@link #binding()}.
+   * @return the constructed value of this binding or null if the construction ended up with null.
+   * @throws Throwable if any exception occurs during the construction of the underlying type.
+   */
+  @Nullable <T> T get(@NotNull InjectionContext context) throws Throwable;
 }

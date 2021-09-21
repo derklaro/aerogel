@@ -24,6 +24,7 @@
 
 package aerogel;
 
+import static aerogel.internal.reflect.Primitives.isNotPrimitiveOrIsAssignable;
 import static aerogel.internal.utility.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
@@ -31,7 +32,6 @@ import aerogel.internal.binding.ConstructingBindingHolder;
 import aerogel.internal.binding.FactoryBindingHolder;
 import aerogel.internal.binding.ImmediateBindingHolder;
 import aerogel.internal.jakarta.JakartaBridge;
-import aerogel.internal.reflect.Primitives;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import org.jetbrains.annotations.Contract;
@@ -45,29 +45,74 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface Bindings {
 
+  /**
+   * A binding constructor which will always return the fixed {@code value} for the given {@code element}.
+   *
+   * @param element the element to bind the binding to.
+   * @param value   the fixed value to return when the element is requested.
+   * @return a new binding constructor which will always return the fixed {@code value} for {@code element}.
+   * @throws NullPointerException     if {@code element} is null.
+   * @throws IllegalArgumentException if {@code element} is not assignable to {@code value}.
+   */
   @Contract(pure = true)
   static @NotNull BindingConstructor fixed(@NotNull Element element, @NotNull Object value) {
     return fixed(element, element, value);
   }
 
+  /**
+   * A binding constructor which will always return the fixed {@code value} for the given {@code bound}.
+   *
+   * @param type  the element to bind the binding to.
+   * @param bound the bound type of the value.
+   * @param value the fixed value to return when the element is requested.
+   * @return a new binding constructor which will always return the fixed {@code value} for {@code bound}.
+   * @throws NullPointerException     if {@code type} or {@code bound} is null.
+   * @throws IllegalArgumentException if either {@code type} or {@code bound} is not assignable to {@code value}.
+   */
   @Contract(pure = true)
   static @NotNull BindingConstructor fixed(@NotNull Element type, @NotNull Element bound, @NotNull Object value) {
     requireNonNull(type, "Fixed bound type must not be null");
     requireNonNull(bound, "Fixed bound value type must not be null");
 
-    // @todo: check if the given value is assignable to the both types?
-    checkArgument(Primitives.isNotPrimitiveOrIsAssignable(type.componentType(), value),
-      "Primitive binding must be non-null");
+    checkArgument(isNotPrimitiveOrIsAssignable(type.componentType(), value), "Value is not assignable to type");
+    checkArgument(isNotPrimitiveOrIsAssignable(bound.componentType(), value), "Value is not assignable to bound");
 
     return injector -> new ImmediateBindingHolder(type, bound, injector, value);
   }
 
+  /**
+   * Creates a new constructing binding holder - the type will be constructed using either the no-args constructor or
+   * the constructor which is annotated as {@literal @}{@code Inject}. The annotated constructor is preferred over the
+   * no-args constructor construction. This binding is singleton aware. Parameters of the constructor are taken from the
+   * injector.
+   *
+   * @param element the element of which the binding should be created.
+   * @return a new binding constructor which instantiated the given {@code element} to obtain a new instance.
+   * @throws NullPointerException          if {@code element} is null.
+   * @throws IllegalArgumentException      if {@code element} has an invalid component type.
+   * @throws UnsupportedOperationException if the type of {@code element} is not instantiable.
+   * @throws AerogelException              if the class has zero or more than one injectable constructors.
+   */
   @Contract(pure = true)
   static @NotNull BindingConstructor constructing(@NotNull Element element) {
     requireNonNull(element, "Bound type must be non-null");
     return injector -> ConstructingBindingHolder.create(injector, element);
   }
 
+  /**
+   * Creates a new constructing binding holder - the type will be constructed using either the no-args constructor or
+   * the constructor which is annotated as {@literal @}{@code Inject}. The annotated constructor is preferred over the
+   * no-args constructor construction. This binding is singleton aware. Parameters of the constructor are taken from the
+   * injector.
+   *
+   * @param type  the element type.
+   * @param bound the element of which the binding should be created.
+   * @return a new binding constructor which instantiated the given {@code bound} to obtain a new instance.
+   * @throws NullPointerException          if {@code type} or {@code bound} is null.
+   * @throws IllegalArgumentException      if {@code bound} has an invalid component type.
+   * @throws UnsupportedOperationException if the type of {@code bound} is not instantiable.
+   * @throws AerogelException              if the class has zero or more than one injectable constructors.
+   */
   @Contract(pure = true)
   static @NotNull BindingConstructor constructing(@NotNull Element type, @NotNull Element bound) {
     requireNonNull(type, "Fixed bound type must not be null");
@@ -76,11 +121,32 @@ public interface Bindings {
     return injector -> ConstructingBindingHolder.create(injector, type, bound);
   }
 
+  /**
+   * Creates a new factory binding holder - the type will be constructed using the return type of this method. A factory
+   * method is singleton aware and allowed to return null. Parameters of the method are taken from the injector.
+   *
+   * @param factoryMethod the method which should be used as the factory method.
+   * @return a new binding constructor which calls the given method to create a new instance of the return type.
+   * @throws NullPointerException     if {@code factoryMethod} is null.
+   * @throws IllegalArgumentException if {@code factoryMethod} is not static or returns void.
+   */
   @Contract(pure = true)
   static @NotNull BindingConstructor factory(@NotNull Method factoryMethod) {
+    requireNonNull(factoryMethod, "Factory method must not be null");
     return factory(Element.get(factoryMethod.getGenericReturnType()), factoryMethod);
   }
 
+  /**
+   * Creates a new factory binding holder - the type will be constructed using the return type of this method. A factory
+   * method is singleton aware and allowed to return null. Parameters of the method are taken from the injector.
+   *
+   * @param type          the element type of the binding.
+   * @param factoryMethod the method which should be used as the factory method.
+   * @return a new binding constructor which calls the given method to create a new instance of the return type.
+   * @throws NullPointerException     if {@code factoryMethod} is null.
+   * @throws IllegalArgumentException if {@code factoryMethod} is not static, returns void or not the same type as
+   *                                  {@code type}.
+   */
   @Contract(pure = true)
   static @NotNull BindingConstructor factory(@NotNull Element type, @NotNull Method factoryMethod) {
     requireNonNull(type, "Factory type must not be null");
@@ -88,6 +154,8 @@ public interface Bindings {
 
     checkArgument(factoryMethod.getReturnType() != void.class, "Factory method must not return void");
     checkArgument(Modifier.isStatic(factoryMethod.getModifiers()), "Factory method need has to be static");
+    checkArgument(factoryMethod.getGenericReturnType().equals(type.componentType()),
+      "Factory method must return element type");
 
     return injector -> {
       // check if the return type is a singleton

@@ -86,6 +86,7 @@ public interface Provider<T> {
    * during the object instantiation to the caller.
    *
    * @return a fully constructed instance of the type {@code T}.
+   * @throws AerogelException if any exception occurs during the construction of the underlying type.
    */
-  @Nullable T get();
+  @Nullable T get() throws AerogelException;
 }

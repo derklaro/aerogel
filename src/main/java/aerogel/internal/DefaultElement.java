@@ -100,6 +100,7 @@ public final class DefaultElement implements Element {
   public @NotNull Element requireAnnotations(@NotNull Annotation... annotations) {
     // create a new annotation comparer for every annotation
     for (Annotation annotation : annotations) {
+      Objects.requireNonNull(annotation, "annotation is null");
       this.annotationComparer.add(AnnotationComparerMaker.make(annotation));
     }
     // for chaining
@@ -113,6 +114,7 @@ public final class DefaultElement implements Element {
   public @NotNull Element requireAnnotations(@NotNull Class<?>... annotationTypes) {
     // create a new annotation comparer for every annotation
     for (Class<?> annotationType : annotationTypes) {
+      Objects.requireNonNull(annotationType, "annotation type is null");
       this.annotationComparer.add(AnnotationComparerMaker.make(annotationType));
     }
     // for chaining

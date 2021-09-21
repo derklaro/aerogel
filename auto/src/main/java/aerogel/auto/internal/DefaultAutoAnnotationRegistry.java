@@ -121,7 +121,7 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
   public void installBindings(@NotNull InputStream emittedFile, @NotNull Injector target) {
     // load all the bindings constructors and install them to the injector
     for (BindingConstructor constructor : this.makeConstructors(emittedFile)) {
-      constructor.construct(target);
+      target.install(constructor);
     }
   }
 }

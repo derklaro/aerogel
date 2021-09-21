@@ -35,6 +35,7 @@ import aerogel.internal.codegen.InjectionTimeProxy;
 import aerogel.internal.codegen.InjectionTimeProxy.InjectionTimeProxyable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -62,9 +63,12 @@ public final class DefaultInjectionContext implements InjectionContext {
   @Override
   @SuppressWarnings("unchecked")
   public <T> @Nullable T findInstance(@NotNull Element element) {
+    Objects.requireNonNull(element, "element");
     // check if a type was already constructed during the invocation cycle
     if (this.knownTypes.containsKey(element)) {
-      return (T) this.knownTypes.get(element);
+      Object knownElement = this.knownTypes.get(element);
+      // NIL is emitted by the builder as some maps might not support null values
+      return knownElement == NIL ? null : (T) knownElement;
     }
     // check if we already tried to construct the element (which is a clear sign for circular dependencies over object
     // construction - we need to try to tackle that)
@@ -95,12 +99,17 @@ public final class DefaultInjectionContext implements InjectionContext {
     }
     // push the element we want to construct to the stack
     this.elementStack.push(element);
-    // no cached instance yet - fall back to a binding of the injector
-    return this.injector.binding(element).get(this);
+    try {
+      // no cached instance yet - fall back to a binding of the injector
+      return this.injector.binding(element).get(this);
+    } catch (Throwable throwable) {
+      throw AerogelException.forMessagedException("Unable to construct " + element + ':', throwable);
+    }
   }
 
   @Override
   public void constructDone(@NotNull Element element, @Nullable Object result, boolean doInjectMembers) {
+    Objects.requireNonNull(element, "element");
     // read the current type from the map
     Object current = this.knownTypes.get(element);
     // check if there is a need to re-assign the instance

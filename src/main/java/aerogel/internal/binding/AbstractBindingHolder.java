@@ -24,6 +24,7 @@
 
 package aerogel.internal.binding;
 
+import aerogel.AerogelException;
 import aerogel.BindingHolder;
 import aerogel.Element;
 import aerogel.InjectionContext;
@@ -61,6 +62,10 @@ public abstract class AbstractBindingHolder implements BindingHolder {
 
   @Override
   public @Nullable Object get() {
-    return this.get(InjectionContext.builder().injector(this.injector).build());
+    try {
+      return this.get(InjectionContext.builder().injector(this.injector).build());
+    } catch (Throwable throwable) {
+      throw AerogelException.forMessagedException("Unable to get bound type of " + this, throwable);
+    }
   }
 }

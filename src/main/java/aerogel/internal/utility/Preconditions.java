@@ -34,13 +34,13 @@ public final class Preconditions {
 
   public static void checkArgument(boolean argument, @NotNull String errorMessage) {
     if (!argument) {
-      throw new UnsupportedOperationException(errorMessage);
+      throw new IllegalArgumentException(errorMessage);
     }
   }
 
   public static void checkArgument(boolean argument, @NotNull String errorMessageFormat, Object... args) {
     if (!argument) {
-      throw new UnsupportedOperationException(String.format(errorMessageFormat, args));
+      throw new IllegalArgumentException(String.format(errorMessageFormat, args));
     }
   }
 }
