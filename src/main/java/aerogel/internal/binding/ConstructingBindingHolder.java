@@ -37,10 +37,25 @@ import java.lang.reflect.Constructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A binding holder which uses class construction based on a class constructor.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class ConstructingBindingHolder extends AbstractBindingHolder {
 
   private final InstanceMaker constructor;
 
+  /**
+   * Creates a new constructing binding instance.
+   *
+   * @param targetType        the type of the binding.
+   * @param bindingType       the type to which the given type is bound.
+   * @param injector          the injector to which this binding was bound.
+   * @param injectionPoint    the constructor to use to create the class instances.
+   * @param shouldBeSingleton if the result of the instantiation call should be a singleton object.
+   */
   public ConstructingBindingHolder(
     @NotNull Element targetType,
     @NotNull Element bindingType,
@@ -52,6 +67,14 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     this.constructor = ClassInstanceMaker.forConstructor(injectionPoint, shouldBeSingleton);
   }
 
+  /**
+   * Makes a new constructing binding holder for the given {@code element}.
+   *
+   * @param injector the injector to which this binding was bound.
+   * @param element  the type of the binding.
+   * @return the created constructing binding holder.
+   * @throws UnsupportedOperationException if the element's type is not instantiable.
+   */
   public static @NotNull ConstructingBindingHolder create(@NotNull Injector injector, @NotNull Element element) {
     // read the type from the element
     Class<?> type = ReflectionUtils.rawType(element.componentType());
@@ -70,6 +93,15 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     }
   }
 
+  /**
+   * Makes a new constructing binding holder for the given {@code bound}.
+   *
+   * @param injector the injector to which this binding was bound.
+   * @param element  the type of the binding.
+   * @param bound    the type to which the element was bound.
+   * @return the created constructing binding holder.
+   * @throws UnsupportedOperationException if the bound's type is not instantiable.
+   */
   public static @NotNull ConstructingBindingHolder create(
     @NotNull Injector injector,
     @NotNull Element element,
@@ -86,6 +118,9 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     return new ConstructingBindingHolder(element, bound, injector, injectionPoint, singleton);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   @SuppressWarnings("unchecked")
   public <T> @Nullable T get(@NotNull InjectionContext context) {

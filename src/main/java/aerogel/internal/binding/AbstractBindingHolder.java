@@ -33,33 +33,58 @@ import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * An abstract implementation of a binding holder which can be used by any binding to simplify the code.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public abstract class AbstractBindingHolder implements BindingHolder {
 
   protected final Injector injector;
   protected final Element targetType;
   protected final Element bindingType;
 
+  /**
+   * Constructs a new abstract binding holder.
+   *
+   * @param type     the type of the binding.
+   * @param binding  the type to which the given type is bound.
+   * @param injector the injector to which this binding was bound.
+   */
   public AbstractBindingHolder(@NotNull Element type, @NotNull Element binding, @NotNull Injector injector) {
     this.targetType = Objects.requireNonNull(type, "Target type is required to construct");
     this.bindingType = Objects.requireNonNull(binding, "Binding type is required to construct");
     this.injector = Objects.requireNonNull(injector, "The parent injector is required to construct");
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Injector injector() {
     return this.injector;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Element type() {
     return this.targetType;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Element binding() {
     return this.bindingType;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @Nullable Object get() {
     try {

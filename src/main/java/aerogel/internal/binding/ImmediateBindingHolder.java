@@ -30,10 +30,24 @@ import aerogel.Injector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A binding holder which always returns the same instance of an object.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class ImmediateBindingHolder extends AbstractBindingHolder {
 
   private final Object result;
 
+  /**
+   * Constructs a new immediate binding holder instance.
+   *
+   * @param targetType  the type of the binding.
+   * @param bindingType the type to which the given type is bound.
+   * @param injector    the injector to which this binding was bound.
+   * @param result      the result which should always get returned.
+   */
   public ImmediateBindingHolder(
     @NotNull Element targetType,
     @NotNull Element bindingType,
@@ -44,6 +58,9 @@ public final class ImmediateBindingHolder extends AbstractBindingHolder {
     this.result = result;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   @SuppressWarnings("unchecked")
   public <T> @Nullable T get(@NotNull InjectionContext context) {

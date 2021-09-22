@@ -59,6 +59,12 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+/**
+ * An util for generating runtime proxies for interfaces instead of using reflection.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class InjectionTimeProxy {
 
   private static final String PROXY_NAME_FORMAT = "%s$Proxy_%d";
@@ -92,6 +98,14 @@ public final class InjectionTimeProxy {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Makes a runtime proxy for the given interface class.
+   *
+   * @param interfaceClass the class to generate the proxy for.
+   * @param <T>            the type of the class modeled.
+   * @return the created proxy instance for the class.
+   * @throws RuntimeException if an exception occurs when defining and loading the class.
+   */
   @SuppressWarnings("unchecked")
   public static <T> @NotNull T makeProxy(@NotNull Class<T> interfaceClass) {
     // get the type of the interface class
@@ -188,6 +202,15 @@ public final class InjectionTimeProxy {
     }
   }
 
+  /**
+   * Visits the given method and generates a delegating call to the constructed instance.
+   *
+   * @param cw        the class write of the current class.
+   * @param method    the method for which a proxy method should be created.
+   * @param proxyName the name of the proxy class we are creating.
+   * @param declaring the declaring class of the method.
+   * @param interType the internal type of the interface class for which the proxy gets created.
+   */
   private static void visitMethod(
     @NotNull ClassVisitor cw,
     @NotNull Method method,
@@ -233,8 +256,20 @@ public final class InjectionTimeProxy {
     mv.visitEnd();
   }
 
+  /**
+   * Represents a proxyable object in the runtime which can receive a delegate object at a later point.
+   *
+   * @author Pasqual K.
+   * @since 1.0
+   */
+  @FunctionalInterface
   public interface InjectionTimeProxyable {
 
+    /**
+     * Sets the delegate instance for the current proxy.
+     *
+     * @param delegate the delegate instance to use for the current proxy.
+     */
     void setDelegate(@Nullable Object delegate);
   }
 }

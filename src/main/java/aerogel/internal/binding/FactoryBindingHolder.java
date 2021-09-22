@@ -33,10 +33,25 @@ import java.lang.reflect.Method;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A binding which gets instances from a factory method which constructs it.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class FactoryBindingHolder extends AbstractBindingHolder {
 
   private final InstanceMaker instanceMaker;
 
+  /**
+   * Constructs a new factory binding holder.
+   *
+   * @param type              the type of the binding.
+   * @param binding           the type to which the given type is bound.
+   * @param injector          the injector to which this binding was bound.
+   * @param factoryMethod     the factory method to use to construct the instances.
+   * @param shouldBeSingleton if the result of the factory call should be a singleton object.
+   */
   public FactoryBindingHolder(
     @NotNull Element type,
     @NotNull Element binding,
@@ -48,6 +63,9 @@ public final class FactoryBindingHolder extends AbstractBindingHolder {
     this.instanceMaker = FactoryMethodInstanceMaker.forMethod(factoryMethod, shouldBeSingleton);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   @SuppressWarnings("unchecked")
   public <T> @Nullable T get(@NotNull InjectionContext context) {

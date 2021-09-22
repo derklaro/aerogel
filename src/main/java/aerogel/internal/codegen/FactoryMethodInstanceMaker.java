@@ -53,6 +53,12 @@ import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 
+/**
+ * An instance maker generator which creates instances using factory methods.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class FactoryMethodInstanceMaker {
 
   private static final String PROXY_CLASS_NAME_FORMAT = "%s$Invoker_%s_%d";
@@ -61,6 +67,14 @@ public final class FactoryMethodInstanceMaker {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Makes an instance maker for the given factory method.
+   *
+   * @param method            the method to create the instance maker for.
+   * @param shouldBeSingleton if the resulting object should be a singleton.
+   * @return the created instance maker for the factory method based construction.
+   * @throws RuntimeException if an exception occurs when defining and loading the class.
+   */
   public static @NotNull InstanceMaker forMethod(@NotNull Method method, boolean shouldBeSingleton) {
     // extract the wrapping class of the method
     Class<?> ct = method.getDeclaringClass();
@@ -78,7 +92,7 @@ public final class FactoryMethodInstanceMaker {
     // target Java 8 classes as the minimum requirement
     cw.visit(V1_8, PUBLIC_FINAL | ACC_SUPER, proxyName, null, OBJECT, INSTANCE_MAKER);
     // writes all necessary fields to the class
-    writeFields(cw, proxyName, shouldBeSingleton);
+    writeFields(cw, shouldBeSingleton);
     // write the constructor
     writeConstructor(cw, proxyName, shouldBeSingleton);
 

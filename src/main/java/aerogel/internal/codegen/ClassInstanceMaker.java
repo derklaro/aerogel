@@ -79,6 +79,12 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
+/**
+ * An instance maker generator which creates instances using constructor injection.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class ClassInstanceMaker {
 
   // the super interface all instance makers must implement
@@ -118,6 +124,14 @@ public final class ClassInstanceMaker {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Makes an instance maker for the given constructor.
+   *
+   * @param target    the target constructor to use for injection.
+   * @param singleton if the resulting object should be a singleton.
+   * @return the created instance maker for the constructor injection.
+   * @throws RuntimeException if an exception occurs when defining and loading the class.
+   */
   public static @NotNull InstanceMaker forConstructor(@NotNull Constructor<?> target, boolean singleton) {
     // extract the wrapping class of the constructor
     Class<?> ct = target.getDeclaringClass();
@@ -134,7 +148,7 @@ public final class ClassInstanceMaker {
     // target Java 8 classes as the minimum requirement
     cw.visit(V1_8, PUBLIC_FINAL | ACC_SUPER, proxyName, null, OBJECT, INSTANCE_MAKER);
     // writes all necessary fields to the class
-    writeFields(cw, proxyName, singleton);
+    writeFields(cw, singleton);
     // write the constructor to the class
     writeConstructor(cw, proxyName, singleton);
 
@@ -184,6 +198,15 @@ public final class ClassInstanceMaker {
     return defineAndConstruct(cw, proxyName, ct, elements);
   }
 
+  /**
+   * Stores all parameters to the current object stack.
+   *
+   * @param exec      the executable for which the parameters should get stored.
+   * @param name      the name of the proxy which holds the fields.
+   * @param mv        the method visitor of the currently visiting method.
+   * @param singleton if the resulting object should only have one instance per injector.
+   * @return the elements of the stored parameters.
+   */
   static @NotNull Element[] storeParameters(
     @NotNull Executable exec,
     @NotNull String name,
@@ -207,7 +230,13 @@ public final class ClassInstanceMaker {
     return elements;
   }
 
-  static void writeFields(@NotNull ClassWriter cw, @NotNull String proxyName, boolean singleton) {
+  /**
+   * Write the default fields to a newly created class.
+   *
+   * @param cw        the class writer of the class.
+   * @param singleton if the resulting object should only have one instance per injector.
+   */
+  static void writeFields(@NotNull ClassWriter cw, boolean singleton) {
     // adds the type[] fields to the class
     cw.visitField(PRIVATE_FINAL, ELEMENTS, ELEMENT_DESC, null, null).visitEnd();
     // if this is a singleton add the atomic reference field which will hold that instance later
@@ -217,6 +246,13 @@ public final class ClassInstanceMaker {
     }
   }
 
+  /**
+   * Writes the constructor with the required {@code Element[]} parameter to the class.
+   *
+   * @param cw        the class writer of the constructor.
+   * @param proxyName the name of the proxy we are creating.
+   * @param singleton if the resulting object should only have one instance per injector.
+   */
   static void writeConstructor(@NotNull ClassWriter cw, @NotNull String proxyName, boolean singleton) {
     // visit the constructor
     MethodVisitor mv = beginConstructor(cw, descToMethodDesc(ELEMENT_DESC, void.class));
@@ -244,6 +280,12 @@ public final class ClassInstanceMaker {
     mv.visitEnd();
   }
 
+  /**
+   * Loads all previously stored parameters back to the stack.
+   *
+   * @param types the elements to load.
+   * @param mv    the method visitor of the currently visiting method.
+   */
   static void loadParameters(@NotNull Element[] types, @NotNull MethodVisitor mv) {
     int readerIndex = 0;
     for (Element element : types) {
@@ -256,6 +298,16 @@ public final class ClassInstanceMaker {
     }
   }
 
+  /**
+   * Defines and construct the generated class.
+   *
+   * @param cw       the class writer used for construction of the type.
+   * @param name     the name of the constructed class.
+   * @param parent   the parent class of the constructed class (as we are generating anonymous classes)
+   * @param elements the elements of the parameters used for injection.
+   * @return the instance of the newly created instance maker.
+   * @throws RuntimeException if an exception occurs when defining and loading the class.
+   */
   static @NotNull InstanceMaker defineAndConstruct(
     @NotNull ClassWriter cw,
     @NotNull String name,
@@ -274,6 +326,12 @@ public final class ClassInstanceMaker {
     }
   }
 
+  /**
+   * Writes the current stack top element into the singleton AtomicReference stored in the class.
+   *
+   * @param mv        the method visitor of the current method.
+   * @param proxyName the name of the proxy owning the singleton reference field.
+   */
   static void appendSingletonWrite(@NotNull MethodVisitor mv, @NotNull String proxyName) {
     // temp store the previous return value
     mv.visitVarInsn(ASTORE, 2);
@@ -299,6 +357,12 @@ public final class ClassInstanceMaker {
     mv.visitMethodInsn(INVOKEVIRTUAL, HOLDER_NAME, "set", descToMethodDesc(OBJECT_DESC, void.class), false);
   }
 
+  /**
+   * Loads the previously constructed element to stack and returns it if the construction was done before.
+   *
+   * @param mv        the method visitor of the current method.
+   * @param proxyName the name of the proxy owning the singleton reference field.
+   */
   static void visitSingletonHolder(@NotNull MethodVisitor mv, @NotNull String proxyName) {
     Label wasConstructedDimension = new Label();
     // check if the value was already constructed
@@ -321,6 +385,17 @@ public final class ClassInstanceMaker {
     mv.visitLabel(wasConstructedDimension);
   }
 
+  /**
+   * Ensures that the correct element gets loaded and pushed to the stack.
+   *
+   * @param ot              the proxy which the generator is generating.
+   * @param mv              the method visitor of the current method.
+   * @param parameter       the parameter which should get unboxed.
+   * @param typeWriterIndex the current writer index of the stack.
+   * @param annotations     the annotations of the parameter.
+   * @param index           the current index for loading the element in the runtime from the class element array.
+   * @return the element which will be used for loading the instance from the injection context.
+   */
   private static @NotNull Element unpackParameter(
     @NotNull String ot,
     @NotNull MethodVisitor mv,
