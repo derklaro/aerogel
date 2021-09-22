@@ -24,6 +24,7 @@
 
 package aerogel.internal.reflect;
 
+import aerogel.internal.utility.Preconditions;
 import java.lang.reflect.Type;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,9 +33,11 @@ import org.jetbrains.annotations.Nullable;
 
 public final class Primitives {
 
-  private static final Map<Class<?>, Class<?>> PRIMITIVE_TO_WRAPPER = new ConcurrentHashMap<>();
+  private static final Map<Class<?>, Class<?>> PRIMITIVE_TO_WRAPPER = new ConcurrentHashMap<>(9);
+  private static final Map<Class<?>, Object> PRIMITIVE_DEFAULT_VALUES = new ConcurrentHashMap<>(8);
 
   static {
+    // primitive type -> wrapper type
     PRIMITIVE_TO_WRAPPER.put(void.class, Void.class);
     PRIMITIVE_TO_WRAPPER.put(byte.class, Byte.class);
     PRIMITIVE_TO_WRAPPER.put(long.class, Long.class);
@@ -44,6 +47,15 @@ public final class Primitives {
     PRIMITIVE_TO_WRAPPER.put(double.class, Double.class);
     PRIMITIVE_TO_WRAPPER.put(char.class, Character.class);
     PRIMITIVE_TO_WRAPPER.put(boolean.class, Boolean.class);
+    // primitive type -> default value
+    PRIMITIVE_DEFAULT_VALUES.put(int.class, 0);
+    PRIMITIVE_DEFAULT_VALUES.put(char.class, '\0');
+    PRIMITIVE_DEFAULT_VALUES.put(boolean.class, false);
+    PRIMITIVE_DEFAULT_VALUES.put(byte.class, (byte) 0);
+    PRIMITIVE_DEFAULT_VALUES.put(long.class, (long) 0);
+    PRIMITIVE_DEFAULT_VALUES.put(short.class, (short) 0);
+    PRIMITIVE_DEFAULT_VALUES.put(float.class, (float) 0);
+    PRIMITIVE_DEFAULT_VALUES.put(double.class, (double) 0);
   }
 
   private Primitives() {
@@ -70,5 +82,11 @@ public final class Primitives {
     Class<?> box = PRIMITIVE_TO_WRAPPER.get(primitive);
     // either the box is null or the type assignable to it
     return box != null && boxed != null && box.isAssignableFrom(boxed.getClass());
+  }
+
+  @SuppressWarnings("unchecked")
+  public static <T> @NotNull T defaultValue(@NotNull Class<T> type) {
+    Preconditions.checkArgument(type.isPrimitive(), "type " + type + " is not primitive");
+    return (T) PRIMITIVE_DEFAULT_VALUES.get(type);
   }
 }

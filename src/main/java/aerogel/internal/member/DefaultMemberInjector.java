@@ -519,8 +519,8 @@ public final class DefaultMemberInjector implements MemberInjector {
     // check if the field is initialized
     if (settings.injectOnlyUninitializedFields()) {
       try {
-        // try to read the field value
-        return field.get(on) == null;
+        // tries to read the field value
+        return ReflectionUtils.isUninitialized(field, on);
       } catch (IllegalAccessException ignored) {
       }
     }

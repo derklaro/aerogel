@@ -25,6 +25,7 @@
 package aerogel.internal.reflect;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
@@ -33,6 +34,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class ReflectionUtils {
 
@@ -94,6 +96,18 @@ public final class ReflectionUtils {
     }
     // the method is either public or protected - it can be overridden by any inheritance
     return "public";
+  }
+
+  public static boolean isUninitialized(@NotNull Field field, @Nullable Object holder) throws IllegalAccessException {
+    // get the current field value
+    Object currentValue = field.get(holder);
+    // check if the field type is primitive - check for the default value then
+    if (isPrimitive(field.getGenericType())) {
+      return currentValue.equals(Primitives.defaultValue(field.getType()));
+    } else {
+      // for non-primitive fields the value must just be null
+      return currentValue == null;
+    }
   }
 
   public static boolean isPrimitive(@NotNull Type type) {

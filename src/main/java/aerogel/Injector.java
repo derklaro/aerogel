@@ -27,6 +27,7 @@ package aerogel;
 import aerogel.internal.DefaultInjector;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
@@ -48,6 +49,7 @@ public interface Injector {
    *
    * @return a new, empty injector instance.
    */
+  @Contract(pure = true)
   static @NotNull Injector newInjector() {
     return new DefaultInjector(null);
   }
