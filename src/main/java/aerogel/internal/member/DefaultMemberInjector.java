@@ -24,6 +24,7 @@
 
 package aerogel.internal.member;
 
+import aerogel.AerogelException;
 import aerogel.Element;
 import aerogel.InjectionContext;
 import aerogel.Injector;
@@ -46,6 +47,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -217,11 +219,13 @@ public final class DefaultMemberInjector implements MemberInjector {
 
   @Override
   public void inject(@NotNull MemberInjectionSettings settings) {
+    Objects.requireNonNull(settings, "settings");
     this.inject(settings, (InjectionContext) null);
   }
 
   @Override
   public void inject(@NotNull MemberInjectionSettings settings, @Nullable InjectionContext context) {
+    Objects.requireNonNull(settings, "settings");
     // according to the jakarta injection rules, all fields then all methods need to get injected
     // every static method must only be injected once
     // supertype fields
@@ -258,6 +262,8 @@ public final class DefaultMemberInjector implements MemberInjector {
     @NotNull MemberInjectionSettings settings,
     @Nullable InjectionContext context
   ) {
+    Objects.requireNonNull(instance, "instance");
+    Objects.requireNonNull(settings, "settings");
     // do the static member injection first
     this.inject(settings, context);
     // instance methods
@@ -269,6 +275,7 @@ public final class DefaultMemberInjector implements MemberInjector {
 
   @Override
   public void injectField(@NotNull String name) {
+    Objects.requireNonNull(name, "name");
     // try to find a static field with the given name and inject that
     for (InjectableField injectable : this.staticFields) {
       if (injectable.field.getName().equals(name)) {
@@ -282,6 +289,8 @@ public final class DefaultMemberInjector implements MemberInjector {
 
   @Override
   public void injectField(@NotNull Object instance, @NotNull String name) {
+    Objects.requireNonNull(instance, "instance");
+    Objects.requireNonNull(name, "name");
     // try to find a static field with the given name and inject that
     for (InjectableField injectable : this.staticFields) {
       if (injectable.field.getName().equals(name)) {
@@ -302,6 +311,7 @@ public final class DefaultMemberInjector implements MemberInjector {
 
   @Override
   public @Nullable Object injectMethod(@NotNull String name, @NotNull Class<?>... parameterTypes) {
+    Objects.requireNonNull(name, "name");
     // try to find a static method with the given name and inject that
     for (InjectableMethod injectable : this.staticMethods) {
       if (injectable.method.getName().equals(name) && Arrays.equals(injectable.parameterTypes, parameterTypes)) {
@@ -318,6 +328,8 @@ public final class DefaultMemberInjector implements MemberInjector {
 
   @Override
   public @Nullable Object injectMethod(@NotNull Object instance, @NotNull String name, @NotNull Class<?>... params) {
+    Objects.requireNonNull(instance, "instance");
+    Objects.requireNonNull(name, "name");
     // try to find a static method with the given name and inject that
     for (InjectableMethod injectable : this.staticMethods) {
       if (injectable.method.getName().equals(name) && Arrays.equals(injectable.parameterTypes, params)) {
@@ -419,7 +431,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       // return null if we didn't invoke the method
       return null;
     } catch (IllegalAccessException | InvocationTargetException exception) {
-      throw new IllegalArgumentException("Unable to invoke method", exception);
+      throw AerogelException.forMessagedException("Unable to invoke method", exception);
     }
   }
 
@@ -453,7 +465,7 @@ public final class DefaultMemberInjector implements MemberInjector {
         injectable.field.set(instance, fieldValue);
       }
     } catch (IllegalAccessException exception) {
-      throw new IllegalArgumentException("Unable to set field value", exception);
+      throw AerogelException.forMessagedException("Unable to set field value", exception);
     }
   }
 

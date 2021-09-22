@@ -27,29 +27,133 @@ package aerogel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Injects dependencies into class members (fields and methods). This injector is used internally to inject the members
+ * of a class after constructing it. It can be used as well to call methods or inject fields multiple times or on
+ * classes which are not created by an {@link Injector}. A member injector can only be obtained from an injector
+ * instance by using {@link Injector#memberInjector(Class)}. All members which are requesting a dependency injection
+ * must be annotated as {@link Inject}.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public interface MemberInjector {
 
+  /**
+   * Get the injector which is used for instance lookups.
+   *
+   * @return the injector which is used for instance lookups.
+   */
   @NotNull Injector injector();
 
+  /**
+   * Get the target class of this member injector. This class was provided when obtaining an instance from an injector.
+   *
+   * @return the target class of this member injector.
+   */
   @NotNull Class<?> targetClass();
 
+  /**
+   * Injects all static members of the target class using the default {@link MemberInjectionSettings}.
+   *
+   * @throws AerogelException if a field or method injection fails.
+   */
   void inject();
 
+  /**
+   * Injects all static members of the target class using the given {@code settings}.
+   *
+   * @param settings the settings to use when injecting the members.
+   * @throws AerogelException     if a field or method injection fails.
+   * @throws NullPointerException if {@code settings} is null.
+   */
   void inject(@NotNull MemberInjectionSettings settings);
 
+  /**
+   * Injects all static members of the target class using the given {@code setting} and if provided the {@code context}
+   * for instance lookups rather than the {@link #injector()}.
+   *
+   * @param settings the settings to use when injecting the members.
+   * @param context  the context in which this injection happens or null if not in a context operation.
+   * @throws AerogelException     if a field or method injection fails.
+   * @throws NullPointerException if {@code settings} is null.
+   */
   void inject(@NotNull MemberInjectionSettings settings, @Nullable InjectionContext context);
 
+  /**
+   * Inject all members into the given {@code instance} using the default {@link MemberInjectionSettings}.
+   *
+   * @param instance the instance to inject the members in.
+   * @throws AerogelException     if a field or method injection fails.
+   * @throws NullPointerException if {@code instance} is null.
+   */
   void inject(@NotNull Object instance);
 
+  /**
+   * Inject all members into the given {@code instance} using the given {@code settings}.
+   *
+   * @param instance the instance to inject the members in.
+   * @param settings the settings to use when injecting the members.
+   * @throws AerogelException     if a field or method injection fails.
+   * @throws NullPointerException if {@code instance} or {@code settings} is null.
+   */
   void inject(@NotNull Object instance, @NotNull MemberInjectionSettings settings);
 
+  /**
+   * Inject all members into the given {@code instance} using the given {@code settings} and if provided the {@code
+   * context} * for instance lookups rather than the {@link #injector()}.
+   *
+   * @param instance the instance to inject the members in.
+   * @param settings the settings to use when injecting the members.
+   * @param context  the context in which this injection happens or null if not in a context operation.
+   * @throws AerogelException     if a field or method injection fails.
+   * @throws NullPointerException if {@code instance} or {@code settings} is null.
+   */
   void inject(@NotNull Object instance, @NotNull MemberInjectionSettings settings, @Nullable InjectionContext context);
 
+  /**
+   * Injects a specific static field in the target class.
+   *
+   * @param name the name of the field to inject.
+   * @throws IllegalArgumentException if no injectable field with the given {@code name} exists.
+   * @throws AerogelException         if the field injection failed.
+   * @throws NullPointerException     if {@code name} is null.
+   */
   void injectField(@NotNull String name);
 
+  /**
+   * Injects a specific field in the target class on the given {@code instance}.
+   *
+   * @param instance the instance to inject the field on.
+   * @param name     the name of the field to inject.
+   * @throws IllegalArgumentException if no injectable field with the given {@code name} exists.
+   * @throws AerogelException         if the field injection failed.
+   * @throws NullPointerException     if {@code instance} or {@code name} is null.
+   */
   void injectField(@NotNull Object instance, @NotNull String name);
 
+  /**
+   * Injects a specific static method in the target class.
+   *
+   * @param name           the name of the method to invoke.
+   * @param parameterTypes the parameter types of the method to invoke.
+   * @return the result of the method invocation, may be null.
+   * @throws IllegalArgumentException if no injectable method with the given {@code name} exists.
+   * @throws AerogelException         if the method injection failed.
+   * @throws NullPointerException     if {@code name} is null.
+   */
   @Nullable Object injectMethod(@NotNull String name, @NotNull Class<?>... parameterTypes);
 
+  /**
+   * Injects a specific method in the target class on the given {@code instance}.
+   *
+   * @param instance       the instance to inject the method on.
+   * @param name           the name of the method to invoke.
+   * @param parameterTypes the parameter types of the method to invoke.
+   * @return the result of the method invocation, may be null.
+   * @throws IllegalArgumentException if no injectable method with the given {@code name} exists.
+   * @throws AerogelException         if the method injection failed.
+   * @throws NullPointerException     if {@code instance} or {@code name} is null.
+   */
   @Nullable Object injectMethod(@NotNull Object instance, @NotNull String name, @NotNull Class<?>... parameterTypes);
 }
