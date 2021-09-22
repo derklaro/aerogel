@@ -80,10 +80,10 @@ public class BindingsTest {
   @Test
   void testInvalidFactoryBinding() {
     Assertions.assertThrows(
-      UnsupportedOperationException.class,
+      IllegalArgumentException.class,
       () -> Injector.newInjector().install(Bindings.factory(FactoryMethodHolder.class.getMethod("constructVoid"))));
     Assertions.assertThrows(
-      UnsupportedOperationException.class,
+      IllegalArgumentException.class,
       () -> Injector.newInjector().install(Bindings.factory(FactoryMethodHolder.class.getMethod("instanceConstruct"))));
   }
 
