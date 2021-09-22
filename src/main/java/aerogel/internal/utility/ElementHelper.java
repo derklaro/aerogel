@@ -35,14 +35,30 @@ import java.util.Collection;
 import java.util.HashSet;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A helper for class for constructing {@link Element}s.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class ElementHelper {
 
+  /**
+   * An empty array of annotations used to collect all annotations in the {@code extractQualifierAnnotations} method.
+   */
   private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
 
   private ElementHelper() {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Makes an element for the given {@code field} extracting all necessary information from it.
+   *
+   * @param field       the field to build the element for.
+   * @param annotations the annotations of the field.
+   * @return the constructed element for the given field.
+   */
   public static @NotNull Element buildElement(@NotNull Field field, @NotNull Annotation[] annotations) {
     // extract the requested name
     String name = JakartaBridge.nameOf(field);
@@ -56,6 +72,13 @@ public final class ElementHelper {
     return Element.get(type).requireName(name).requireAnnotations(qualifierAnnotations);
   }
 
+  /**
+   * Makes an element for the given {@code parameter} extracting all necessary information from it.
+   *
+   * @param parameter   the parameter to make the element for.
+   * @param annotations the annotations of the parameter.
+   * @return the constructed element for the given parameter.
+   */
   public static @NotNull Element buildElement(@NotNull Parameter parameter, @NotNull Annotation[] annotations) {
     // extract the requested name
     String name = JakartaBridge.nameOf(parameter);
@@ -69,6 +92,12 @@ public final class ElementHelper {
     return Element.get(type).requireName(name).requireAnnotations(qualifierAnnotations);
   }
 
+  /**
+   * Extracts all {@link aerogel.Qualifier} annotations from the given annotation array.
+   *
+   * @param annotations the annotation array to filter the qualifier annotations from.
+   * @return a new array only containing all qualifier annotations which are in the given annotation array.
+   */
   public static Annotation @NotNull [] extractQualifierAnnotations(Annotation @NotNull [] annotations) {
     Collection<Annotation> qualifiedAnnotation = new HashSet<>();
     // extract every @Qualifier annotation

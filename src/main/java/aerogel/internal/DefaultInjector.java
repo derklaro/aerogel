@@ -44,6 +44,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 
+/**
+ * The default implementation of an injector. See {@link Injector#newInjector()}.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class DefaultInjector implements Injector {
 
   /**

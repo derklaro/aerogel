@@ -26,6 +26,12 @@ package aerogel.internal.member;
 
 import aerogel.MemberInjectionSettings;
 
+/**
+ * A default implementation of {@link MemberInjectionSettings}.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 final class DefaultMemberInjectionSettings implements MemberInjectionSettings {
 
   private final boolean injectPrivateMethods;
@@ -60,46 +66,73 @@ final class DefaultMemberInjectionSettings implements MemberInjectionSettings {
     this.injectOnlyUninitializedFields = injectOnlyUninitializedFields;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean injectPrivateMethods() {
     return this.injectPrivateMethods;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean injectStaticMethods() {
     return this.injectStaticMethods;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean injectInstanceMethods() {
     return this.injectInstanceMethods;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean injectInheritedMethods() {
     return this.injectInheritedMethods;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean injectPrivateFields() {
     return this.injectPrivateFields;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean injectStaticFields() {
     return this.injectStaticFields;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean injectInstanceFields() {
     return this.injectInstanceFields;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean injectInheritedFields() {
     return this.injectInheritedFields;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean injectOnlyUninitializedFields() {
     return this.injectOnlyUninitializedFields;

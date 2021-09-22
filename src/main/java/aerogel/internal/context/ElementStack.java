@@ -32,24 +32,56 @@ import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A stack of elements used for easy element access in the default injection context implementation.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 final class ElementStack {
 
+  /**
+   * The spacer between entries when dumping the walking stack.
+   */
   private static final String PATH_CHAINER = " => ";
 
+  /**
+   * The current stack holder we are working on.
+   */
   private final Deque<Element> stack = new ArrayDeque<>();
 
+  /**
+   * Removes all entries from the current stack.
+   */
   public void dry() {
     this.stack.clear();
   }
 
+  /**
+   * Pushes the given {@code element} to the head of the stack.
+   *
+   * @param element the element to push into the stack.
+   */
   public void push(@NotNull Element element) {
     this.stack.push(element);
   }
 
+  /**
+   * Checks if this stack contains the given {@code element}.
+   *
+   * @param element the element to check for.
+   * @return true if this stack contains the given element, false otherwise.
+   */
   public boolean has(@NotNull Element element) {
     return this.stack.contains(element);
   }
 
+  /**
+   * Searches through the whole stack for the first element which matches the given {@code filter}.
+   *
+   * @param filter the filter applied to each element in the stack.
+   * @return the first element which successfully passed the {@code filter} or null if no element passes.
+   */
   public @Nullable Element filter(@NotNull Predicate<Element> filter) {
     for (Element element : stack) {
       if (filter.test(element)) {
@@ -59,6 +91,12 @@ final class ElementStack {
     return null;
   }
 
+  /**
+   * Dumps the whole walking stack into a string beginning with the tail of the stack walking to the top of it.
+   *
+   * @param last the last element which should get append to the stack.
+   * @return the dumped walking stack, may be an empty string if the stack is empty.
+   */
   public @NotNull String dumpWalkingStack(@NotNull Element last) {
     // no element - no stack
     if (this.stack.isEmpty()) {

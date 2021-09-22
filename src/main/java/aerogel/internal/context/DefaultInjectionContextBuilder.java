@@ -28,25 +28,36 @@ import aerogel.Element;
 import aerogel.InjectionContext;
 import aerogel.InjectionContext.Builder;
 import aerogel.Injector;
-import aerogel.internal.context.DefaultInjectionContext;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A default {@link InjectionContext.Builder} implementation.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class DefaultInjectionContextBuilder implements Builder {
 
   private final Map<Element, Object> overriddenElements = new ConcurrentHashMap<>();
 
   private Injector parentInjector;
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull InjectionContext.Builder injector(@NotNull Injector injector) {
     this.parentInjector = Objects.requireNonNull(injector, "Injector must be non-null");
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull <T> InjectionContext.Builder override(@NotNull Element element, @Nullable T instance) {
     this.overriddenElements.put(
@@ -55,6 +66,9 @@ public final class DefaultInjectionContextBuilder implements Builder {
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull InjectionContext build() {
     // ensure that the necessary information are provided

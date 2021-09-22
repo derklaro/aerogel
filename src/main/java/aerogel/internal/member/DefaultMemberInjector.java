@@ -55,11 +55,26 @@ import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A default implementation of a {@link MemberInjector}.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class DefaultMemberInjector implements MemberInjector {
 
+  /**
+   * A static object array representing a no-args injection dependencies array.
+   */
   private static final Object[] NO_PARAMS = new Object[0];
 
+  /**
+   * A member injection setting which inject all members according to the setting standards.
+   */
   private static final MemberInjectionSettings ALL = MemberInjectionSettings.builder().build();
+  /**
+   * A member injection setting which only injects static members.
+   */
   private static final MemberInjectionSettings ONLY_STATIC = MemberInjectionSettings.builder()
     .injectInstanceMethods(false)
     .injectInstanceFields(false)
@@ -85,6 +100,12 @@ public final class DefaultMemberInjector implements MemberInjector {
   private final AtomicBoolean didStaticMethodInjection = new AtomicBoolean();
   private final AtomicBoolean didStaticSupertypeMethodInjection = new AtomicBoolean();
 
+  /**
+   * Constructs a new default member injection instance.
+   *
+   * @param injector the injector used for dependency instance lookups.
+   * @param target   the target class for which this injector gets created.
+   */
   public DefaultMemberInjector(@NotNull Injector injector, @NotNull Class<?> target) {
     this.injector = injector;
     this.targetClass = target;
@@ -202,27 +223,42 @@ public final class DefaultMemberInjector implements MemberInjector {
     this.onlyNotThisClass = member -> member.getDeclaringClass() != this.targetClass;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Injector injector() {
     return this.injector;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Class<?> targetClass() {
     return this.targetClass;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void inject() {
     this.inject(ONLY_STATIC);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void inject(@NotNull MemberInjectionSettings settings) {
     Objects.requireNonNull(settings, "settings");
     this.inject(settings, (InjectionContext) null);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void inject(@NotNull MemberInjectionSettings settings, @Nullable InjectionContext context) {
     Objects.requireNonNull(settings, "settings");
@@ -246,16 +282,25 @@ public final class DefaultMemberInjector implements MemberInjector {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void inject(@NotNull Object instance) {
     this.inject(instance, ALL);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void inject(@NotNull Object instance, @NotNull MemberInjectionSettings settings) {
     this.inject(instance, settings, null);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void inject(
     @NotNull Object instance,
@@ -273,6 +318,9 @@ public final class DefaultMemberInjector implements MemberInjector {
     this.injectInstanceMethods(instance, settings, context, this.onlyThisClass);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void injectField(@NotNull String name) {
     Objects.requireNonNull(name, "name");
@@ -287,6 +335,9 @@ public final class DefaultMemberInjector implements MemberInjector {
     throw new IllegalArgumentException(String.format("No static field with name %s in %s", name, this.targetClass));
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void injectField(@NotNull Object instance, @NotNull String name) {
     Objects.requireNonNull(instance, "instance");
@@ -309,6 +360,9 @@ public final class DefaultMemberInjector implements MemberInjector {
     throw new IllegalArgumentException(String.format("No field with name %s in %s", name, this.targetClass));
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @Nullable Object injectMethod(@NotNull String name, @NotNull Class<?>... parameterTypes) {
     Objects.requireNonNull(name, "name");
@@ -326,6 +380,9 @@ public final class DefaultMemberInjector implements MemberInjector {
       this.targetClass));
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @Nullable Object injectMethod(@NotNull Object instance, @NotNull String name, @NotNull Class<?>... params) {
     Objects.requireNonNull(instance, "instance");
@@ -350,6 +407,14 @@ public final class DefaultMemberInjector implements MemberInjector {
       this.targetClass));
   }
 
+  /**
+   * Inject all static fields which also pass the {@code preTester}.
+   *
+   * @param settings  the settings of the injection.
+   * @param context   the context of the injection or null if not in a context operation.
+   * @param preTester the extra tester if a field matches.
+   * @throws AerogelException if the field injection fails.
+   */
   private void injectStaticFields(
     @NotNull MemberInjectionSettings settings,
     @Nullable InjectionContext context,
@@ -366,6 +431,15 @@ public final class DefaultMemberInjector implements MemberInjector {
     }
   }
 
+  /**
+   * Injects all instance fields to the {@code instance} which also pass the {@code preTester}.
+   *
+   * @param instance  the instance to inject the fields into.
+   * @param settings  the settings of the injection.
+   * @param context   the context of the injection or null if not in a context operation.
+   * @param preTester the extra tester if a field matches.
+   * @throws AerogelException if the field injection fails.
+   */
   private void injectInstanceFields(
     @NotNull Object instance,
     @NotNull MemberInjectionSettings settings,
@@ -383,6 +457,14 @@ public final class DefaultMemberInjector implements MemberInjector {
     }
   }
 
+  /**
+   * Injects all static method which also pass the {@code preTester}.
+   *
+   * @param settings  the settings of the injection.
+   * @param context   the context of the injection or null if not in a context operation.
+   * @param preTester the extra tester if a method matches.
+   * @throws AerogelException if the method injection fails.
+   */
   private void injectStaticMethods(
     @NotNull MemberInjectionSettings settings,
     @Nullable InjectionContext context,
@@ -399,6 +481,15 @@ public final class DefaultMemberInjector implements MemberInjector {
     }
   }
 
+  /**
+   * Injects all method which also pass the {@code preTester}.
+   *
+   * @param instance  the instance to inject the methods on.
+   * @param settings  the settings of the injection.
+   * @param context   the context of the injection or null if not in a context operation.
+   * @param preTester the extra tester if a method matches.
+   * @throws AerogelException if the method injection fails.
+   */
   private void injectInstanceMethods(
     @NotNull Object instance,
     @NotNull MemberInjectionSettings settings,
@@ -416,6 +507,15 @@ public final class DefaultMemberInjector implements MemberInjector {
     }
   }
 
+  /**
+   * Injects a specific method and return the method's return value.
+   *
+   * @param instance the instance to inject the methods on, can be null if the method is static.
+   * @param method   the method to inject.
+   * @param context  the context of the injection or null if not in a context operation.
+   * @return the result of the method invocation.
+   * @throws AerogelException if the method injection fails.
+   */
   private @Nullable Object injectMethod(
     @Nullable Object instance,
     @NotNull InjectableMethod method,
@@ -435,6 +535,14 @@ public final class DefaultMemberInjector implements MemberInjector {
     }
   }
 
+  /**
+   * Injects a specific field.
+   *
+   * @param instance   the instance to inject the field on, can be null if the field is static.
+   * @param injectable the field to inject.
+   * @param context    the context of the injection or null if not in a context operation.
+   * @throws AerogelException if the field injection fails.
+   */
   private void injectField(
     @Nullable Object instance,
     @NotNull InjectableField injectable,
@@ -469,6 +577,13 @@ public final class DefaultMemberInjector implements MemberInjector {
     }
   }
 
+  /**
+   * Lookups all dependencies for injection a specific method.
+   *
+   * @param injectable the method to inject.
+   * @param context    the context of the injection or null if not in a context operation.
+   * @return all parameters needed to invoke the method.
+   */
   private @Nullable Object[] lookupParamInstances(
     @NotNull InjectableMethod injectable,
     @Nullable InjectionContext context
@@ -510,6 +625,13 @@ public final class DefaultMemberInjector implements MemberInjector {
     }
   }
 
+  /**
+   * Checks if the given method matches the given injection settings.
+   *
+   * @param method   the method to check.
+   * @param settings the settings to check against.
+   * @return true if the method matches the settings, false otherwise.
+   */
   private boolean methodMatches(@NotNull Method method, @NotNull MemberInjectionSettings settings) {
     // check if the method is private & private method injection is enabled
     if (Modifier.isPrivate(method.getModifiers()) && !settings.injectPrivateMethods()) {
@@ -519,6 +641,14 @@ public final class DefaultMemberInjector implements MemberInjector {
     return method.getDeclaringClass().equals(this.targetClass) || settings.injectInheritedMethods();
   }
 
+  /**
+   * Checks if the given field matches the given injection settings.
+   *
+   * @param field    the field to check.
+   * @param settings the settings to check against.
+   * @param on       the instance to read the value of the field is necessary, can be null for static fields.
+   * @return true if the field matches the settings, false otherwise.
+   */
   private boolean fieldMatches(@NotNull Field field, @NotNull MemberInjectionSettings settings, @Nullable Object on) {
     // check if the method is private & private method injection is enabled
     if (Modifier.isPrivate(field.getModifiers()) && !settings.injectPrivateFields()) {
@@ -540,6 +670,12 @@ public final class DefaultMemberInjector implements MemberInjector {
     return true;
   }
 
+  /**
+   * Represents a data holder for a method which prevents runtime overloads.
+   *
+   * @author Pasqual K.
+   * @since 1.0
+   */
   private static final class InjectableMethod {
 
     private final Method method;
@@ -548,6 +684,11 @@ public final class DefaultMemberInjector implements MemberInjector {
     private final Class<?>[] parameterTypes;
     private final Annotation[][] parameterAnnotations;
 
+    /**
+     * Constructs a new injectable method based on the given {@code method}.
+     *
+     * @param method the method to construct this holder for.
+     */
     public InjectableMethod(@NotNull Method method) {
       this.method = method;
       this.optional = JakartaBridge.isOptional(method);
@@ -557,12 +698,23 @@ public final class DefaultMemberInjector implements MemberInjector {
     }
   }
 
+  /**
+   * Represents a data holder for a field which prevents runtime overloads.
+   *
+   * @author Pasqual K.
+   * @since 1.0
+   */
   private static final class InjectableField {
 
     private final Field field;
     private final boolean optional;
     private final Annotation[] annotations;
 
+    /**
+     * Constructs a new injectable field based on the given {@code field}.
+     *
+     * @param field the field to construct this holder for.
+     */
     public InjectableField(@NotNull Field field) {
       this.field = field;
       this.optional = JakartaBridge.isOptional(field);

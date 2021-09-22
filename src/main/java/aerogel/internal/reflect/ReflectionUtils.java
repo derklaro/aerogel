@@ -36,12 +36,24 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A utility class to work with java reflections.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class ReflectionUtils {
 
   private ReflectionUtils() {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Ensures that the given {@code type} is instantiable.
+   *
+   * @param type the type to check.
+   * @throws UnsupportedOperationException if the type is not instantiable.
+   */
   public static void ensureInstantiable(@NotNull Type type) {
     // check if the type is a class
     if (!(type instanceof Class<?>)) {
@@ -55,10 +67,24 @@ public final class ReflectionUtils {
     }
   }
 
+  /**
+   * Gets the generic super type of the given {@link ParameterizedType}.
+   *
+   * @param type the type to get the generic super type of.
+   * @return the generic super type of the {@link ParameterizedType} or null if the type is not a parameterized type.
+   */
   public static @NotNull Type genericSuperType(@NotNull Type type) {
     return type instanceof ParameterizedType ? ((ParameterizedType) type).getActualTypeArguments()[0] : type;
   }
 
+  /**
+   * Extracts the raw type of the given {@code type}. For example a parameterized type like {@code List<String>} will
+   * result in {@code List}.
+   *
+   * @param type the type to extract the raw type of.
+   * @return the raw type of the parameterized type.
+   * @throws IllegalArgumentException if the type is a type variable or wildcard type.
+   */
   public static @NotNull Class<?> rawType(@NotNull Type type) {
     Type superType = genericSuperType(type);
     // check if the type is a normal class
@@ -76,11 +102,23 @@ public final class ReflectionUtils {
     throw new IllegalArgumentException("Unsupported type " + superType + " to unbox");
   }
 
+  /**
+   * Checks if the member is package private (has no specific access modifier)
+   *
+   * @param member the member to check.
+   * @return {@code true} if the member is package private, {@code false} otherwise.
+   */
   public static boolean isPackagePrivate(@NotNull Member member) {
     int mod = member.getModifiers();
     return !Modifier.isPublic(mod) && !Modifier.isProtected(mod) && !Modifier.isPrivate(mod);
   }
 
+  /**
+   * Creates a short unique string for the member based on the member's visibility.
+   *
+   * @param member the member to create the summary for.
+   * @return the short created visibility summary for the member.
+   */
   public static @NotNull String shortVisibilitySummary(@NotNull Member member) {
     // check if the member is package private
     // in this case we need to make the visibility summary unique by suffixing with the package name as the method
@@ -98,6 +136,15 @@ public final class ReflectionUtils {
     return "public";
   }
 
+  /**
+   * Check if the given field is uninitialized. A non-primitive field is uninitialized if it's value is null, a
+   * primitive field is considered uninitialized if it's value is equal to the default's field value.
+   *
+   * @param field  the field to check.
+   * @param holder the holder of the field if the field is not an instance field.
+   * @return true if the field is uninitialized, false otherwise.
+   * @throws IllegalAccessException if JLAC is enforced and the field is inaccessible.
+   */
   public static boolean isUninitialized(@NotNull Field field, @Nullable Object holder) throws IllegalAccessException {
     // get the current field value
     Object currentValue = field.get(holder);
@@ -110,10 +157,22 @@ public final class ReflectionUtils {
     }
   }
 
+  /**
+   * Checks if the given {@code type} is primitive.
+   *
+   * @param type the type to check.
+   * @return true if the field is primitive, false otherwise.
+   */
   public static boolean isPrimitive(@NotNull Type type) {
     return type instanceof Class<?> && ((Class<?>) type).isPrimitive();
   }
 
+  /**
+   * Builds a class tree of the extended classes of the given {@code startingPoint}.
+   *
+   * @param startingPoint the starting point from which the tree should get created.
+   * @return a full tree of all extended classes of starting from the given {@code startingPoint}.
+   */
   public static @NotNull List<Class<?>> hierarchyTree(@NotNull Class<?> startingPoint) {
     List<Class<?>> result = new ArrayList<>();
     // add all super classes of the class

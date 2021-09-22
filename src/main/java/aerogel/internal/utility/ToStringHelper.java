@@ -28,18 +28,45 @@ import java.util.Collection;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A small utility class to easily build a {@code toString} method response for any class.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class ToStringHelper {
 
+  /**
+   * The string builder to write the information of the class to.
+   */
   private final StringBuilder stringBuilder;
 
+  /**
+   * Constructs a new builder based on the given {@code instance}.
+   *
+   * @param instance the instance for which the toString method result will be created.
+   */
   public ToStringHelper(@NotNull Object instance) {
     this.stringBuilder = new StringBuilder(instance.getClass().getSimpleName()).append("(");
   }
 
+  /**
+   * Code style flow helper for creating a new builder based on the given {@code instance}.
+   *
+   * @param instance the instance for which the toString method result will be created.
+   * @return the constructed builder.
+   */
   public static @NotNull ToStringHelper from(@NotNull Object instance) {
     return new ToStringHelper(instance);
   }
 
+  /**
+   * Puts a collection into this builder, all entries of the collection will be stringified and added to this builder.
+   *
+   * @param name  the name of the collection's origin field.
+   * @param value the actual collection which should get written into the builder.
+   * @return the same instance as used to call this method, for chaining.
+   */
   public @NotNull ToStringHelper putCollection(@NotNull String name, @Nullable Collection<?> value) {
     // check if the collection is empty or null - use an empty array separator then
     if (value == null || value.isEmpty()) {
@@ -64,11 +91,24 @@ public final class ToStringHelper {
     }
   }
 
+  /**
+   * Puts the object stringified into this builder.
+   *
+   * @param name  the name of the object's origin field.
+   * @param value the object to put into this builder.
+   * @return the same instance as used to call this method, for chaining.
+   */
   public @NotNull ToStringHelper putField(@NotNull String name, @Nullable Object value) {
     this.stringBuilder.append(name).append('=').append(value).append(", ");
     return this;
   }
 
+  /**
+   * Completes the operation and builds a full {@code toString} method result from this builder. A builder can be
+   * re-used after a call to this method.
+   *
+   * @return the created {@code toString} method result based on this builder.
+   */
   public @NotNull String toString() {
     // remove the last comma if there is one
     int lastFieldIndex = this.stringBuilder.lastIndexOf(",");

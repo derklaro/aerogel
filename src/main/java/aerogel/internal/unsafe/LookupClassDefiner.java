@@ -30,10 +30,27 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A class definer for modern jvm implementation (Java 15+) which makes use of the newly added {@code defineHiddenClass}
+ * method in the {@code Lookup} class.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 final class LookupClassDefiner implements ClassDefiner {
 
+  /**
+   * The jvm trusted lookup instance. It allows access to every lookup even if the access to these classes is denied for
+   * the current module.
+   */
   private static final Lookup TRUSTED_LOOKUP;
+  /**
+   * The created option array to define a class.
+   */
   private static final Object HIDDEN_CLASS_OPTIONS;
+  /**
+   * The method to define a hidden class using a lookup instance.
+   */
   private static final Method DEFINE_HIDDEN_METHOD;
 
   static {
@@ -75,6 +92,12 @@ final class LookupClassDefiner implements ClassDefiner {
     DEFINE_HIDDEN_METHOD = defineHiddenMethod;
   }
 
+  /**
+   * Creates a new array of class options which is used to define a class in a lookup.
+   *
+   * @return the created class option array to define a class.
+   * @throws Exception if any exception occurs during the array lookup.
+   */
   @SuppressWarnings({"rawtypes", "unchecked"})
   private static @NotNull Object classOptionArray() throws Exception {
     // the ClassOption enum is a subclass of the Lookup class
@@ -87,10 +110,18 @@ final class LookupClassDefiner implements ClassDefiner {
     return resultingOptionArray;
   }
 
+  /**
+   * Get if the lookup class definer requirements are met to use the definer in the current jvm.
+   *
+   * @return if the lookup class definer requirements are met to use the definer in the current jvm.
+   */
   public static boolean isAvailable() {
     return TRUSTED_LOOKUP != null && HIDDEN_CLASS_OPTIONS != null && DEFINE_HIDDEN_METHOD != null;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Class<?> defineClass(@NotNull String name, @NotNull Class<?> parent, byte[] bytecode) {
     try {

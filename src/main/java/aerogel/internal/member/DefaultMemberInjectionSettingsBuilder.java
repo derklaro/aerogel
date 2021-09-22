@@ -27,6 +27,12 @@ package aerogel.internal.member;
 import aerogel.MemberInjectionSettings;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A default implementation of a {@link MemberInjectionSettings.Builder}.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class DefaultMemberInjectionSettingsBuilder implements MemberInjectionSettings.Builder {
 
   private boolean injectPrivateMethods = true;
@@ -39,60 +45,90 @@ public final class DefaultMemberInjectionSettingsBuilder implements MemberInject
   private boolean injectInheritedFields = true;
   private boolean injectOnlyUninitializedFields;
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull MemberInjectionSettings.Builder injectPrivateMethods(boolean injectPrivateMethods) {
     this.injectPrivateMethods = injectPrivateMethods;
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull MemberInjectionSettings.Builder injectStaticMethods(boolean injectStaticMethods) {
     this.injectStaticMethods = injectStaticMethods;
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull MemberInjectionSettings.Builder injectInstanceMethods(boolean injectInstanceMethods) {
     this.injectInstanceMethods = injectInstanceMethods;
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull MemberInjectionSettings.Builder injectInheritedMethods(boolean injectInheritedMethods) {
     this.injectInheritedMethods = injectInheritedMethods;
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull MemberInjectionSettings.Builder injectPrivateFields(boolean injectPrivateFields) {
     this.injectPrivateFields = injectPrivateFields;
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull MemberInjectionSettings.Builder injectStaticFields(boolean injectStaticFields) {
     this.injectStaticFields = injectStaticFields;
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull MemberInjectionSettings.Builder injectInstanceFields(boolean injectInstanceFields) {
     this.injectInstanceFields = injectInstanceFields;
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull MemberInjectionSettings.Builder injectInheritedFields(boolean injectInheritedFields) {
     this.injectInheritedFields = injectInheritedFields;
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull MemberInjectionSettings.Builder injectOnlyUninitializedFields(boolean injectOnlyUninitializedFields) {
     this.injectOnlyUninitializedFields = injectOnlyUninitializedFields;
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull MemberInjectionSettings build() {
     return new DefaultMemberInjectionSettings(

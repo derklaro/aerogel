@@ -27,8 +27,19 @@ package aerogel.internal.unsafe;
 import java.lang.reflect.Method;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A class defining method for legacy jvm implementations (Java 7 - 14) which is deprecated since Java 15 in honor of
+ * the Lookup class defining method. This method uses the {@code defineAnonymousClass} class provided by the jvm
+ * internal {@code Unsafe} class.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 final class UnsafeClassDefiner implements ClassDefiner {
 
+  /**
+   * The method which allows the access to the {@code defineAnonymousClass} method in {@code Unsafe}.
+   */
   private static final Method DEFINE_ANONYMOUS_CLASS;
 
   static {
@@ -51,10 +62,18 @@ final class UnsafeClassDefiner implements ClassDefiner {
     DEFINE_ANONYMOUS_CLASS = defineAnonymousClass;
   }
 
+  /**
+   * Checks if the {@code defineAnonymousClass} is available and this defining method can be used.
+   *
+   * @return if the {@code defineAnonymousClass} is available and this defining method can be used.
+   */
   public static boolean isAvailable() {
     return DEFINE_ANONYMOUS_CLASS != null;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Class<?> defineClass(@NotNull String name, @NotNull Class<?> parent, byte[] bytecode) {
     try {

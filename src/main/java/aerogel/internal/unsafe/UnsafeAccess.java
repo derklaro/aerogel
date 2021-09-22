@@ -26,9 +26,21 @@ package aerogel.internal.unsafe;
 
 import java.lang.reflect.Field;
 
+/**
+ * Gives access to the {@code Unsafe} class of the jvm which allows access to previously inaccessible magic.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 final class UnsafeAccess {
 
+  /**
+   * The {@code unsafe} class object if present.
+   */
   static final Class<?> UNSAFE_CLASS;
+  /**
+   * The jvm static {@code Unsafe} instance if present.
+   */
   static final Object THE_UNSAFE_INSTANCE;
 
   static {
@@ -53,6 +65,11 @@ final class UnsafeAccess {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Get if the {@code Unsafe} class and instance were successfully loaded.
+   *
+   * @return if the {@code Unsafe} class and instance were successfully loaded.
+   */
   static boolean isAvailable() {
     return UNSAFE_CLASS != null && THE_UNSAFE_INSTANCE != null;
   }

@@ -31,9 +31,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * A utility class for working with java's primitive types.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class Primitives {
 
+  /**
+   * Holds all primitive to its wrapper class associations. For example {@code int} is associated with {@code Integer}.
+   */
   private static final Map<Class<?>, Class<?>> PRIMITIVE_TO_WRAPPER = new ConcurrentHashMap<>(9);
+  /**
+   * Holds the default values for every primitive data type except for void as defined <a
+   * href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html">here</a>.
+   */
   private static final Map<Class<?>, Object> PRIMITIVE_DEFAULT_VALUES = new ConcurrentHashMap<>(8);
 
   static {
@@ -62,6 +75,13 @@ public final class Primitives {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Checks if the given {@code type} is assignable to the {@code boxed} object.
+   *
+   * @param type  the type to check for.
+   * @param boxed the boxed instance to check if compatible to the given {@code type}.
+   * @return true if {@code boxed} is an instance of {@code type}, false otherwise.
+   */
   public static boolean isNotPrimitiveOrIsAssignable(@NotNull Type type, @Nullable Object boxed) {
     // check if the type is a class and primitive
     if (type instanceof Class<?> && ((Class<?>) type).isPrimitive()) {
@@ -77,6 +97,13 @@ public final class Primitives {
     return boxed.getClass().equals(rawType);
   }
 
+  /**
+   * Checks if the given {@code boxed} instance is a boxed type of the given {@code primitive} class.
+   *
+   * @param primitive the primitive class to check for.
+   * @param boxed     the boxed instance to check.
+   * @return true if the boxed instance is the boxed type of the primitive class.
+   */
   public static boolean isOfBoxedType(@NotNull Class<?> primitive, @Nullable Object boxed) {
     // get the boxed type the given type should be assignable from
     Class<?> box = PRIMITIVE_TO_WRAPPER.get(primitive);
@@ -84,6 +111,14 @@ public final class Primitives {
     return box != null && boxed != null && box.isAssignableFrom(boxed.getClass());
   }
 
+  /**
+   * Gets the default value of the given {@code type}.
+   *
+   * @param type the type to get.
+   * @param <T>  the wildcard type of the class to get.
+   * @return the default initialization value of the associated primitive type.
+   * @throws IllegalArgumentException if the given {@code type} is not primitive.
+   */
   @SuppressWarnings("unchecked")
   public static <T> @NotNull T defaultValue(@NotNull Class<T> type) {
     Preconditions.checkArgument(type.isPrimitive(), "type " + type + " is not primitive");

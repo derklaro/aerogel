@@ -26,11 +26,22 @@ package aerogel.internal.unsafe;
 
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A holder class for the best class definer of the current jvm.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class ClassDefiners {
 
+  /**
+   * The jvm static instance of the best definer for the current jvm implementation.
+   */
   private static final ClassDefiner DEFINER;
 
   static {
+    // check the lookup definer first - the unsafe defining method is available for newer jvm implementation but should
+    // not be used.
     if (LookupClassDefiner.isAvailable()) {
       DEFINER = new LookupClassDefiner();
     } else if (UnsafeClassDefiner.isAvailable()) {
@@ -44,6 +55,11 @@ public final class ClassDefiners {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Get the jvm static instance of the best definer for the current jvm implementation.
+   *
+   * @return the jvm static instance of the best definer for the current jvm implementation.
+   */
   public static @NotNull ClassDefiner getDefiner() {
     return DEFINER;
   }

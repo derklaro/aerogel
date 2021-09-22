@@ -39,27 +39,51 @@ import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Represents a default implementation of an {@link InjectionContext}.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class DefaultInjectionContext implements InjectionContext {
 
+  /**
+   * A jvm static member injection setting which injects all members into a class.
+   */
   private static final MemberInjectionSettings ALL_MEMBERS = MemberInjectionSettings.builder().build();
 
   private final Injector injector;
   private final ElementStack elementStack;
   private final Map<Element, Object> knownTypes;
 
+  /**
+   * The current element which gets constructed by this context.
+   */
   private volatile Element currentElement;
 
+  /**
+   * Constructs a new injection context.
+   *
+   * @param injector        the injector which is used for instance lookups.
+   * @param overriddenTypes all types which were overridden and are already present.
+   */
   public DefaultInjectionContext(@NotNull Injector injector, @NotNull Map<Element, Object> overriddenTypes) {
     this.injector = injector;
     this.elementStack = new ElementStack();
     this.knownTypes = new HashMap<>(overriddenTypes);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Injector injector() {
     return this.injector;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   @SuppressWarnings("unchecked")
   public <T> @Nullable T findInstance(@NotNull Element element) {
@@ -107,6 +131,9 @@ public final class DefaultInjectionContext implements InjectionContext {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void constructDone(@NotNull Element element, @Nullable Object result, boolean doInjectMembers) {
     Objects.requireNonNull(element, "element");
@@ -138,6 +165,12 @@ public final class DefaultInjectionContext implements InjectionContext {
     }
   }
 
+  /**
+   * Inject all members into the given {@code result} if possible.
+   *
+   * @param element the element which holds the result.
+   * @param result  the result instance into which the members should get injected, may be null.
+   */
   private void injectMembers(@NotNull Element element, @Nullable Object result) {
     // if we do have an instance we can do the member injection directly
     if (result != null) {

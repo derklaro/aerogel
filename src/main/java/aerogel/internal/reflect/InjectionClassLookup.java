@@ -29,12 +29,27 @@ import aerogel.internal.jakarta.JakartaBridge;
 import java.lang.reflect.Constructor;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A utility class to find an injectable constructor in a class.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class InjectionClassLookup {
 
   private InjectionClassLookup() {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Finds the only injectable constructor of the class. An injectable constructor must be unique and annotated as
+   * {@link aerogel.Inject}. If no constructor in the class is annotated the no-args constructor will be used when
+   * available.
+   *
+   * @param clazz the class to find an injectable constructor in.
+   * @return the injectable constructor of the class.
+   * @throws AerogelException if zero or more than one injectable constructor was found in the given class.
+   */
   public static @NotNull Constructor<?> findInjectableConstructor(@NotNull Class<?> clazz) {
     // prevents copy of the constructors array
     Constructor<?>[] constructors = clazz.getDeclaredConstructors();

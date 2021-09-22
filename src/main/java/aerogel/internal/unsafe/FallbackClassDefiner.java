@@ -28,21 +28,55 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A class definer which defines classes using a class loader. This is a fallback method which will not work as expected
+ * on modern jvm implementations which have higher access check requirements. In normal cases this definer should never
+ * get used as the {@link UnsafeClassDefiner} should handle jvm implementations up to {@code 15} and the newer lookup
+ * based {@link LookupClassDefiner} handles jvm implementations from {@code 15}.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 final class FallbackClassDefiner implements ClassDefiner {
 
+  /**
+   * The cached defining class loaders for each class loader of the parent classes to define the class in.
+   */
   private final Map<ClassLoader, DefiningClassLoader> cache = new ConcurrentHashMap<>();
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Class<?> defineClass(@NotNull String name, @NotNull Class<?> parent, byte[] bytecode) {
     return this.cache.computeIfAbsent(parent.getClassLoader(), DefiningClassLoader::new).defineClass(name, bytecode);
   }
 
+  /**
+   * A class loader which gives access to the normally protected {@code defineClass} method.
+   *
+   * @author Pasqual K.
+   * @since 1.0
+   */
   private static final class DefiningClassLoader extends ClassLoader {
 
+    /**
+     * Creates a new defining class loader for the parent class loader of the holding class.
+     *
+     * @param parent the parent class loader for delegation.
+     */
     public DefiningClassLoader(ClassLoader parent) {
       super(parent);
     }
 
+    /**
+     * An exposed method which allows converting the given {@code bytecode} into an instance of class delegating the
+     * call to {@link ClassLoader#defineClass(String, byte[], int, int)}.
+     *
+     * @param name     the expected name of the class.
+     * @param byteCode the bytecode of the class to define.
+     * @return the constructed class object from the given {@code bytecode}.
+     */
     public @NotNull Class<?> defineClass(@NotNull String name, byte[] byteCode) {
       return super.defineClass(name, byteCode, 0, byteCode.length);
     }
