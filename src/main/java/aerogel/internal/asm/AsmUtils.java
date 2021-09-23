@@ -46,33 +46,83 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+/**
+ * A utility class for working with the asm library.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class AsmUtils {
 
+  /**
+   * The name of a constructor method.
+   */
   public static final String CONSTRUCTOR_NAME = "<init>";
+  /**
+   * The name of the static initializer method.
+   */
   public static final String STATIC_INITIALIZER_NAME = "<clinit>";
 
+  /**
+   * Accessor combination of public and final.
+   */
   public static final int PUBLIC_FINAL = ACC_PUBLIC | ACC_FINAL;
+  /**
+   * Accessor combination of private and final.
+   */
   public static final int PRIVATE_FINAL = ACC_PRIVATE | ACC_FINAL;
 
+  /**
+   * The internal name of the object class.
+   */
   public static final String OBJECT = Type.getInternalName(Object.class);
+  /**
+   * The descriptor of the object class.
+   */
   public static final String OBJECT_DESC = Type.getDescriptor(Object.class);
 
   private AsmUtils() {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Converts the given {@code desc} into a method descriptor by appending the return value to it.
+   *
+   * @param desc   the descriptor to convert.
+   * @param rValue the return value of the method.
+   * @return the method descriptor based on the given {@code desc} and {@code rValue}.
+   */
   public static @NotNull String descToMethodDesc(@NotNull String desc, @NotNull Class<?> rValue) {
     return String.format("(%s)%s", desc, Type.getDescriptor(rValue));
   }
 
+  /**
+   * A shortcut method to get the internal name of a class. The internal name of a class is its fully qualified name, as
+   * returned by Class.getName(), where {@code .} is replaced with {@code /}.
+   *
+   * @param clazz the clazz to get the internal name of.
+   * @return the internal name of the given {@code clazz}.
+   */
   public static @NotNull String intName(@NotNull Class<?> clazz) {
     return Type.getInternalName(clazz);
   }
 
+  /**
+   * A shortcut method to get the descriptor of a constructor.
+   *
+   * @param constructor the constructor to get the descriptor of.
+   * @return the descriptor of the given {@code constructor}.
+   */
   public static @NotNull String consDesc(@NotNull Constructor<?> constructor) {
     return Type.getConstructorDescriptor(constructor);
   }
 
+  /**
+   * Pushes an int to the stack choosing the best opcode for that.
+   *
+   * @param mv    the current method visitor onto which the int should get pushed.
+   * @param value the int value to push onto the stack.
+   */
   public static void pushInt(@NotNull MethodVisitor mv, int value) {
     if (value < -1) {
       mv.visitLdcInsn(value);
@@ -87,6 +137,13 @@ public final class AsmUtils {
     }
   }
 
+  /**
+   * Creates a method descriptor based on the given return type and the argument types.
+   *
+   * @param rType     the return type of the method.
+   * @param arguments all argument types of the method.
+   * @return the created method description based on the given arguments.
+   */
   public static @NotNull String methodDesc(@NotNull Class<?> rType, @NotNull Class<?>... arguments) {
     StringBuilder builder = new StringBuilder("(");
     for (Class<?> argument : arguments) {
@@ -95,14 +152,33 @@ public final class AsmUtils {
     return builder.append(')').append(Type.getDescriptor(rType)).toString();
   }
 
+  /**
+   * A shortcut method to get the descriptor of a method.
+   *
+   * @param method the method to get the descriptor of.
+   * @return the descriptor of the given {@code method}.
+   */
   public static @NotNull String methodDesc(@NotNull Method method) {
     return Type.getMethodDescriptor(method);
   }
 
+  /**
+   * Gets the opcode to return the value of the given type.
+   *
+   * @param rt the type to get the return opcode for.
+   * @return the opcode to return the given type.
+   */
   public static int returnOpCode(@NotNull Class<?> rt) {
     return Type.getType(rt).getOpcode(IRETURN);
   }
 
+  /**
+   * Begins a method visitor in the given class for a constructor with the given descriptor.
+   *
+   * @param cw   the class visitor to write the constructor in.
+   * @param desc the descriptor of the newly created constructor.
+   * @return the method visitor to continue the constructor generation.
+   */
   public static @NotNull MethodVisitor beginConstructor(@NotNull ClassVisitor cw, @NotNull String desc) {
     // add the constructor to the class
     MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, CONSTRUCTOR_NAME, desc, null, null);
@@ -115,6 +191,12 @@ public final class AsmUtils {
     return mv;
   }
 
+  /**
+   * Dumps the given class writer into a file at the given {@code target} path.
+   *
+   * @param target      the path of the file to write the class write to.
+   * @param classWriter the class writer to dump into the file.
+   */
   public static void dumpClassWriter(@NotNull Path target, @NotNull ClassWriter classWriter) {
     try {
       Files.write(target, classWriter.toByteArray());

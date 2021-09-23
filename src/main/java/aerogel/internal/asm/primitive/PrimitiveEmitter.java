@@ -27,13 +27,41 @@ package aerogel.internal.asm.primitive;
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.MethodVisitor;
 
+/**
+ * An emitter to store, load, box and unbox primitive types.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public interface PrimitiveEmitter {
 
+  /**
+   * Boxes the current top of the operand stack.
+   *
+   * @param mv the method visitor which requested the boxing.
+   */
   void box(@NotNull MethodVisitor mv);
 
+  /**
+   * Unboxes the current top of the operand stack.
+   *
+   * @param mv the method visitor which requested the unboxing.
+   */
   void unbox(@NotNull MethodVisitor mv);
 
+  /**
+   * Stores the current value to the operand stack at the given index using the appropriate opcode.
+   *
+   * @param mv         the method visitor which requested the storing.
+   * @param stackIndex the index to store the value on the operand stack at.
+   */
   void storeToStack(@NotNull MethodVisitor mv, int stackIndex);
 
+  /**
+   * Loads the value to the operand stack at the given index using the appropriate opcode.
+   *
+   * @param mv         the method visitor which requested the loading.
+   * @param stackIndex the index to load the value on the operand stack from.
+   */
   void loadFromStack(@NotNull MethodVisitor mv, int stackIndex);
 }

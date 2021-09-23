@@ -30,6 +30,12 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+/**
+ * A functional emitter which can be used for all primitive types.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public class DefaultPrimitiveEmitter implements PrimitiveEmitter {
 
   private final String wrapperClass;
@@ -40,6 +46,14 @@ public class DefaultPrimitiveEmitter implements PrimitiveEmitter {
   private final int readOpCode;
   private final int storeOpCode;
 
+  /**
+   * Constructs a new default primitive emitter instance.
+   *
+   * @param box       the type of the boxed primitive.
+   * @param primitive the primitive type.
+   * @param rop       the load opcode.
+   * @param sop       the store opcode.
+   */
   public DefaultPrimitiveEmitter(Class<?> box, Class<?> primitive, int rop, int sop) {
     this.wrapperClass = Type.getInternalName(box);
     this.boxingDescriptor = AsmUtils.methodDesc(box, primitive);
@@ -49,22 +63,34 @@ public class DefaultPrimitiveEmitter implements PrimitiveEmitter {
     this.storeOpCode = sop;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void box(@NotNull MethodVisitor mv) {
     mv.visitMethodInsn(Opcodes.INVOKESTATIC, this.wrapperClass, "valueOf", this.boxingDescriptor, false);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void unbox(@NotNull MethodVisitor mv) {
     mv.visitTypeInsn(Opcodes.CHECKCAST, this.wrapperClass);
     mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, this.wrapperClass, this.unboxingMethod, this.unboxingDescriptor, false);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void storeToStack(@NotNull MethodVisitor mv, int stackIndex) {
     mv.visitVarInsn(this.storeOpCode, stackIndex);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void loadFromStack(@NotNull MethodVisitor mv, int stackIndex) {
     mv.visitVarInsn(this.readOpCode, stackIndex);

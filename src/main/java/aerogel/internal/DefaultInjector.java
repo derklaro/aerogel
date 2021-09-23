@@ -63,6 +63,11 @@ public final class DefaultInjector implements Injector {
   // represents the binding for this injector
   private final ImmediateBindingHolder injectorBinding;
 
+  /**
+   * Constructs a new injector using the given {@code parent} injector as its parent.
+   *
+   * @param parent the parent injector of the new injector, might be null if the injector has no parent.
+   */
   public DefaultInjector(@Nullable Injector parent) {
     this.parent = parent;
     this.bindings = new ConcurrentHashMap<>();

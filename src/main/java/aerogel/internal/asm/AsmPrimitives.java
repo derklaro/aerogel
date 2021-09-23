@@ -41,8 +41,17 @@ import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
+/**
+ * A utility class to work with primitive types during code generation.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class AsmPrimitives {
 
+  /**
+   * A mapping of the primitive types to an emitter which can push the type to the operator stack.
+   */
   public static final Map<Type, PrimitiveEmitter> EMITTER = new ConcurrentHashMap<>();
 
   static {
@@ -60,6 +69,14 @@ public final class AsmPrimitives {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Stores a boxed version of the given class.
+   *
+   * @param clazz         the type which should get boxed and stored to the stack.
+   * @param methodVisitor the method visitor which requested the boxing and storing.
+   * @param index         the index to store the value on the operand stack.
+   * @return the size of the primitive type.
+   */
   public static int storeBox(@NotNull Class<?> clazz, @NotNull MethodVisitor methodVisitor, int index) {
     Type type = Type.getType(clazz);
     PrimitiveEmitter primitiveEmitter = EMITTER.get(type);
@@ -72,6 +89,12 @@ public final class AsmPrimitives {
     return type.getSize();
   }
 
+  /**
+   * Pushes a box of the given type to the operand stack.
+   *
+   * @param clazz         the type which should get boxed.
+   * @param methodVisitor the method visitor which requested the boxing.
+   */
   public static void pushBox(@NotNull Class<?> clazz, @NotNull MethodVisitor methodVisitor) {
     PrimitiveEmitter primitiveEmitter = EMITTER.get(Type.getType(clazz));
     if (primitiveEmitter != null) {
@@ -79,6 +102,14 @@ public final class AsmPrimitives {
     }
   }
 
+  /**
+   * Stores an unboxed version of the given class.
+   *
+   * @param clazz         the type which should get unboxed and stored to the stack.
+   * @param methodVisitor the method visitor which requested the unboxed and storing.
+   * @param index         the index to store the value on the operand stack.
+   * @return the size of the primitive type.
+   */
   public static int storeUnbox(@NotNull Class<?> clazz, @NotNull MethodVisitor methodVisitor, int index) {
     Type type = Type.getType(clazz);
     PrimitiveEmitter primitiveEmitter = EMITTER.get(type);
@@ -91,6 +122,12 @@ public final class AsmPrimitives {
     return type.getSize();
   }
 
+  /**
+   * Pushes an unboxed version of the given type to the operand stack.
+   *
+   * @param clazz         the type which should get unboxed.
+   * @param methodVisitor the method visitor which requested the unboxing.
+   */
   public static void pushUnbox(@NotNull Class<?> clazz, @NotNull MethodVisitor methodVisitor) {
     PrimitiveEmitter primitiveEmitter = EMITTER.get(Type.getType(clazz));
     if (primitiveEmitter != null) {
@@ -98,6 +135,14 @@ public final class AsmPrimitives {
     }
   }
 
+  /**
+   * Loads the given type to the stack if primitive.
+   *
+   * @param clazz the primitive type which should get loaded.
+   * @param mv    the method visitor which requested the loading.
+   * @param index the index of the value to load from the operand stack.
+   * @return the size of the loaded type.
+   */
   public static int load(@NotNull Class<?> clazz, @NotNull MethodVisitor mv, int index) {
     Type type = Type.getType(clazz);
     PrimitiveEmitter primitiveEmitter = EMITTER.get(type);

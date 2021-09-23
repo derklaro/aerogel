@@ -38,7 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Don't use this class directly, use {@link Element#get(Type)} instead.
+ * The default implementation of an element. See {@link Element#get(Type)}.
  *
  * @author Pasqual K.
  * @since 1.0
