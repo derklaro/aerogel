@@ -29,6 +29,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A utility class for loading classes.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class ClassLoadingUtils {
 
   private static final String ARRAY_SUFFIX = "[]";
@@ -49,6 +55,14 @@ public final class ClassLoadingUtils {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Loads a class by its name using the current thread context class loader. This will not initialize the class.
+   * Primitive classes and arrays are supported as well.
+   *
+   * @param name the name of the class to load, may be a primitive type name.
+   * @return a class object representing the requested class.
+   * @throws ClassNotFoundException if the class can not be located using the thread context class loader.
+   */
   public static @NotNull Class<?> loadClass(@NotNull String name) throws ClassNotFoundException {
     // check if the name is a primitive class
     Class<?> primitive = PRIMITIVE_CLASSES.get(name);

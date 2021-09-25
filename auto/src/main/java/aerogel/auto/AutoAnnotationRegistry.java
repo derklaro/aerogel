@@ -33,22 +33,85 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 
+/**
+ * A runtime registry for annotation loading based on emitted file output during compile time.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public interface AutoAnnotationRegistry {
 
+  /**
+   * Creates a new default implementation instance of an {@link AutoAnnotationRegistry}.
+   *
+   * @return a new default implementation instance.
+   */
   static @NotNull AutoAnnotationRegistry newInstance() {
     return new DefaultAutoAnnotationRegistry();
   }
 
+  /**
+   * An unmodifiable view of all the automated factories to load annotations.
+   *
+   * @return all the automated factories to load annotations.
+   */
   @NotNull
   @UnmodifiableView Map<String, AutoAnnotationEntry> entries();
 
+  /**
+   * Unregisters a factory by its name.
+   *
+   * @param name the name of the factory to unregister.
+   * @return the same instance as used to call the method, for chaining.
+   * @throws NullPointerException if name is null.
+   */
   @NotNull AutoAnnotationRegistry unregisterEntry(@NotNull String name);
 
+  /**
+   * Registers a new factory if its name is not already present.
+   *
+   * @param name  the name of the factory to register.
+   * @param entry the factory instance to register.
+   * @return the same instance as used to call the method, for chaining.
+   * @throws NullPointerException if name or entry is null.
+   */
   @NotNull AutoAnnotationRegistry registerEntry(@NotNull String name, @NotNull AutoAnnotationEntry entry);
 
+  /**
+   * Makes all binding constructors which were emitted to the target file.
+   *
+   * @param loader   the loader in which the file resource is located.
+   * @param fileName the name of the file resource to load.
+   * @return all constructed bindings based on the file output.
+   * @throws aerogel.AerogelException if an I/O exception occurs while loading or closing the data stream.
+   */
   @NotNull Set<BindingConstructor> makeConstructors(@NotNull ClassLoader loader, @NotNull String fileName);
 
+  /**
+   * Makes all binding constructors which were emitted to the target stream.
+   *
+   * @param emittedFile the input stream of the file to read from.
+   * @return all constructed bindings based on the file output.
+   * @throws aerogel.AerogelException if an I/O exception occurs while loading, reading or closing the data stream.
+   */
   @NotNull Set<BindingConstructor> makeConstructors(@NotNull InputStream emittedFile);
 
+  /**
+   * Makes and installs all bindings which were emitted to the target file.
+   *
+   * @param loader   the loader in which the file resource is located.
+   * @param fileName the name of the file resource to load.
+   * @param target   the injector to install the bindings to.
+   * @throws aerogel.AerogelException if an I/O exception occurs while loading or closing the data stream.
+   */
+  void installBindings(@NotNull ClassLoader loader, @NotNull String fileName, @NotNull Injector target);
+
+  /**
+   * Makes and installs all binding constructors which were emitted to the target stream.
+   *
+   * @param emittedFile the input stream of the file to read from.
+   * @param target      the injector to install the bindings to.
+   * @throws aerogel.AerogelException if an I/O exception occurs while loading, reading or closing the data stream.
+   */
   void installBindings(@NotNull InputStream emittedFile, @NotNull Injector target);
 }

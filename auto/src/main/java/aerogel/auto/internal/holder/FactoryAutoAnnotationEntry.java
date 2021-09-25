@@ -41,18 +41,32 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * An auto annotation factory implementation which supports the {@link aerogel.auto.Factory} annotation.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
 
   private final String methodName;
   private final String enclosingClass;
   private final Set<String> methodArguments;
 
+  /**
+   * Constructs a new empty factory used for deserialization.
+   */
   public FactoryAutoAnnotationEntry() {
     this.methodName = null;
     this.enclosingClass = null;
     this.methodArguments = null;
   }
 
+  /**
+   * Constructs a new element.
+   *
+   * @param element the element which was annotated.
+   */
   public FactoryAutoAnnotationEntry(@NotNull ExecutableElement element) {
     this.methodName = element.getSimpleName().toString();
     // we assume that the executable element is a method element in which case the enclosing element is the declaring class
@@ -68,6 +82,9 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void emit(@NotNull DataOutputStream out) throws IOException {
     out.writeUTF("factory"); // the processor which is responsible for the binding construction
@@ -80,6 +97,9 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Set<BindingConstructor> makeBinding(@NotNull DataInputStream in) throws IOException {
     String methodName = in.readUTF(); // the name of the factory method

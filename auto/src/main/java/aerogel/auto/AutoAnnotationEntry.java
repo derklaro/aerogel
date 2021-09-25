@@ -30,10 +30,31 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
+/**
+ * A factory for reading and re-constructing bindings to and from data streams.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public interface AutoAnnotationEntry {
 
+  /**
+   * Emits the collected data of this entry to the given data output.
+   *
+   * @param out the data output.
+   * @throws IOException if an I/O error occurs.
+   */
   void emit(@NotNull DataOutputStream out) throws IOException;
 
+  /**
+   * Re-constructs all bindings which were emitted by this factory.
+   *
+   * @param in the data input to read the data previously written from.
+   * @return the constructed bindings based on the data from the input stream.
+   * @throws IOException if an I/O error occurs.
+   */
+  @Unmodifiable
   @NotNull Set<BindingConstructor> makeBinding(@NotNull DataInputStream in) throws IOException;
 }

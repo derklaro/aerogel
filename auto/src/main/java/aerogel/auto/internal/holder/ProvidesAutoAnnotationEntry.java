@@ -41,22 +41,40 @@ import java.util.stream.Collectors;
 import javax.lang.model.element.TypeElement;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * An auto annotation factory implementation which supports the {@link Provides} annotation.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
 
   private final String bindingName;
   private final Set<String> bindings;
 
+  /**
+   * Constructs an empty entry. Used for deserialization.
+   */
   public ProvidesAutoAnnotationEntry() {
     this.bindingName = null;
     this.bindings = null;
   }
 
+  /**
+   * Constructs a new entry.
+   *
+   * @param element  the element which was annotated.
+   * @param provides the annotation.
+   */
   public ProvidesAutoAnnotationEntry(@NotNull TypeElement element, @NotNull Provides provides) {
     this.bindingName = element.getQualifiedName().toString();
     // we assume that provides has always at least one provided class
     this.bindings = Arrays.stream(provides.value()).map(Class::getName).collect(Collectors.toSet());
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void emit(@NotNull DataOutputStream out) throws IOException {
     out.writeUTF("provides"); // the processor which is responsible for the binding construction
@@ -68,6 +86,9 @@ public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Set<BindingConstructor> makeBinding(@NotNull DataInputStream in) throws IOException {
     try {

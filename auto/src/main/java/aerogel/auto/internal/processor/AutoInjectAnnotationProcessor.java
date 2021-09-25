@@ -52,6 +52,13 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * An annotation processor which will collect and emit all {@link Provides} and {@link Factory} elements to a file in
+ * the class output directory called {@code auto-factories.txt}.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
 
   // represents the open options used to emit the data of a successful processing round
@@ -72,6 +79,9 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
   // the uri of the file we want
   private Path targetFile;
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public synchronized void init(ProcessingEnvironment processingEnv) {
     // super to initialize the used 'processingEnv' field
@@ -93,17 +103,26 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public SourceVersion getSupportedSourceVersion() {
     // allows access to newer language level features than 6 & does not emit a warning during the compile process
     return SourceVersion.latestSupported();
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Set<String> getSupportedAnnotationTypes() {
     return SUPPORTED_ANNOTATIONS;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
     // check if the processing round is over
@@ -135,6 +154,12 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
     return false;
   }
 
+  /**
+   * Collects all elements which are annotated as {@link Factory}.
+   *
+   * @param env      the current processing environment.
+   * @param roundEnv the current round processing environment.
+   */
   private void collectFactories(@NotNull ProcessingEnvironment env, @NotNull RoundEnvironment roundEnv) {
     // get all members annotated as @Factory
     for (Element element : roundEnv.getElementsAnnotatedWith(Factory.class)) {
@@ -168,6 +193,12 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
     }
   }
 
+  /**
+   * Collects all elements which are annotated as {@link Provides}.
+   *
+   * @param env      the current processing environment.
+   * @param roundEnv the current round processing environment.
+   */
   private void collectProvides(@NotNull ProcessingEnvironment env, @NotNull RoundEnvironment roundEnv) {
     // get all members annotated as @Provides
     for (Element element : roundEnv.getElementsAnnotatedWith(Provides.class)) {

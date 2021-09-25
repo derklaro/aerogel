@@ -44,26 +44,45 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 
+/**
+ * A default implementation of an {@link AutoAnnotationRegistry}.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegistry {
 
   private final Map<String, AutoAnnotationEntry> entries = new ConcurrentHashMap<>();
 
+  /**
+   * Constructs a new factory which by default supports the {@link aerogel.auto.Factory} and {@link
+   * aerogel.auto.Provides} annotation.
+   */
   public DefaultAutoAnnotationRegistry() {
     this.entries.put("factory", new FactoryAutoAnnotationEntry());
     this.entries.put("provides", new ProvidesAutoAnnotationEntry());
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull @UnmodifiableView Map<String, AutoAnnotationEntry> entries() {
     return Collections.unmodifiableMap(this.entries);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull AutoAnnotationRegistry unregisterEntry(@NotNull String name) {
     this.entries.remove(requireNonNull(name, "name"));
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull AutoAnnotationRegistry registerEntry(@NotNull String name, @NotNull AutoAnnotationEntry entry) {
     requireNonNull(name, "name");
@@ -73,6 +92,9 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
     return this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Set<BindingConstructor> makeConstructors(@NotNull ClassLoader loader, @NotNull String fileName) {
     try (InputStream in = loader.getResourceAsStream(fileName)) {
@@ -87,6 +109,9 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull Set<BindingConstructor> makeConstructors(@NotNull InputStream emittedFile) {
     try (DataInputStream in = new DataInputStream(emittedFile)) {
@@ -117,6 +142,20 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void installBindings(@NotNull ClassLoader loader, @NotNull String fileName, @NotNull Injector target) {
+    // load all the bindings constructors and install them to the injector
+    for (BindingConstructor constructor : this.makeConstructors(loader, fileName)) {
+      target.install(constructor);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void installBindings(@NotNull InputStream emittedFile, @NotNull Injector target) {
     // load all the bindings constructors and install them to the injector
