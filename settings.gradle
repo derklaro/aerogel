@@ -25,3 +25,6 @@
 rootProject.name = 'aerogel'
 
 include 'auto'
+
+// prefixes each sub project with 'aerogel-'
+rootProject.children.forEach(proj -> proj.name = 'aerogel-' + proj.name)
