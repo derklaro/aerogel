@@ -7,8 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '8', '11', '16' ]
-    name: Build on Java ${{ matrix.Java }}
+        java: [ '8', '11', '17' ]
+    name: Build on Java ${{ matrix.java }}
     steps:
       - uses: actions/checkout@v2
       - uses: gradle/wrapper-validation-action@v1
