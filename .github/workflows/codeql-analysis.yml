@@ -2,9 +2,7 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ dev, release ]
   pull_request:
-    branches: [ dev ]
   schedule:
     - cron: '00 2 * * *'
 
@@ -23,16 +21,16 @@ jobs:
         language: [ 'java' ]
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
-      with:
-        languages: ${{ matrix.language }}
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: ${{ matrix.language }}
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v1
 
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1
