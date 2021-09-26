@@ -28,11 +28,12 @@ plugins {
 }
 
 allprojects {
-  group 'com.github.derklaro'
+  group 'io.github.derklaro'
   version '1.0.0-SNAPSHOT'
 
   defaultTasks 'build', 'checkLicenses', 'test', 'jar'
 
+  apply plugin: 'signing'
   apply plugin: 'checkstyle'
   apply plugin: 'java-library'
   apply plugin: 'maven-publish'
@@ -62,6 +63,17 @@ allprojects {
     useJUnitPlatform()
   }
 
+  java {
+    withJavadocJar()
+    withSourcesJar()
+  }
+
+  javadoc {
+    if (JavaVersion.current().isJava9Compatible()) {
+      options.addBooleanOption('html5', true)
+    }
+  }
+
   compileJava {
     sourceCompatibility = '8'
     targetCompatibility = '8'
@@ -71,10 +83,55 @@ allprojects {
 
   publishing {
     publications {
-      maven(MavenPublication) {
+      create("library", MavenPublication.class) {
         from components.java
+        artifactId = project.name
+
+        pom {
+          name = project.name
+          description = project.description
+          url = 'https://github.com/derklaro/aerogel'
+
+          licenses {
+            license {
+              name = 'The MIT License'
+              url = 'https://opensource.org/licenses/MIT'
+            }
+          }
+
+          scm {
+            url = 'https://github.com/derklaro/aerogel'
+            connection = 'scm:git:git://github.com/derklaro/aerogel.git'
+            developerConnection = 'scm:git:ssh://github.com/derklaro/aerogel.git'
+          }
+
+          issueManagement {
+            system = 'GitHub Issues'
+            url = 'https://github.com/derklaro/aerogel/issues'
+          }
+        }
       }
     }
+
+    repositories {
+      maven {
+        if (project.version.endsWith('-SNAPSHOT')) {
+          url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+        } else {
+          url 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+        }
+
+        credentials {
+          username = project.hasProperty('ossrhUsername') ? project.property('ossrhUsername') : ''
+          password = project.hasProperty('ossrhPassword') ? project.property('ossrhPassword') : ''
+        }
+      }
+    }
+  }
+
+  signing {
+    useGpgCmd()
+    sign publishing.publications.library
   }
 
   checkstyle {
