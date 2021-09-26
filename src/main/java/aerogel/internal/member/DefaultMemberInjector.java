@@ -183,7 +183,6 @@ public final class DefaultMemberInjector implements MemberInjector {
           // check if the field is final - we cannot inject them as the modifiers field was added to the reflection
           // blocklist in Java 12 and a warning gets emitted since Java 9. There is no point to support this behaviour
           // for Java 8 users...
-          // @todo: we could use codegen here - this allows access & modify of final fields
           if (Modifier.isFinal(field.getModifiers())) {
             throw new IllegalArgumentException(String.format(
               "Field %s in %s is final and cannot get injected",
