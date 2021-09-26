@@ -127,8 +127,8 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     // construct the value
     T value = (T) this.constructor.getInstance(context);
     // push the construction done notice to the context
-    context.constructDone(this.targetType, value, false);
-    context.constructDone(this.bindingType, value, true);
+    context.constructDone(this.targetType, value, true);
+    context.constructDone(this.bindingType, value, false);
     // return
     return value;
   }
