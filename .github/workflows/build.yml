@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         java: [ '8', '11', '17' ]
-    name: Build on Java ${{ matrix.java }}
+    name: ${{ matrix.java }}
 
     steps:
       - name: Checkout repository
