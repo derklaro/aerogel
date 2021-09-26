@@ -22,10 +22,15 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel.kotlin
 
-include 'auto'
-include 'kotlin-extensions'
+import aerogel.Element
 
-// prefixes each sub project with 'aerogel-'
-rootProject.children.forEach(proj -> proj.name = 'aerogel-' + proj.name)
+/**
+ * Creates a new [Element] for the specified generic type [T].
+ *
+ * @see Element.get
+ * @author Pasqual K.
+ * @since 1.0
+ */
+inline fun <reified T> get() = Element.get(T::class.java)

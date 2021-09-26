@@ -24,21 +24,20 @@
 
 plugins {
   id 'org.cadixdev.licenser' version '0.6.1' apply false
-  id 'com.github.johnrengelman.shadow' version '7.0.0' apply false
+  id 'com.github.johnrengelman.shadow' version '7.0.0'
 }
 
 allprojects {
   group 'io.github.derklaro'
   version '1.0.0-SNAPSHOT'
 
-  defaultTasks 'build', 'checkLicenses', 'test', 'jar'
+  defaultTasks 'build', 'checkLicenses', 'test', 'shadowJar'
 
   apply plugin: 'signing'
   apply plugin: 'checkstyle'
   apply plugin: 'java-library'
   apply plugin: 'maven-publish'
   apply plugin: 'org.cadixdev.licenser'
-  apply plugin: 'com.github.johnrengelman.shadow'
 
   repositories {
     mavenLocal()
@@ -64,8 +63,11 @@ allprojects {
   }
 
   java {
-    withJavadocJar()
     withSourcesJar()
+    // javadoc is only required for java projects - we use dokka on kotlin projects
+    if (!project.name.contains('kotlin')) {
+      withJavadocJar()
+    }
   }
 
   javadoc {
@@ -145,7 +147,9 @@ allprojects {
   }
 
   license {
+    include '**/*.kt'
     include '**/*.java'
+    include '**/*.gradle'
     header = project.rootProject.file('license_header.txt')
   }
 

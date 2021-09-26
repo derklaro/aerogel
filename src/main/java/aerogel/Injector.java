@@ -161,7 +161,7 @@ public interface Injector {
   @Nullable BindingHolder bindingOrNull(@NotNull Element element);
 
   /**
-   * Get the stored binding for the given {@code element} in this constructor.
+   * Get the stored binding for the given {@code element} in this injector.
    *
    * @param element the element of the binding to get.
    * @return the stored binding for the given element target or null if no type is stored for the element.

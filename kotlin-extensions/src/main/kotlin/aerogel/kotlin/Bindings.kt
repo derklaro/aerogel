@@ -22,10 +22,29 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+package aerogel.kotlin
 
-include 'auto'
-include 'kotlin-extensions'
+import aerogel.BindingConstructor
+import aerogel.Bindings
 
-// prefixes each sub project with 'aerogel-'
-rootProject.children.forEach(proj -> proj.name = 'aerogel-' + proj.name)
+/**
+ * Creates a new constructing binding holder for the given generic type [T].
+ *
+ * @throws IllegalArgumentException      if {@code element} has an invalid component type.
+ * @throws UnsupportedOperationException if the type of {@code element} is not instantiable.
+ * @throws aerogel.AerogelException      if the class has zero or more than one injectable constructors.
+ * @see Bindings.constructing
+ * @author Pasqual K.
+ * @since 1.0
+ */
+inline fun <reified T> constructing(): BindingConstructor = Bindings.constructing(get<T>())
+
+/**
+ * Creates a new binding constructor for the generic type [T] which always return the given [value].
+ *
+ * @throws IllegalArgumentException if {@code element} is not assignable to {@code value}.
+ * @see Bindings.fixed
+ * @author Pasqual K.
+ * @since 1.0
+ */
+inline fun <reified T> fixed(value: Any): BindingConstructor = Bindings.fixed(get<T>(), value)
