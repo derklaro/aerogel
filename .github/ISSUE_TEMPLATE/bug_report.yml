@@ -11,7 +11,7 @@ body:
   - type: dropdown
     id: area
     attributes:
-      label: area
+      label: Area
       description: "In which area of aerogel did you encounter the bug?"
       options:
         - Core
