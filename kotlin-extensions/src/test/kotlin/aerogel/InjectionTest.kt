@@ -24,7 +24,7 @@
 
 package aerogel
 
-import aerogel.kotlin.get
+import aerogel.kotlin.element
 import aerogel.kotlin.instance
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -34,7 +34,7 @@ class InjectionTest {
   @Test
   fun `constructor injection`() {
     val injector = Injector.newInjector()
-    injector.install(Bindings.fixed(get<String>().requireName("Hello World"), "1234"))
+    injector.install(Bindings.fixed(element<String>().requireName("Hello World"), "1234"))
 
     val depends = injector.instance<DependingOnTest>()
     Assertions.assertNotNull(depends)
@@ -44,8 +44,8 @@ class InjectionTest {
   @Test
   fun `constructor and member injection`() {
     val injector = Injector.newInjector()
-    injector.install(Bindings.fixed(get<String>().requireName("Hello World"), "1234"))
-    injector.install(Bindings.fixed(get<String>().requireName("Hello there"), "12345"))
+    injector.install(Bindings.fixed(element<String>().requireName("Hello World"), "1234"))
+    injector.install(Bindings.fixed(element<String>().requireName("Hello there"), "12345"))
 
     val two = injector.instance<TestClass2>()
     Assertions.assertNotNull(two)
@@ -58,8 +58,8 @@ class InjectionTest {
   @Test
   fun `exception on val member injection request`() {
     val injector = Injector.newInjector()
-    injector.install(Bindings.fixed(get<String>().requireName("Hello World"), "1234"))
-    injector.install(Bindings.fixed(get<String>().requireName("Hello there"), "12345"))
+    injector.install(Bindings.fixed(element<String>().requireName("Hello World"), "1234"))
+    injector.install(Bindings.fixed(element<String>().requireName("Hello there"), "12345"))
 
     Assertions.assertThrows(AerogelException::class.java) {
       injector.instance<TestClass3>()

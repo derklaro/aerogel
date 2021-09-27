@@ -36,7 +36,7 @@ import aerogel.MemberInjector
  * @author Pasqual K.
  * @since 1.0
  */
-inline fun <reified T> Injector.instance(): T? = this.instance(get<T>())
+inline fun <reified T> Injector.instance(): T? = this.instance(element<T>())
 
 /**
  * Creates or gets the binding of the specified generic type [T].
@@ -46,7 +46,7 @@ inline fun <reified T> Injector.instance(): T? = this.instance(get<T>())
  * @author Pasqual K.
  * @since 1.0
  */
-inline fun <reified T> Injector.binding(): BindingHolder = this.binding(get<T>())
+inline fun <reified T> Injector.binding(): BindingHolder = this.binding(element<T>())
 
 /**
  * Get the stored binding of the generic type [T] in the current injector or null if not present.
@@ -55,7 +55,7 @@ inline fun <reified T> Injector.binding(): BindingHolder = this.binding(get<T>()
  * @author Pasqual K.
  * @since 1.0
  */
-inline fun <reified T> Injector.fastBinding(): BindingHolder? = this.fastBinding(get<T>())
+inline fun <reified T> Injector.fastBinding(): BindingHolder? = this.fastBinding(element<T>())
 
 /**
  * Retrieves the binding in the current injector and all parent injector of the generic type [T] or null if none of the
@@ -65,7 +65,7 @@ inline fun <reified T> Injector.fastBinding(): BindingHolder? = this.fastBinding
  * @author Pasqual K.
  * @since 1.0
  */
-inline fun <reified T> Injector.bindingOrNull(): BindingHolder? = this.bindingOrNull(get<T>())
+inline fun <reified T> Injector.bindingOrNull(): BindingHolder? = this.bindingOrNull(element<T>())
 
 /**
  * Get or creates a member injector for the generic type [T].

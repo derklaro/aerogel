@@ -33,4 +33,4 @@ import aerogel.Element
  * @author Pasqual K.
  * @since 1.0
  */
-inline fun <reified T> get() = Element.get(T::class.java)
+inline fun <reified T> element() = Element.get(T::class.java)

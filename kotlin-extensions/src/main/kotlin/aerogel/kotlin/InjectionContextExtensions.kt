@@ -34,7 +34,7 @@ import aerogel.InjectionContext.Builder
  * @author Pasqual K.
  * @since 1.0
  */
-inline fun <reified T> InjectionContext.findInstance(): T? = this.findInstance(get<T>())
+inline fun <reified T> InjectionContext.findInstance(): T? = this.findInstance(element<T>())
 
 /**
  * Used to indicate that the construction of [result] typed [T] was done successfully. The resulting instance may be
@@ -45,7 +45,7 @@ inline fun <reified T> InjectionContext.findInstance(): T? = this.findInstance(g
  * @since 1.0
  */
 inline fun <reified T> InjectionContext.constructDone(result: Any?, injectMembers: Boolean = true) {
-  this.constructDone(get<T>(), result, injectMembers)
+  this.constructDone(element<T>(), result, injectMembers)
 }
 
 /**
@@ -55,4 +55,4 @@ inline fun <reified T> InjectionContext.constructDone(result: Any?, injectMember
  * @author Pasqual K.
  * @since 1.0
  */
-inline fun <reified T> Builder.override(value: T?): Builder = this.override(get<T>(), value)
+inline fun <reified T> Builder.override(value: T?): Builder = this.override(element<T>(), value)

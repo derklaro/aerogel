@@ -37,7 +37,7 @@ import aerogel.Bindings
  * @author Pasqual K.
  * @since 1.0
  */
-inline fun <reified T> constructing(): BindingConstructor = Bindings.constructing(get<T>())
+inline fun <reified T> constructing(): BindingConstructor = Bindings.constructing(element<T>())
 
 /**
  * Creates a new binding constructor for the generic type [T] which always return the given [value].
@@ -47,4 +47,4 @@ inline fun <reified T> constructing(): BindingConstructor = Bindings.constructin
  * @author Pasqual K.
  * @since 1.0
  */
-inline fun <reified T> fixed(value: Any): BindingConstructor = Bindings.fixed(get<T>(), value)
+inline fun <reified T> fixed(value: Any): BindingConstructor = Bindings.fixed(element<T>(), value)
