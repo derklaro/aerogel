@@ -150,7 +150,7 @@ public final class ReflectionUtils {
     Object currentValue = field.get(holder);
     // check if the field type is primitive - check for the default value then
     if (isPrimitive(field.getGenericType())) {
-      return currentValue.equals(Primitives.defaultValue(field.getType()));
+      return currentValue != null && currentValue.equals(Primitives.defaultValue(field.getType()));
     } else {
       // for non-primitive fields the value must just be null
       return currentValue == null;
