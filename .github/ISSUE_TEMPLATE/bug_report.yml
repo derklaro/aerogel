@@ -1,0 +1,62 @@
+name: "\U0001F41E Bug report"
+description: "Create an issue which describes a bug in aerogel"
+title: '[Bug]: '
+labels: [ "bug" ]
+
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for taking the time to file this bug report!"
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: area
+      description: "In which area of aerogel did you encounter the bug?"
+      options:
+        - Core
+        - Auto
+        - Kotlin-Extensions
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: "What happened?"
+      description: "Please describe in a few sentences what happened"
+      value: "A bug happened :/"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-should-happen
+    attributes:
+      label: "What should happen?"
+      description: "Please describe in a few sentences what you expected to happen"
+      value: "No bug i suppose :)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: code
+    attributes:
+      label: "The issue triggering code"
+      description: "Please append (if possible) the code that triggered the described issue"
+
+  - type: textarea
+    id: exception
+    attributes:
+      label: "The triggered exception"
+      description: "Please append (if possible) the exception which happened. There might be no exception."
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Terms
+      description: |
+        Please check if there are no other issues that already target the described issue and if you filled everything
+        to the best of our knowledge and belief
+      options:
+        - label: "Yes i did"
+          required: true

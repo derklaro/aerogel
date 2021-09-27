@@ -1,0 +1,45 @@
+name: "\U0001F4A1 Feature request"
+description: "Create an issue describing a feature that would be nice to have"
+title: '[Request]: '
+labels: [ "enhancement" ]
+
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for taking the time file an issue request."
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: area
+      description: "In which area of aerogel do you want to see the new feature?"
+      options:
+        - Core
+        - Auto
+        - Kotlin-Extensions
+        - New module
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the new feature
+      description: "Describe the new feature you want to see in aerogel with enough detail for everyone to understand"
+    validations:
+      required: true
+
+  - type: textarea
+    id: current-workaround
+    attributes:
+      label: Is there a workaround you are currently using?
+      description: "Describe the workaround in a few sentences you are currently using if there is one"
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Terms
+      description: "Please check if there are no other issues that already target the described feature"
+      options:
+        - label: "Yes i did"
+          required: true
