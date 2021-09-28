@@ -189,6 +189,53 @@ To run the full build lifecycle you can just execute `./gradlew` or `gradlew.bat
 system. The final jar, javadoc jar and sources jar are now located in `**/build/libs`. All tasks which are possible to
 be executed can be listed by running `./gradlew tasks` or `gradlew.bat tasks`.
 
+Publishing
+--------
+
+The library gets published on a regular basis to the sonatype snapshot repository if there are in-development changes.
+You can get these versions by using the current snapshot version and adding the sonatype repository as a maven
+repository to your build:
+
+```groovy
+repositories {
+  maven {
+    name 'sonatype-snapshots'
+    url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+  }
+}
+```
+
+Releases are published to the maven central repository and jitpack:
+
+```groovy
+repositories {
+  // to use the releases from maven-central
+  mavenCentral()
+  // alternative to mavenCentral()
+  maven {
+    name 'central'
+    url 'https://repo1.maven.org/maven2/'
+  }
+  // to use the releases from jitpack
+  maven {
+    name 'jitpack'
+    url 'https://jitpack.io/'
+  }
+}
+```
+
+### GitHub Releases
+
+Every release version of aerogel has a [release](https://github.com/derklaro/aerogel/releases) in the repository.
+Release candidates gets tagged as `Pre-release`.
+
+### Version naming
+
+- `<version>-SNAPSHOT`: the current development snapshot, will be located in the sonatype snapshot repository.
+- `<version->-RC<rc-version-count>`: the current pre-release. The development process of the next version ended but
+  needs more testing before an actual release.
+- `<version>`: A stable release version of aerogel.
+
 JSR 330
 --------
 
