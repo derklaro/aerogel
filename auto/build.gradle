@@ -3,3 +3,7 @@ description = 'Extension for aerogel supporting automatic binding creation compi
 dependencies {
   implementation rootProject
 }
+
+test {
+  dependsOn ':shadowJar'
+}

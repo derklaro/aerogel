@@ -9,6 +9,10 @@ dependencies {
   implementation rootProject
 }
 
+test {
+  dependsOn ':shadowJar'
+}
+
 task dokkaJavadocJar(type: Jar) {
   from dokkaJavadoc
   archiveClassifier.set('javadoc')

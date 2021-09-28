@@ -173,8 +173,8 @@ nexusPublishing {
       nexusUrl.set(uri('https://s01.oss.sonatype.org/service/local/'))
       snapshotRepositoryUrl.set(uri('https://s01.oss.sonatype.org/content/repositories/snapshots/'))
 
-      username.set(project.property('ossrhUsername'))
-      password.set(project.property('ossrhPassword'))
+      username.set(project.hasProperty('ossrhUsername') ? project.property('ossrhUsername') : '')
+      password.set(project.hasProperty('ossrhPassword') ? project.property('ossrhPassword') : '')
     }
   }
 
