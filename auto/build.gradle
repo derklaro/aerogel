@@ -1,3 +1,5 @@
+description = 'Extension for aerogel supporting automatic binding creation compile and runtime based'
+
 dependencies {
   implementation rootProject
 }

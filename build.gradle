@@ -23,8 +23,9 @@
  */
 
 plugins {
-  id 'org.cadixdev.licenser' version '0.6.1' apply false
+  id 'org.cadixdev.licenser' version '0.6.1'
   id 'com.github.johnrengelman.shadow' version '7.0.0'
+  id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
 }
 
 allprojects {
@@ -86,18 +87,23 @@ allprojects {
   publishing {
     publications {
       create("library", MavenPublication.class) {
-        from components.java
-        artifactId = project.name
+        from project.components.java
 
         pom {
           name = project.name
-          description = project.description
           url = 'https://github.com/derklaro/aerogel'
 
           licenses {
             license {
               name = 'The MIT License'
               url = 'https://opensource.org/licenses/MIT'
+            }
+          }
+
+          developers {
+            developer {
+              name = 'Pasqual Koschmieder'
+              email = 'pasqual.koschmieder@gmail.com'
             }
           }
 
@@ -111,21 +117,10 @@ allprojects {
             system = 'GitHub Issues'
             url = 'https://github.com/derklaro/aerogel/issues'
           }
-        }
-      }
-    }
 
-    repositories {
-      maven {
-        if (project.version.endsWith('-SNAPSHOT')) {
-          url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
-        } else {
-          url 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
-        }
-
-        credentials {
-          username = project.hasProperty('ossrhUsername') ? project.property('ossrhUsername') : ''
-          password = project.hasProperty('ossrhPassword') ? project.property('ossrhPassword') : ''
+          afterEvaluate {
+            description = project.description
+          }
         }
       }
     }
@@ -168,4 +163,20 @@ allprojects {
     reproducibleFileOrder = true
     preserveFileTimestamps = false
   }
+}
+
+description = 'A very lightweight jvm dependency injection framework'
+
+nexusPublishing {
+  repositories {
+    sonatype {
+      nexusUrl.set(uri('https://s01.oss.sonatype.org/service/local/'))
+      snapshotRepositoryUrl.set(uri('https://s01.oss.sonatype.org/content/repositories/snapshots/'))
+
+      username.set(project.property('ossrhUsername'))
+      password.set(project.property('ossrhPassword'))
+    }
+  }
+
+  useStaging.set(!project.rootProject.version.endsWith('-SNAPSHOT'))
 }

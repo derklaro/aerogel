@@ -3,6 +3,8 @@ plugins {
   id 'org.jetbrains.kotlin.jvm' version '1.6.0-M1'
 }
 
+description = 'Extension for aerogel supporting the enhanced kotlin inline generics'
+
 dependencies {
   implementation rootProject
 }
