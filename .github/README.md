@@ -1,4 +1,4 @@
-Aerogel ![Build Status](https://github.com/derklaro/aerogel/actions/workflows/build.yml/badge.svg) ![Central Release Version](https://img.shields.io/maven-central/v/io.github.derklaro/aerogel)
+Aerogel ![Build Status](https://github.com/derklaro/aerogel/actions/workflows/build.yml/badge.svg) ![LGTM quality rating](https://img.shields.io/lgtm/grade/java/github/derklaro/aerogel) ![Central Release Version](https://img.shields.io/maven-central/v/io.github.derklaro/aerogel)
 ===========
 
 A lightweight dependency injection framework for Java 8 - 17 which aims for stability, performance and reliability.
