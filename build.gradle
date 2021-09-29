@@ -30,7 +30,7 @@ plugins {
 
 allprojects {
   group 'io.github.derklaro'
-  version '1.0.1-SNAPSHOT'
+  version '1.2.0-SNAPSHOT'
 
   defaultTasks 'build', 'checkLicenses', 'test', 'shadowJar'
 
@@ -177,10 +177,8 @@ allprojects {
   }
 
   tasks.withType(Sign) {
-    gradle.taskGraph.whenReady { graph ->
-      onlyIf {
-        graph.hasTask('publishToSonatype')
-      }
+    onlyIf {
+      !project.rootProject.version.endsWith('-SNAPSHOT')
     }
   }
 }
