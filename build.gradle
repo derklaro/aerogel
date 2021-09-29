@@ -30,7 +30,7 @@ plugins {
 
 allprojects {
   group 'io.github.derklaro'
-  version '1.0.0'
+  version '1.0.1-SNAPSHOT'
 
   defaultTasks 'build', 'checkLicenses', 'test', 'shadowJar'
 
@@ -72,8 +72,13 @@ allprojects {
   }
 
   javadoc {
+    options.encoding = 'UTF-8'
+    options.windowTitle = 'Aerogel Javadocs'
+    options.memberLevel = JavadocMemberLevel.PRIVATE
+    options.addStringOption 'Xdoclint:none', '-quiet'
+
     if (JavaVersion.current().isJava9Compatible()) {
-      options.addBooleanOption('html5', true)
+      options.addBooleanOption 'html5', true
     }
   }
 
@@ -162,6 +167,14 @@ allprojects {
   tasks.withType(AbstractArchiveTask) {
     reproducibleFileOrder = true
     preserveFileTimestamps = false
+  }
+
+  tasks.withType(Sign) {
+    gradle.taskGraph.whenReady { graph ->
+      onlyIf {
+        graph.hasTask('publishToSonatype')
+      }
+    }
   }
 }
 
