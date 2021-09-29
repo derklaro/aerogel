@@ -33,6 +33,7 @@ import aerogel.internal.codegen.InstanceMaker;
 import aerogel.internal.jakarta.JakartaBridge;
 import aerogel.internal.reflect.InjectionClassLookup;
 import aerogel.internal.reflect.ReflectionUtils;
+import aerogel.internal.utility.ElementHelper;
 import java.lang.reflect.Constructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -82,7 +83,7 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     ProvidedBy provided = type.getAnnotation(ProvidedBy.class);
     // create a binding holder based on the information
     if (provided != null) {
-      return create(injector, element, Element.get(provided.value()));
+      return create(injector, element, ElementHelper.buildElement(provided.value()));
     } else {
       // check if we can construct the type
       ReflectionUtils.ensureInstantiable(type);
