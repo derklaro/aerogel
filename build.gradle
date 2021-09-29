@@ -89,6 +89,13 @@ allprojects {
     options.encoding = 'UTF-8'
   }
 
+  compileTestJava {
+    sourceCompatibility = '8'
+    targetCompatibility = '8'
+
+    options.encoding = 'UTF-8'
+  }
+
   publishing {
     publications {
       create("library", MavenPublication.class) {
