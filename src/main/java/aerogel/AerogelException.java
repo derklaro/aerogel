@@ -27,31 +27,77 @@ package aerogel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * The core exception wrapping any message or other exception thrown when working with aerogel.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
 public final class AerogelException extends RuntimeException {
 
   private final boolean allowStackTrace;
 
+  /**
+   * Creates a new aerogel exception instance.
+   *
+   * @param message         the message of the exception.
+   * @param throwable       the cause of the exception.
+   * @param allowStackTrace if a stack trace should be appended when throwing the exception.
+   */
   private AerogelException(String message, Throwable throwable, boolean allowStackTrace) {
     super(message, throwable);
     this.allowStackTrace = allowStackTrace;
   }
 
+  /**
+   * Creates a new aerogel exception with the given message and enabled stack trace.
+   *
+   * @param message the message of the exception.
+   * @return the created exception instance.
+   */
   public static @NotNull AerogelException forMessage(@NotNull String message) {
     return of(message, null, true);
   }
 
+  /**
+   * Creates a new aerogel exception with the given message and disabled stack trace.
+   *
+   * @param message the message of the exception.
+   * @return the created exception instance.
+   */
   public static @NotNull AerogelException forMessageWithoutStack(@NotNull String message) {
     return of(message, null, false);
   }
 
+  /**
+   * Creates a new aerogel exception with the given cause and enabled stack trace.
+   *
+   * @param exception the cause of the exception.
+   * @return the created exception instance.
+   */
   public static @NotNull AerogelException forException(@NotNull Throwable exception) {
     return of(null, exception, true);
   }
 
+  /**
+   * Creates a new aerogel exception with the given message and cause. Stacktrace is enabled.
+   *
+   * @param message   the message of the exception.
+   * @param exception the cause of the exception.
+   * @return the created exception instance.
+   */
   public static @NotNull AerogelException forMessagedException(@NotNull String message, @NotNull Throwable exception) {
     return of(message, exception, true);
   }
 
+  /**
+   * Creates a new aerogel exception instance.
+   *
+   * @param message         the message of the exception.
+   * @param throwable       the cause of the exception.
+   * @param allowStackTrace if a stack trace should be appended when throwing the exception.
+   * @return the created exception instance.
+   */
   public static @NotNull AerogelException of(
     @Nullable String message,
     @Nullable Throwable throwable,
@@ -60,11 +106,17 @@ public final class AerogelException extends RuntimeException {
     return new AerogelException(message, throwable, allowStackTrace);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public synchronized Throwable initCause(Throwable cause) {
     return this.allowStackTrace ? super.initCause(cause) : this;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public synchronized Throwable fillInStackTrace() {
     return this.allowStackTrace ? super.fillInStackTrace() : this;
