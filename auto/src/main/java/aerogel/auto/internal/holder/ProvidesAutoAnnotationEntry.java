@@ -32,13 +32,16 @@ import aerogel.Bindings;
 import aerogel.Element;
 import aerogel.auto.AutoAnnotationEntry;
 import aerogel.auto.Provides;
+import aerogel.internal.utility.ElementHelper;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -66,10 +69,10 @@ public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
    * @param element  the element which was annotated.
    * @param provides the annotation.
    */
-  public ProvidesAutoAnnotationEntry(@NotNull TypeElement element, @NotNull Provides provides) {
+  public ProvidesAutoAnnotationEntry(@NotNull TypeElement element, @NotNull List<? extends TypeMirror> provides) {
     this.bindingName = element.getQualifiedName().toString();
     // we assume that provides has always at least one provided class
-    this.bindings = Arrays.stream(provides.value()).map(Class::getName).collect(Collectors.toSet());
+    this.bindings = provides.stream().map(TypeMirror::toString).collect(Collectors.toSet());
   }
 
   /**
@@ -100,7 +103,7 @@ public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
       }
       // make a constructor for each provided class
       return Arrays.stream(providedClasses)
-        .map(providedClass -> Bindings.constructing(type, Element.get(providedClass)))
+        .map(providedClass -> Bindings.constructing(ElementHelper.buildElement(providedClass), type))
         .collect(Collectors.toSet());
     } catch (ClassNotFoundException exception) {
       throw AerogelException.forMessagedException("Unable to provide bindings constructors", exception);

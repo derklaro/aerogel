@@ -24,6 +24,8 @@
 
 package aerogel.auto.internal.processor;
 
+import static aerogel.auto.internal.utility.AnnotationUtils.typesOfAnnotationValue;
+
 import aerogel.auto.AutoAnnotationEntry;
 import aerogel.auto.Factory;
 import aerogel.auto.Provides;
@@ -37,6 +39,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -48,6 +51,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
 import org.jetbrains.annotations.NotNull;
@@ -219,17 +223,18 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
           String.format("Binding class %s must not be abstract", element.getSimpleName()));
         continue;
       }
-      // get the provides annotation from the class
-      Provides provides = element.getAnnotation(Provides.class);
+      // get the type mirrors the annotation is providing
+      //noinspection ResultOfMethodCallIgnored
+      List<? extends TypeMirror> value = typesOfAnnotationValue(() -> element.getAnnotation(Provides.class).value());
       // ensure that the annotation is actually providing something
-      if (provides.value().length == 0) {
+      if (value.isEmpty()) {
         env.getMessager().printMessage(
           Kind.MANDATORY_WARNING,
           String.format("Providing class %s provides nothing", element.getSimpleName()));
         continue;
       }
       // valid providing class - emit that
-      this.foundEntries.add(new ProvidesAutoAnnotationEntry((TypeElement) element, provides));
+      this.foundEntries.add(new ProvidesAutoAnnotationEntry((TypeElement) element, value));
     }
   }
 }
