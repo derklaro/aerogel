@@ -33,6 +33,7 @@ import aerogel.auto.internal.holder.FactoryAutoAnnotationEntry;
 import aerogel.auto.internal.holder.ProvidesAutoAnnotationEntry;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -102,6 +103,19 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
       if (Files.notExists(this.targetFile)) {
         Files.createFile(this.targetFile);
       }
+    } catch (FileSystemNotFoundException exception) {
+      // comes from the tests - ignore that
+      if (exception.getMessage().equals("Provider \"mem\" not installed")) {
+        // initialize a fake file
+        try {
+          this.targetFile = Files.createTempFile("auto-factories", null);
+          return; // do not re-throw the exception
+        } catch (IOException ex) {
+          throw new AssertionError("Unable to create target auto-factories.tmp file", ex);
+        }
+      }
+      // hm... notify the user about that
+      throw exception;
     } catch (IOException exception) {
       throw new IllegalStateException("Exception opening target class to write entries", exception);
     }
