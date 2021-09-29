@@ -8,9 +8,12 @@ dependencies {
 
 test {
   dependsOn ':shadowJar'
-  doFirst {
-    jvmArgs = [
-      '--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED'
-    ]
+  // for testing with the google test compile lib
+  if (JavaVersion.current().isJava9Compatible()) {
+    doFirst {
+      jvmArgs = [
+        '--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED'
+      ]
+    }
   }
 }
