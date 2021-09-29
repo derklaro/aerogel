@@ -32,6 +32,7 @@ import aerogel.internal.binding.ConstructingBindingHolder;
 import aerogel.internal.binding.FactoryBindingHolder;
 import aerogel.internal.binding.ImmediateBindingHolder;
 import aerogel.internal.jakarta.JakartaBridge;
+import aerogel.internal.utility.ElementHelper;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import org.jetbrains.annotations.Contract;
@@ -133,7 +134,7 @@ public interface Bindings {
   @Contract(pure = true)
   static @NotNull BindingConstructor factory(@NotNull Method factoryMethod) {
     requireNonNull(factoryMethod, "Factory method must not be null");
-    return factory(Element.get(factoryMethod.getGenericReturnType()), factoryMethod);
+    return factory(ElementHelper.buildElement(factoryMethod), factoryMethod);
   }
 
   /**

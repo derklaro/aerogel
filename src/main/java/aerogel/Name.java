@@ -33,7 +33,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a specific name qualified object registered in an {@link Injector}. This allows you to inject a specific
- * instance which was bound to the name earlier and separate instances.
+ * instance which was bound to the name earlier and separate instances. Applied to a factory method or type the
+ * annotation can be used to specify a binding name.
  *
  * <p>For example:
  *
@@ -52,7 +53,7 @@ import org.jetbrains.annotations.NotNull;
 @Qualifier
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.PARAMETER, ElementType.FIELD})
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD})
 public @interface Name {
 
   /**

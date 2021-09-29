@@ -29,6 +29,7 @@ import aerogel.internal.jakarta.JakartaBridge;
 import aerogel.internal.reflect.ReflectionUtils;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -90,6 +91,36 @@ public final class ElementHelper {
     Annotation[] qualifierAnnotations = extractQualifierAnnotations(annotations);
     // create an element based on the information
     return Element.get(type).requireName(name).requireAnnotations(qualifierAnnotations);
+  }
+
+  /**
+   * Makes an element for the given {@code method} extracting all necessary information from it.
+   *
+   * @param method the method to make the element for.
+   * @return the constructed element for the given method.
+   */
+  public static @NotNull Element buildElement(@NotNull Method method) {
+    // extract the name of the method
+    String name = JakartaBridge.nameOf(method);
+    // extract the qualifier annotations
+    Annotation[] qualifierAnnotations = extractQualifierAnnotations(method.getDeclaredAnnotations());
+    // build the element based on the information
+    return Element.get(method.getGenericReturnType()).requireName(name).requireAnnotations(qualifierAnnotations);
+  }
+
+  /**
+   * Makes an element for the given {@code clazz} extracting all necessary information from it.
+   *
+   * @param clazz the class to build the element for.
+   * @return the constructed element for the given class.
+   */
+  public static @NotNull Element buildElement(@NotNull Class<?> clazz) {
+    // extract the name of the class
+    String name = JakartaBridge.nameOf(clazz);
+    // extract the qualifier annotations
+    Annotation[] qualifierAnnotations = extractQualifierAnnotations(clazz.getDeclaredAnnotations());
+    // build the element based on the information
+    return Element.get(clazz).requireName(name).requireAnnotations(qualifierAnnotations);
   }
 
   /**
