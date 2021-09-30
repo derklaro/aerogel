@@ -117,7 +117,7 @@ public final class Primitives {
    * @param type the type to get.
    * @param <T>  the wildcard type of the class to get.
    * @return the default initialization value of the associated primitive type.
-   * @throws IllegalArgumentException if the given {@code type} is not primitive.
+   * @throws aerogel.AerogelException if the given {@code type} is not primitive.
    */
   @SuppressWarnings("unchecked")
   public static <T> @NotNull T defaultValue(@NotNull Class<T> type) {

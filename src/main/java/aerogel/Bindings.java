@@ -52,8 +52,8 @@ public interface Bindings {
    * @param element the element to bind the binding to.
    * @param value   the fixed value to return when the element is requested.
    * @return a new binding constructor which will always return the fixed {@code value} for {@code element}.
-   * @throws NullPointerException     if {@code element} is null.
-   * @throws IllegalArgumentException if {@code element} is not assignable to {@code value}.
+   * @throws NullPointerException if {@code element} is null.
+   * @throws AerogelException     if {@code element} is not assignable to {@code value}.
    */
   @Contract(pure = true)
   static @NotNull BindingConstructor fixed(@NotNull Element element, @NotNull Object value) {
@@ -67,8 +67,8 @@ public interface Bindings {
    * @param bound the bound type of the value.
    * @param value the fixed value to return when the element is requested.
    * @return a new binding constructor which will always return the fixed {@code value} for {@code bound}.
-   * @throws NullPointerException     if {@code type} or {@code bound} is null.
-   * @throws IllegalArgumentException if either {@code type} or {@code bound} is not assignable to {@code value}.
+   * @throws NullPointerException if {@code type} or {@code bound} is null.
+   * @throws AerogelException     if either {@code type} or {@code bound} is not assignable to {@code value}.
    */
   @Contract(pure = true)
   static @NotNull BindingConstructor fixed(@NotNull Element type, @NotNull Element bound, @NotNull Object value) {
@@ -89,10 +89,8 @@ public interface Bindings {
    *
    * @param element the element of which the binding should be created.
    * @return a new binding constructor which instantiated the given {@code element} to obtain a new instance.
-   * @throws NullPointerException          if {@code element} is null.
-   * @throws IllegalArgumentException      if {@code element} has an invalid component type.
-   * @throws UnsupportedOperationException if the type of {@code element} is not instantiable.
-   * @throws AerogelException              if the class has zero or more than one injectable constructors.
+   * @throws NullPointerException if {@code element} is null.
+   * @throws AerogelException     if the class more or less than one injectable constructors or is not instantiable.
    */
   @Contract(pure = true)
   static @NotNull BindingConstructor constructing(@NotNull Element element) {
@@ -109,10 +107,8 @@ public interface Bindings {
    * @param type  the element type.
    * @param bound the element of which the binding should be created.
    * @return a new binding constructor which instantiated the given {@code bound} to obtain a new instance.
-   * @throws NullPointerException          if {@code type} or {@code bound} is null.
-   * @throws IllegalArgumentException      if {@code bound} has an invalid component type.
-   * @throws UnsupportedOperationException if the type of {@code bound} is not instantiable.
-   * @throws AerogelException              if the class has zero or more than one injectable constructors.
+   * @throws NullPointerException if {@code type} or {@code bound} is null.
+   * @throws AerogelException     if the class more or less than one injectable constructors or is not instantiable.
    */
   @Contract(pure = true)
   static @NotNull BindingConstructor constructing(@NotNull Element type, @NotNull Element bound) {
@@ -128,8 +124,8 @@ public interface Bindings {
    *
    * @param factoryMethod the method which should be used as the factory method.
    * @return a new binding constructor which calls the given method to create a new instance of the return type.
-   * @throws NullPointerException     if {@code factoryMethod} is null.
-   * @throws IllegalArgumentException if {@code factoryMethod} is not static or returns void.
+   * @throws NullPointerException if {@code factoryMethod} is null.
+   * @throws AerogelException     if {@code factoryMethod} is not static or returns void.
    */
   @Contract(pure = true)
   static @NotNull BindingConstructor factory(@NotNull Method factoryMethod) {
@@ -144,9 +140,9 @@ public interface Bindings {
    * @param type          the element type of the binding.
    * @param factoryMethod the method which should be used as the factory method.
    * @return a new binding constructor which calls the given method to create a new instance of the return type.
-   * @throws NullPointerException     if {@code factoryMethod} is null.
-   * @throws IllegalArgumentException if {@code factoryMethod} is not static, returns void or not the same type as
-   *                                  {@code type}.
+   * @throws NullPointerException if {@code factoryMethod} is null.
+   * @throws AerogelException     if {@code factoryMethod} is not static, returns void or not the same type as {@code
+   *                              type}.
    */
   @Contract(pure = true)
   static @NotNull BindingConstructor factory(@NotNull Element type, @NotNull Method factoryMethod) {

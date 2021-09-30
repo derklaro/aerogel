@@ -24,6 +24,7 @@
 
 package aerogel.internal.unsafe;
 
+import aerogel.AerogelException;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -134,7 +135,7 @@ final class LookupClassDefiner implements ClassDefiner {
       // get the class from the lookup
       return lookup.lookupClass();
     } catch (Throwable throwable) {
-      throw new RuntimeException("Exception defining class " + name, throwable);
+      throw AerogelException.forMessagedException("Exception defining class " + name, throwable);
     }
   }
 }

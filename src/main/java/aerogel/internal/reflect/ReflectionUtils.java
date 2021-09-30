@@ -24,6 +24,7 @@
 
 package aerogel.internal.reflect;
 
+import aerogel.AerogelException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
@@ -52,18 +53,18 @@ public final class ReflectionUtils {
    * Ensures that the given {@code type} is instantiable.
    *
    * @param type the type to check.
-   * @throws UnsupportedOperationException if the type is not instantiable.
+   * @throws AerogelException if the type is not instantiable.
    */
   public static void ensureInstantiable(@NotNull Type type) {
     // check if the type is a class
     if (!(type instanceof Class<?>)) {
-      throw new UnsupportedOperationException(type.getTypeName() + " is not instantiable");
+      throw AerogelException.forMessage(type.getTypeName() + " is not instantiable");
     }
     // cast to the type
     Class<?> clazz = (Class<?>) type;
     // check if the type is instantiable
     if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers()) || clazz.isPrimitive() || clazz.isArray()) {
-      throw new UnsupportedOperationException(clazz + " is not instantiable");
+      throw AerogelException.forMessage(clazz + " is not instantiable");
     }
   }
 
@@ -83,7 +84,7 @@ public final class ReflectionUtils {
    *
    * @param type the type to extract the raw type of.
    * @return the raw type of the parameterized type.
-   * @throws IllegalArgumentException if the type is a type variable or wildcard type.
+   * @throws AerogelException if the type is a type variable or wildcard type.
    */
   public static @NotNull Class<?> rawType(@NotNull Type type) {
     Type superType = genericSuperType(type);
@@ -99,7 +100,7 @@ public final class ReflectionUtils {
       return (Class<?>) ((ParameterizedType) superType).getRawType();
     }
     // every other type implementation can not be exactly found - ignored them
-    throw new IllegalArgumentException("Unsupported type " + superType + " to unbox");
+    throw AerogelException.forMessage("Unsupported type " + superType + " to unbox");
   }
 
   /**

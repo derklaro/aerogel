@@ -45,6 +45,7 @@ import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_8;
 
+import aerogel.AerogelException;
 import aerogel.internal.asm.AsmPrimitives;
 import aerogel.internal.unsafe.ClassDefiners;
 import aerogel.internal.utility.Preconditions;
@@ -104,7 +105,7 @@ public final class InjectionTimeProxy {
    * @param interfaceClass the class to generate the proxy for.
    * @param <T>            the type of the class modeled.
    * @return the created proxy instance for the class.
-   * @throws RuntimeException if an exception occurs when defining and loading the class.
+   * @throws AerogelException if an exception occurs when defining and loading the class.
    */
   @SuppressWarnings("unchecked")
   public static <T> @NotNull T makeProxy(@NotNull Class<T> interfaceClass) {
@@ -198,7 +199,7 @@ public final class InjectionTimeProxy {
 
       return (T) ctx.newInstance();
     } catch (ReflectiveOperationException exception) {
-      throw new RuntimeException(exception);
+      throw AerogelException.forException(exception);
     }
   }
 

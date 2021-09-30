@@ -147,7 +147,7 @@ public final class DefaultMemberInjector implements MemberInjector {
           }
           // check if the method is not abstract - how the heck should we invoke them
           if (Modifier.isAbstract(method.getModifiers())) {
-            throw new IllegalArgumentException(String.format(
+            throw AerogelException.forMessage(String.format(
               "Method %s in %s is abstract and cannot get injected",
               method.getName(),
               method.getDeclaringClass()));
@@ -184,7 +184,7 @@ public final class DefaultMemberInjector implements MemberInjector {
           // blocklist in Java 12 and a warning gets emitted since Java 9. There is no point to support this behaviour
           // for Java 8 users...
           if (Modifier.isFinal(field.getModifiers())) {
-            throw new IllegalArgumentException(String.format(
+            throw AerogelException.forMessage(String.format(
               "Field %s in %s is final and cannot get injected",
               field.getName(),
               field.getDeclaringClass()));
@@ -331,7 +331,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       }
     }
     // no such field found
-    throw new IllegalArgumentException(String.format("No static field with name %s in %s", name, this.targetClass));
+    throw AerogelException.forMessage(String.format("No static field with name %s in %s", name, this.targetClass));
   }
 
   /**
@@ -356,7 +356,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       }
     }
     // no such field found
-    throw new IllegalArgumentException(String.format("No field with name %s in %s", name, this.targetClass));
+    throw AerogelException.forMessage(String.format("No field with name %s in %s", name, this.targetClass));
   }
 
   /**
@@ -372,7 +372,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       }
     }
     // no such method found
-    throw new IllegalArgumentException(String.format(
+    throw AerogelException.forMessage(String.format(
       "No static method with name %s and parameters %s in %s",
       name,
       Arrays.toString(parameterTypes),
@@ -399,7 +399,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       }
     }
     // no such method found
-    throw new IllegalArgumentException(String.format(
+    throw AerogelException.forMessage(String.format(
       "No method with name %s and parameters %s in %s",
       name,
       Arrays.toString(params),

@@ -24,6 +24,7 @@
 
 package aerogel.internal.unsafe;
 
+import aerogel.AerogelException;
 import java.lang.reflect.Method;
 import org.jetbrains.annotations.NotNull;
 
@@ -80,7 +81,7 @@ final class UnsafeClassDefiner implements ClassDefiner {
       // Use unsafe to define the class
       return (Class<?>) DEFINE_ANONYMOUS_CLASS.invoke(UnsafeAccess.THE_UNSAFE_INSTANCE, parent, bytecode, null);
     } catch (Throwable throwable) {
-      throw new RuntimeException("Unable to define class " + name, throwable);
+      throw AerogelException.forMessagedException("Unable to define class " + name, throwable);
     }
   }
 }

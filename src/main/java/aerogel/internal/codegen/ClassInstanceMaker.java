@@ -56,6 +56,7 @@ import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_8;
 
+import aerogel.AerogelException;
 import aerogel.BindingHolder;
 import aerogel.Element;
 import aerogel.InjectionContext;
@@ -130,7 +131,7 @@ public final class ClassInstanceMaker {
    * @param target    the target constructor to use for injection.
    * @param singleton if the resulting object should be a singleton.
    * @return the created instance maker for the constructor injection.
-   * @throws RuntimeException if an exception occurs when defining and loading the class.
+   * @throws AerogelException if an exception occurs when defining and loading the class.
    */
   public static @NotNull InstanceMaker forConstructor(@NotNull Constructor<?> target, boolean singleton) {
     // extract the wrapping class of the constructor
@@ -306,7 +307,7 @@ public final class ClassInstanceMaker {
    * @param parent   the parent class of the constructed class (as we are generating anonymous classes)
    * @param elements the elements of the parameters used for injection.
    * @return the instance of the newly created instance maker.
-   * @throws RuntimeException if an exception occurs when defining and loading the class.
+   * @throws AerogelException if an exception occurs when defining and loading the class.
    */
   static @NotNull InstanceMaker defineAndConstruct(
     @NotNull ClassWriter cw,
@@ -322,7 +323,7 @@ public final class ClassInstanceMaker {
 
       return (InstanceMaker) ctx.newInstance((Object) elements);
     } catch (ReflectiveOperationException exception) {
-      throw new RuntimeException(exception);
+      throw AerogelException.forException(exception);
     }
   }
 

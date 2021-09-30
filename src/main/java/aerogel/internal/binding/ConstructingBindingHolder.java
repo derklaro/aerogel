@@ -74,7 +74,7 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
    * @param injector the injector to which this binding was bound.
    * @param element  the type of the binding.
    * @return the created constructing binding holder.
-   * @throws UnsupportedOperationException if the element's type is not instantiable.
+   * @throws aerogel.AerogelException if the element's type is not instantiable.
    */
   public static @NotNull ConstructingBindingHolder create(@NotNull Injector injector, @NotNull Element element) {
     // read the type from the element
@@ -101,7 +101,7 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
    * @param element  the type of the binding.
    * @param bound    the type to which the element was bound.
    * @return the created constructing binding holder.
-   * @throws UnsupportedOperationException if the bound's type is not instantiable.
+   * @throws aerogel.AerogelException if the bound's type is not instantiable.
    */
   public static @NotNull ConstructingBindingHolder create(
     @NotNull Injector injector,

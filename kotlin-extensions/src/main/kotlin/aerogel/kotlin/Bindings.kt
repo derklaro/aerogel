@@ -30,9 +30,8 @@ import aerogel.Bindings
 /**
  * Creates a new constructing binding holder for the given generic type [T].
  *
- * @throws IllegalArgumentException      if {@code element} has an invalid component type.
- * @throws UnsupportedOperationException if the type of {@code element} is not instantiable.
- * @throws aerogel.AerogelException      if the class has zero or more than one injectable constructors.
+ * @throws NullPointerException     if {@code element} is null.
+ * @throws aerogel.AerogelException if the class more or less than one injectable constructors or is not instantiable.
  * @see Bindings.constructing
  * @author Pasqual K.
  * @since 1.0
@@ -42,7 +41,7 @@ inline fun <reified T> constructing(): BindingConstructor = Bindings.constructin
 /**
  * Creates a new binding constructor for the generic type [T] which always return the given [value].
  *
- * @throws IllegalArgumentException if {@code element} is not assignable to {@code value}.
+ * @throws aerogel.AerogelException if {@code element} is not assignable to {@code value}.
  * @see Bindings.fixed
  * @author Pasqual K.
  * @since 1.0

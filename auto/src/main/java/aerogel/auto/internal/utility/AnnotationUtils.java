@@ -24,6 +24,7 @@
 
 package aerogel.auto.internal.utility;
 
+import aerogel.AerogelException;
 import java.util.List;
 import javax.lang.model.type.MirroredTypesException;
 import javax.lang.model.type.TypeMirror;
@@ -52,12 +53,13 @@ public final class AnnotationUtils {
    *
    * @param getter a runnable which gets called and the thrown exception gets catched.
    * @return the type mirrors of the annotation value.
-   * @throws RuntimeException if the method is not used in the intended way.
+   * @throws AerogelException if the method is not used in the intended way.
    */
   public static @NotNull List<? extends TypeMirror> typesOfAnnotationValue(@NotNull Runnable getter) {
     try {
       getter.run();
-      throw new RuntimeException("what?"); // cannot happen - just explode
+      // should not happen - just explode
+      throw AerogelException.forMessage("If this method was used as intended or was never touched this is bug");
     } catch (MirroredTypesException exception) {
       return exception.getTypeMirrors();
     }

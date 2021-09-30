@@ -24,6 +24,7 @@
 
 package aerogel.internal.utility;
 
+import aerogel.AerogelException;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -43,11 +44,11 @@ public final class Preconditions {
    *
    * @param argument     the argument to check.
    * @param errorMessage the error message to use if the argument is not true.
-   * @throws IllegalArgumentException if the argument is not true.
+   * @throws AerogelException if the argument is not true.
    */
   public static void checkArgument(boolean argument, @NotNull String errorMessage) {
     if (!argument) {
-      throw new IllegalArgumentException(errorMessage);
+      throw AerogelException.forMessage(errorMessage);
     }
   }
 
@@ -57,11 +58,11 @@ public final class Preconditions {
    * @param argument           the argument to check.
    * @param errorMessageFormat the error message format to use if the argument is not true.
    * @param args               the arguments to use to format the error message format.
-   * @throws IllegalArgumentException if the argument is not true.
+   * @throws AerogelException if the argument is not true.
    */
   public static void checkArgument(boolean argument, @NotNull String errorMessageFormat, Object... args) {
     if (!argument) {
-      throw new IllegalArgumentException(String.format(errorMessageFormat, args));
+      throw AerogelException.forMessage(String.format(errorMessageFormat, args));
     }
   }
 }

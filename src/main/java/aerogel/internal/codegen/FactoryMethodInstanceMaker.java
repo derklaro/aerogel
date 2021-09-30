@@ -73,7 +73,7 @@ public final class FactoryMethodInstanceMaker {
    * @param method            the method to create the instance maker for.
    * @param shouldBeSingleton if the resulting object should be a singleton.
    * @return the created instance maker for the factory method based construction.
-   * @throws RuntimeException if an exception occurs when defining and loading the class.
+   * @throws aerogel.AerogelException if an exception occurs when defining and loading the class.
    */
   public static @NotNull InstanceMaker forMethod(@NotNull Method method, boolean shouldBeSingleton) {
     // extract the wrapping class of the method

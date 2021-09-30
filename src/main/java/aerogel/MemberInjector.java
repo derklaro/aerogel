@@ -115,9 +115,8 @@ public interface MemberInjector {
    * Injects a specific static field in the target class.
    *
    * @param name the name of the field to inject.
-   * @throws IllegalArgumentException if no injectable field with the given {@code name} exists.
-   * @throws AerogelException         if the field injection failed.
-   * @throws NullPointerException     if {@code name} is null.
+   * @throws AerogelException     if no injectable field with the given {@code name} exists or the injection fails.
+   * @throws NullPointerException if {@code name} is null.
    */
   void injectField(@NotNull String name);
 
@@ -126,9 +125,8 @@ public interface MemberInjector {
    *
    * @param instance the instance to inject the field on.
    * @param name     the name of the field to inject.
-   * @throws IllegalArgumentException if no injectable field with the given {@code name} exists.
-   * @throws AerogelException         if the field injection failed.
-   * @throws NullPointerException     if {@code instance} or {@code name} is null.
+   * @throws AerogelException     if no injectable field with the given {@code name} exists or the injection fails.
+   * @throws NullPointerException if {@code instance} or {@code name} is null.
    */
   void injectField(@NotNull Object instance, @NotNull String name);
 
@@ -138,9 +136,8 @@ public interface MemberInjector {
    * @param name           the name of the method to invoke.
    * @param parameterTypes the parameter types of the method to invoke.
    * @return the result of the method invocation, may be null.
-   * @throws IllegalArgumentException if no injectable method with the given {@code name} exists.
-   * @throws AerogelException         if the method injection failed.
-   * @throws NullPointerException     if {@code name} is null.
+   * @throws AerogelException     if no injectable method with the given {@code name} exists or the injection fails.
+   * @throws NullPointerException if {@code name} is null.
    */
   @Nullable Object injectMethod(@NotNull String name, @NotNull Class<?>... parameterTypes);
 
@@ -151,9 +148,8 @@ public interface MemberInjector {
    * @param name           the name of the method to invoke.
    * @param parameterTypes the parameter types of the method to invoke.
    * @return the result of the method invocation, may be null.
-   * @throws IllegalArgumentException if no injectable method with the given {@code name} exists.
-   * @throws AerogelException         if the method injection failed.
-   * @throws NullPointerException     if {@code instance} or {@code name} is null.
+   * @throws AerogelException     if no injectable method with the given {@code name} exists or the injection fails.
+   * @throws NullPointerException if {@code instance} or {@code name} is null.
    */
   @Nullable Object injectMethod(@NotNull Object instance, @NotNull String name, @NotNull Class<?>... parameterTypes);
 }

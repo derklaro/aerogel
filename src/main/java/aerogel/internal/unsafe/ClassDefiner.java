@@ -42,7 +42,7 @@ public interface ClassDefiner {
    * @param parent   the parent class of this class as we are assuming to define an anonymous class.
    * @param bytecode the bytecode of the class to define.
    * @return the constructed class object from the given {@code bytecode}.
-   * @throws RuntimeException if the class defining failed.
+   * @throws aerogel.AerogelException if the class defining failed.
    */
   @NotNull Class<?> defineClass(@NotNull String name, @NotNull Class<?> parent, byte[] bytecode);
 }

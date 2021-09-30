@@ -26,6 +26,7 @@ package aerogel.auto.internal.processor;
 
 import static aerogel.auto.internal.utility.AnnotationUtils.typesOfAnnotationValue;
 
+import aerogel.AerogelException;
 import aerogel.auto.AutoAnnotationEntry;
 import aerogel.auto.Factory;
 import aerogel.auto.Provides;
@@ -111,13 +112,13 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
           this.targetFile = Files.createTempFile("auto-factories", null);
           return; // do not re-throw the exception
         } catch (IOException ex) {
-          throw new AssertionError("Unable to create target auto-factories.tmp file", ex);
+          throw AerogelException.forMessagedException("Unable to create target auto-factories.tmp file", ex);
         }
       }
       // hm... notify the user about that
       throw exception;
     } catch (IOException exception) {
-      throw new IllegalStateException("Exception opening target class to write entries", exception);
+      throw AerogelException.forMessagedException("Exception opening target class to write entries", exception);
     }
   }
 
@@ -156,7 +157,7 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
           // ready for the next round
           this.foundEntries.clear();
         } catch (IOException exception) {
-          throw new RuntimeException("Exception opening output file " + this.targetFile, exception);
+          throw AerogelException.forMessagedException("Exception opening output file " + this.targetFile, exception);
         }
       }
       // never claim annotation so that other processors can visit them as well
