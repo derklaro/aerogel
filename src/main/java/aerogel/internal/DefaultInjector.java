@@ -222,7 +222,9 @@ public final class DefaultInjector implements Injector {
     Objects.requireNonNull(element, "element");
     // check if we have a cached bindingHolder
     BindingHolder bindingHolder = this.bindings.get(element);
-    if (bindingHolder == null && this.parent != null) {
+    // check if we need a parent injector lookup - skip the parent lookup if the element is the current injector element
+    // in this case we always want to inject this injector, not the parent
+    if (bindingHolder == null && this.parent != null && !INJECTOR_ELEMENT.equals(element)) {
       // check if one of the parents has a cached bindingHolder
       Injector injector = this.parent;
       do {
