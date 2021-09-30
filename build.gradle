@@ -71,6 +71,17 @@ allprojects {
     }
   }
 
+  jar {
+    manifest {
+      attributes 'Specification-Vendor': 'derklaro'
+      attributes 'Specification-Version': project.version
+      attributes 'Specification-Title': project.name.replace('-', '.')
+      attributes 'Automatic-Module-Name': project.name.replace('-', '.')
+      attributes 'Git-Branch': 'git branch --show-current'.execute().text.trim()
+      attributes 'Git-Commit': 'git rev-parse --verify --short HEAD'.execute().text.trim()
+    }
+  }
+
   javadoc {
     options.encoding = 'UTF-8'
     options.windowTitle = 'Aerogel Javadocs'
