@@ -27,10 +27,10 @@ package aerogel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class SingletonTest {
+public class ChildInjectorTest {
 
   @Test
-  void testConstructingSingleton() {
+  void testChildInjectorConstruction() {
     Injector injector = Injector.newInjector();
     injector.install(Bindings.constructing(Element.get(StringHolder.class)));
 
@@ -38,11 +38,43 @@ public class SingletonTest {
     Assertions.assertNotNull(value);
     Assertions.assertEquals("test", value.test);
 
-    StringHolder value2 = injector.instance(StringHolder.class);
+    Injector child = injector.newChildInjector();
+    Assertions.assertNull(child.fastBinding(Element.get(StringHolder.class)));
+
+    StringHolder value2 = child.instance(StringHolder.class);
     Assertions.assertNotNull(value2);
     Assertions.assertEquals("test", value2.test);
 
     Assertions.assertSame(value, value2);
+    Assertions.assertNotNull(child.fastBinding(Element.get(StringHolder.class)));
+  }
+
+  @Test
+  void testChildInjectorInheritance() {
+    Injector injector = Injector.newInjector();
+    Injector childInjector = injector.newChildInjector();
+
+    Assertions.assertTrue(injector.bindings().isEmpty());
+    Assertions.assertTrue(childInjector.bindings().isEmpty());
+
+    Assertions.assertSame(injector, injector.instance(Injector.class));
+    Assertions.assertSame(childInjector, childInjector.instance(Injector.class));
+
+    injector.install(Bindings.fixed(Element.get(String.class), "Hello World!"));
+
+    Assertions.assertEquals(1, injector.allBindings().size());
+    Assertions.assertEquals(1, childInjector.allBindings().size());
+
+    Assertions.assertFalse(injector.bindings().isEmpty());
+    Assertions.assertTrue(childInjector.bindings().isEmpty());
+
+    Assertions.assertEquals("Hello World!", injector.instance(String.class));
+    Assertions.assertEquals("Hello World!", childInjector.instance(String.class));
+
+    childInjector.install(Bindings.fixed(Element.get(int.class), 1234));
+
+    Assertions.assertThrows(AerogelException.class, () -> injector.instance(int.class));
+    Assertions.assertEquals(1234, childInjector.instance(int.class));
   }
 
   @Singleton

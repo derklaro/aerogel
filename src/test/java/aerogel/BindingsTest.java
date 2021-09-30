@@ -63,7 +63,7 @@ public class BindingsTest {
   @Test
   void testInvalidConstructingBinding() {
     Assertions.assertThrows(
-      UnsupportedOperationException.class,
+      AerogelException.class,
       () -> Injector.newInjector().install(Bindings.constructing(Element.get(NotConstructable.class))));
   }
 
@@ -80,10 +80,10 @@ public class BindingsTest {
   @Test
   void testInvalidFactoryBinding() {
     Assertions.assertThrows(
-      IllegalArgumentException.class,
+      AerogelException.class,
       () -> Injector.newInjector().install(Bindings.factory(FactoryMethodHolder.class.getMethod("constructVoid"))));
     Assertions.assertThrows(
-      IllegalArgumentException.class,
+      AerogelException.class,
       () -> Injector.newInjector().install(Bindings.factory(FactoryMethodHolder.class.getMethod("instanceConstruct"))));
   }
 

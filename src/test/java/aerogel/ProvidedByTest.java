@@ -27,27 +27,35 @@ package aerogel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class SingletonTest {
+public class ProvidedByTest {
 
   @Test
-  void testConstructingSingleton() {
-    Injector injector = Injector.newInjector();
-    injector.install(Bindings.constructing(Element.get(StringHolder.class)));
+  void testProvidedByDetection() {
+    JustAnotherInterface value = Assertions.assertDoesNotThrow(
+      () -> Injector.newInjector().instance(JustAnotherInterface.class));
 
-    StringHolder value = injector.instance(StringHolder.class);
     Assertions.assertNotNull(value);
-    Assertions.assertEquals("test", value.test);
-
-    StringHolder value2 = injector.instance(StringHolder.class);
-    Assertions.assertNotNull(value2);
-    Assertions.assertEquals("test", value2.test);
-
-    Assertions.assertSame(value, value2);
+    Assertions.assertEquals("Hello world :)", value.helloWorld());
+    Assertions.assertEquals("Goodbye everyone", value.helloPeople());
   }
 
-  @Singleton
-  private static final class StringHolder {
+  @ProvidedBy(JustAnotherInterfaceImpl.class)
+  public interface JustAnotherInterface {
 
-    private final String test = "test";
+    default String helloWorld() {
+      return "Hello world :)";
+    }
+
+    default String helloPeople() {
+      return "Hello people";
+    }
+  }
+
+  public static final class JustAnotherInterfaceImpl implements JustAnotherInterface {
+
+    @Override
+    public String helloPeople() {
+      return "Goodbye everyone";
+    }
   }
 }
