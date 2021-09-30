@@ -73,6 +73,18 @@ public interface Injector {
    * Creates or gets the instance of the given class type.
    *
    * @param type the type of the element to get.
+   * @param <T>  the type of the class modeled by the given class object.
+   * @return the constructed instance of the class type, may be null.
+   * @throws NullPointerException if {@code type} is null.
+   * @throws AerogelException     if no binding is present and no runtime binding can be created.
+   * @since 1.2.0
+   */
+  <T> T instance(@NotNull Class<T> type);
+
+  /**
+   * Creates or gets the instance of the given type.
+   *
+   * @param type the type of the element to get.
    * @param <T>  the wildcard type of the element.
    * @return the constructed instance of the type, may be null.
    * @throws NullPointerException if {@code type} is null.

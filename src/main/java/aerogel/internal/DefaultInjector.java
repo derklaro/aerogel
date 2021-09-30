@@ -95,6 +95,14 @@ public final class DefaultInjector implements Injector {
    * {@inheritDoc}
    */
   @Override
+  public <T> T instance(@NotNull Class<T> type) {
+    return this.instance(Element.get(type));
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public <T> T instance(@NotNull Type type) {
     return this.instance(Element.get(type));
   }
