@@ -130,6 +130,19 @@ allprojects {
             url = 'https://github.com/derklaro/aerogel/issues'
           }
 
+          // gradle has no out-of-the-box support support for the <repositories> section in the pom.xml file which means
+          // that external repositories cannot get fetched. See: https://github.com/gradle/gradle/issues/15932
+          withXml {
+            def repositories = asNode().appendNode('repositories')
+            project.repositories.forEach {
+              if (it instanceof MavenArtifactRepository && it.url.toString().startsWith('https://')) {
+                def repository = repositories.appendNode('repository')
+                repository.appendNode('id', it.name)
+                repository.appendNode('url', it.url.toString())
+              }
+            }
+          }
+
           afterEvaluate {
             description = project.description
           }
