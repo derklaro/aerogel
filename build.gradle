@@ -74,8 +74,8 @@ allprojects {
   jar {
     manifest {
       attributes 'Specification-Vendor': 'derklaro'
+      attributes 'Specification-Title': project.name
       attributes 'Specification-Version': project.version
-      attributes 'Specification-Title': project.name.replace('-', '.')
       attributes 'Automatic-Module-Name': project.name.replace('-', '.')
       attributes 'Git-Branch': 'git branch --show-current'.execute().text.trim()
       attributes 'Git-Commit': 'git rev-parse --verify --short HEAD'.execute().text.trim()
