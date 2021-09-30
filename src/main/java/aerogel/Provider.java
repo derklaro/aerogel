@@ -25,6 +25,9 @@
 package aerogel;
 
 import aerogel.internal.ImmediateProvider;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -89,4 +92,150 @@ public interface Provider<T> {
    * @throws AerogelException if any exception occurs during the construction of the underlying type.
    */
   @Nullable T get() throws AerogelException;
+
+  /**
+   * Tries to get the value of this provider, returns null if getting the value results in an exception.
+   *
+   * @return the value of this provider or null if getting the value results in an exception.
+   * @see #getOrElse(Object)
+   * @since 1.2.0
+   */
+  default @Nullable T getOrNull() {
+    return this.getOrElse(null);
+  }
+
+  /**
+   * Tries to get the value of this provider, return {@code defaultValue} if getting the value results in an exception.
+   *
+   * @param defaultValue the default value to get if this provider cannot provide a value.
+   * @return the value provided by this provider or {@code defaultValue} if this provider is unable to provide a value.
+   * @since 1.2.0
+   */
+  default T getOrElse(@Nullable T defaultValue) {
+    try {
+      return this.get();
+    } catch (AerogelException exception) {
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Returns a new {@link Provider} whose value is the value of this provider or the given {@code defaultValue} if not
+   * present. The resulting provider is synced to this provider meaning that every time get is called on the created
+   * provider it queries the value of this provider and determines if the value of this or the given {@code
+   * defaultValue} should be used.
+   *
+   * @param defaultValue the default value to return if the current provider has no value.
+   * @return the new provider.
+   * @since 1.2.0
+   */
+  default @NotNull Provider<T> orElse(@Nullable T defaultValue) {
+    return () -> this.getOrElse(defaultValue);
+  }
+
+  /**
+   * Returns a new {@link Provider} whose value is the value of this provider or the value of the given {@code fallback}
+   * provider if not present. The resulting provider is synced to this provider meaning that every time get is called on
+   * the created provider it queries the value of this provider and determines if the value of this or the given {@code
+   * fallback} provider should be used.
+   *
+   * @param fallback the provider to query the value from if the current provider has no value.
+   * @return the new provider.
+   * @since 1.2.0
+   */
+  default @NotNull Provider<T> orElse(@NotNull Provider<? extends T> fallback) {
+    return () -> {
+      T currentValue = this.getOrNull();
+      return currentValue == null ? fallback.getOrNull() : currentValue;
+    };
+  }
+
+  /**
+   * Returns a new {@link Provider} whose value is the value of this provider or the value of the given {@code supplier}
+   * if not present. The resulting provider is synced to this provider meaning that every time get is called on the
+   * created provider it queries the value of this provider and determines if the value of this or the result of the
+   * given {@code supplier} should be used.
+   *
+   * @param supplier the supplier that produces a value in case this provider has no value.
+   * @return the new provider.
+   * @since 1.2.0
+   */
+  default @NotNull Provider<T> orElseGet(@NotNull Supplier<? extends T> supplier) {
+    return () -> {
+      T currentValue = this.getOrNull();
+      return currentValue == null ? supplier.get() : currentValue;
+    };
+  }
+
+  /**
+   * Returns a new {@link Provider} whose value is the value of this provider applied to given {@code mapper}. The
+   * resulting provider is synced to this provider meaning that every time get is called on the created provider it
+   * queries the value of this provider and applies it to the given {@code mapper}. If the value of the current (this)
+   * provider is null the mapper function will not be called and the new provider will return {@code null}.
+   *
+   * @param mapper the mapper this provider's value. May return null in which case the new provider has no value.
+   * @param <R>    the element type of the new provider.
+   * @return the new provider.
+   * @since 1.2.0
+   */
+  default @NotNull <R> Provider<R> map(@NotNull Function<? super T, ? extends R> mapper) {
+    return () -> {
+      T currentValue = this.getOrNull();
+      return currentValue == null ? null : mapper.apply(currentValue);
+    };
+  }
+
+  /**
+   * Returns a new {@link Provider} whose value is the value of this provider applied to the given {@code mapper}. On
+   * the mapped provider the function {@link #getOrNull()} will be called to determine the result. The resulting
+   * provider is synced to this provider meaning that every time get is called on the created provider it queries the
+   * value of this provider and applies it to the given {@code mapper}. If the value of the current (this) provider is
+   * null the mapper function will not be called and the new provider will return {@code null}. If the mapper function
+   * returns {@code null} when computing the provider the new provider will return {@code null}.
+   *
+   * @param mapper the flat mapper this provider's value. May return null in which case the new provider has no value.
+   * @param <R>    the element type of the new provider.
+   * @return the new provider.
+   * @since 1.2.0
+   */
+  default @NotNull <R> Provider<R> flatMap(@NotNull Function<? super T, ? extends Provider<? extends R>> mapper) {
+    return () -> {
+      T currentValue = this.getOrNull();
+      // no current value - no need for the mapper lookup
+      if (currentValue == null) {
+        return null;
+      }
+      // compute a provider from the function and get the return value of it if the computed provider is present
+      Provider<? extends R> provider = mapper.apply(currentValue);
+      return provider == null ? null : provider.getOrNull();
+    };
+  }
+
+  /**
+   * Returns a new {@link Provider} which value will be combined result of this and the given {@code second} provider.
+   * The resulting provider is synced to this provider meaning that every time get is called on the created provider it
+   * queries the value of this provider, the value of the {@code second} provider and applies it to the given {@code
+   * combiner}. If the value of the current (this) or the {@code second} provider is null the mapper combiner will not
+   * be called and the new provider will return {@code null}.
+   *
+   * @param second   the provider to combine this provider with.
+   * @param combiner the combiner for this and the second provider's values.
+   * @param <R>      the element type of the second provider.
+   * @param <S>      the element type of the new provider.
+   * @return the new provider.
+   * @since 1.2.0
+   */
+  default @NotNull <R, S> Provider<S> combine(@NotNull Provider<R> second, @NotNull BiFunction<T, R, S> combiner) {
+    return () -> {
+      // query the current provider's value
+      T currentValue = this.getOrNull();
+      if (currentValue == null) {
+        return null;
+      }
+      // query the second provider's value
+      R secondValue = second.getOrNull();
+      // combine both results if the second result is present
+      return secondValue == null ? null : combiner.apply(currentValue, secondValue);
+    };
+  }
 }
