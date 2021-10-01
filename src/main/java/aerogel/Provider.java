@@ -25,6 +25,7 @@
 package aerogel;
 
 import aerogel.internal.ImmediateProvider;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -117,6 +118,18 @@ public interface Provider<T> {
     } catch (AerogelException exception) {
       return defaultValue;
     }
+  }
+
+  /**
+   * Get the value of this provider into an optional. The optional is only present if a value of this provider is
+   * present and not null.
+   *
+   * @return an optional wrapping the current value of this provider.
+   * @see #getOrNull()
+   * @since 1.2.0
+   */
+  default @NotNull Optional<T> getAsOptional() {
+    return Optional.ofNullable(this.getOrNull());
   }
 
   /**
