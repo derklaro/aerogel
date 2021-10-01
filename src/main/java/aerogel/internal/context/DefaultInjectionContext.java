@@ -85,6 +85,14 @@ public final class DefaultInjectionContext implements InjectionContext {
    * {@inheritDoc}
    */
   @Override
+  public @NotNull Element currentElement() {
+    return this.currentElement;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   @SuppressWarnings("unchecked")
   public <T> @Nullable T findInstance(@NotNull Element element) {
     Objects.requireNonNull(element, "element");

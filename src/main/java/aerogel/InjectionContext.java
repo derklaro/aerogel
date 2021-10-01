@@ -61,6 +61,16 @@ public interface InjectionContext {
   @NotNull Injector injector();
 
   /**
+   * Get the current element this context is constructing. This value is only the top level element. If an element
+   * request is passed to this context and requires the construct of more element, this method will return the element
+   * for which the elements get created.
+   *
+   * @return the current constructing element.
+   * @since 1.2.0
+   */
+  @NotNull Element currentElement();
+
+  /**
    * Tries to find or construct the given element in the known types or the associated injector.
    *
    * @param element the element to search.
