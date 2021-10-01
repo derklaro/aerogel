@@ -55,6 +55,7 @@ public final class DefaultInjectionContext implements InjectionContext {
   private final Injector injector;
   private final ElementStack elementStack;
   private final Map<Element, Object> knownTypes;
+  private final Map<Element, Object> overriddenTypes;
 
   /**
    * The current element which gets constructed by this context.
@@ -70,7 +71,9 @@ public final class DefaultInjectionContext implements InjectionContext {
   public DefaultInjectionContext(@NotNull Injector injector, @NotNull Map<Element, Object> overriddenTypes) {
     this.injector = injector;
     this.elementStack = new ElementStack();
-    this.knownTypes = new HashMap<>(overriddenTypes);
+
+    this.knownTypes = new HashMap<>();
+    this.overriddenTypes = new HashMap<>(overriddenTypes);
   }
 
   /**
@@ -96,11 +99,15 @@ public final class DefaultInjectionContext implements InjectionContext {
   @SuppressWarnings("unchecked")
   public <T> @Nullable T findInstance(@NotNull Element element) {
     Objects.requireNonNull(element, "element");
+    // check if the type was overridden when creating the context
+    if (this.overriddenTypes.containsKey(element)) {
+      Object overriddenElement = this.overriddenTypes.get(element);
+      // NIL is emitted by the builder as some maps might not support null values
+      return overriddenElement == NIL ? null : (T) overriddenElement;
+    }
     // check if a type was already constructed during the invocation cycle
     if (this.knownTypes.containsKey(element)) {
-      Object knownElement = this.knownTypes.get(element);
-      // NIL is emitted by the builder as some maps might not support null values
-      return knownElement == NIL ? null : (T) knownElement;
+      return (T) this.knownTypes.get(element);
     }
     // check if we already tried to construct the element (which is a clear sign for circular dependencies over object
     // construction - we need to try to tackle that)
