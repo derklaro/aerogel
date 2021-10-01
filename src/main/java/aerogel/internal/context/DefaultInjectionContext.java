@@ -33,11 +33,13 @@ import aerogel.Injector;
 import aerogel.MemberInjectionSettings;
 import aerogel.internal.codegen.InjectionTimeProxy;
 import aerogel.internal.codegen.InjectionTimeProxy.InjectionTimeProxyable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Represents a default implementation of an {@link InjectionContext}.
@@ -90,6 +92,14 @@ public final class DefaultInjectionContext implements InjectionContext {
   @Override
   public @NotNull Element currentElement() {
     return this.currentElement;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @Unmodifiable @NotNull Map<Element, Object> overriddenTypes() {
+    return Collections.unmodifiableMap(this.overriddenTypes);
   }
 
   /**

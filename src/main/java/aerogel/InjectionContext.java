@@ -25,9 +25,11 @@
 package aerogel;
 
 import aerogel.internal.context.DefaultInjectionContextBuilder;
+import java.util.Map;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Represents a context used to inject a type. It holds all information which are used for the current injection
@@ -69,6 +71,16 @@ public interface InjectionContext {
    * @since 1.2.0
    */
   @NotNull Element currentElement();
+
+  /**
+   * Get the types which were overridden when creating this context using the {@link Builder#override(Element, Object)}
+   * method.
+   *
+   * @return the overridden types in this context.
+   * @since 1.2.0
+   */
+  @Unmodifiable
+  @NotNull Map<Element, Object> overriddenTypes();
 
   /**
    * Tries to find or construct the given element in the known types or the associated injector.
