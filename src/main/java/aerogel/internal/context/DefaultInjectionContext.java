@@ -54,6 +54,11 @@ public final class DefaultInjectionContext implements InjectionContext {
    */
   private static final MemberInjectionSettings ALL_MEMBERS = MemberInjectionSettings.builder().build();
 
+  /**
+   * An element representing an injection context without any extra properties
+   */
+  private static final Element INJECTION_CONTEXT_ELEMENT = Element.get(InjectionContext.class);
+
   private final Injector injector;
   private final ElementStack elementStack;
   private final Map<Element, Object> knownTypes;
@@ -118,6 +123,10 @@ public final class DefaultInjectionContext implements InjectionContext {
     // check if a type was already constructed during the invocation cycle
     if (this.knownTypes.containsKey(element)) {
       return (T) this.knownTypes.get(element);
+    }
+    // (1.3.0): return the current injection context if the context is requested without any special properties.
+    if (INJECTION_CONTEXT_ELEMENT.equals(element)) {
+      return (T) this;
     }
     // check if we already tried to construct the element (which is a clear sign for circular dependencies over object
     // construction - we need to try to tackle that)
