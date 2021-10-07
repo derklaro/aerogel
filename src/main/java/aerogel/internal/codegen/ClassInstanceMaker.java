@@ -45,8 +45,7 @@ import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
 import static org.objectweb.asm.Opcodes.DUP2;
 import static org.objectweb.asm.Opcodes.GETFIELD;
-import static org.objectweb.asm.Opcodes.ICONST_1;
-import static org.objectweb.asm.Opcodes.IFEQ;
+import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
@@ -72,7 +71,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
@@ -94,15 +92,13 @@ public final class ClassInstanceMaker {
   static final String HOLDER = "holder";
   static final String HOLDER_DESC = org.objectweb.asm.Type.getDescriptor(AtomicReference.class);
   static final String HOLDER_NAME = org.objectweb.asm.Type.getInternalName(AtomicReference.class);
-  // the holder of the information if the singleton instance was ever set
-  static final String INSTANCE_THERE = "wasInstanceConstructed";
-  static final String INSTANCE_THERE_DESC = org.objectweb.asm.Type.getDescriptor(AtomicBoolean.class);
-  static final String INSTANCE_THERE_NAME = org.objectweb.asm.Type.getInternalName(AtomicBoolean.class);
   // the injection context
   static final String INJECTOR = "injector";
   static final String FIND_INSTANCE = "findInstance";
   static final String INJECTOR_DESC = methodDesc(Injector.class);
+  static final String FIND_CONSTRUCTED_VALUE = "findConstructedValue";
   static final String FIND_INSTANCE_DESC = methodDesc(Object.class, Element.class);
+  static final String FIND_CONSTRUCTED_VALUE_DESC = methodDesc(Object.class, Element.class);
   static final String INJ_CONTEXT_DESC = org.objectweb.asm.Type.getDescriptor(InjectionContext.class);
   static final String INJ_CONTEXT_NAME = org.objectweb.asm.Type.getInternalName(InjectionContext.class);
   // the injector
@@ -113,10 +109,13 @@ public final class ClassInstanceMaker {
   static final String PROVIDER_NAME = org.objectweb.asm.Type.getInternalName(Provider.class);
   static final String JAKARTA_BRIDGE = org.objectweb.asm.Type.getInternalName(JakartaBridge.class);
   static final String PROV_JAKARTA_DESC = methodDesc(jakarta.inject.Provider.class, Provider.class);
-  // the element access stuff
+  // the element array access stuff
   static final String ELEMENTS = "elements";
   static final Element[] NO_ELEMENT = new Element[0];
-  static final String ELEMENT_DESC = org.objectweb.asm.Type.getDescriptor(Element[].class);
+  static final String ELEMENTS_DESC = org.objectweb.asm.Type.getDescriptor(Element[].class);
+  // the element access stuff
+  static final String CUR_ELEMENT = "currentElement";
+  static final String ELEMENT_DESC = org.objectweb.asm.Type.getDescriptor(Element.class);
   // other stuff
   static final String GET_INSTANCE = "getInstance";
   static final String PROXY_CLASS_NAME_FORMAT = "%s$Invoker_%d";
@@ -133,7 +132,11 @@ public final class ClassInstanceMaker {
    * @return the created instance maker for the constructor injection.
    * @throws AerogelException if an exception occurs when defining and loading the class.
    */
-  public static @NotNull InstanceMaker forConstructor(@NotNull Constructor<?> target, boolean singleton) {
+  public static @NotNull InstanceMaker forConstructor(
+    @NotNull Element self,
+    @NotNull Constructor<?> target,
+    boolean singleton
+  ) {
     // extract the wrapping class of the constructor
     Class<?> ct = target.getDeclaringClass();
     // the types used for the class init
@@ -158,7 +161,7 @@ public final class ClassInstanceMaker {
     mv.visitCode();
     // if this is a singleton check first if the instance is already loaded
     if (singleton) {
-      visitSingletonHolder(mv, proxyName);
+      checkForConstructedValue(mv, proxyName, true);
     }
     // check if the constructor does take arguments (if not that makes the life easier)
     if (target.getParameterCount() == 0) {
@@ -196,7 +199,7 @@ public final class ClassInstanceMaker {
     // finish & define the class
     cw.visitEnd();
     // construct
-    return defineAndConstruct(cw, proxyName, ct, elements);
+    return defineAndConstruct(cw, proxyName, ct, self, elements);
   }
 
   /**
@@ -222,10 +225,8 @@ public final class ClassInstanceMaker {
     AtomicInteger writerIndex = new AtomicInteger(0);
     for (int i = 0; i < parameters.length; i++) {
       elements[i] = unpackParameter(name, mv, parameters[i], writerIndex, parameters[i].getDeclaredAnnotations(), i);
-      // add a check if the singleton instance was created as a side effect after each parameter
-      if (singleton) {
-        visitSingletonHolder(mv, name);
-      }
+      // add a check if the instance was created as a side effect after each parameter
+      checkForConstructedValue(mv, name, singleton);
     }
     // return the types for later re-use
     return elements;
@@ -239,11 +240,12 @@ public final class ClassInstanceMaker {
    */
   static void writeFields(@NotNull ClassWriter cw, boolean singleton) {
     // adds the type[] fields to the class
-    cw.visitField(PRIVATE_FINAL, ELEMENTS, ELEMENT_DESC, null, null).visitEnd();
+    cw.visitField(PRIVATE_FINAL, ELEMENTS, ELEMENTS_DESC, null, null).visitEnd();
+    // adds the element field of the constructing type to the class
+    cw.visitField(PRIVATE_FINAL, CUR_ELEMENT, ELEMENT_DESC, null, null).visitEnd();
     // if this is a singleton add the atomic reference field which will hold that instance later
     if (singleton) {
       cw.visitField(PRIVATE_FINAL, HOLDER, HOLDER_DESC, null, null).visitEnd();
-      cw.visitField(PRIVATE_FINAL, INSTANCE_THERE, INSTANCE_THERE_DESC, null, null).visitEnd();
     }
   }
 
@@ -256,10 +258,14 @@ public final class ClassInstanceMaker {
    */
   static void writeConstructor(@NotNull ClassWriter cw, @NotNull String proxyName, boolean singleton) {
     // visit the constructor
-    MethodVisitor mv = beginConstructor(cw, descToMethodDesc(ELEMENT_DESC, void.class));
+    MethodVisitor mv = beginConstructor(cw, descToMethodDesc(ELEMENTS_DESC + ELEMENT_DESC, void.class));
     // assign the type field
     mv.visitVarInsn(ALOAD, 1);
-    mv.visitFieldInsn(PUTFIELD, proxyName, ELEMENTS, ELEMENT_DESC);
+    mv.visitFieldInsn(PUTFIELD, proxyName, ELEMENTS, ELEMENTS_DESC);
+    // assign the element field holding information about the constructing element
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitVarInsn(ALOAD, 2);
+    mv.visitFieldInsn(PUTFIELD, proxyName, CUR_ELEMENT, ELEMENT_DESC);
     // assign the singleton AtomicReference field if this is a singleton
     if (singleton) {
       // create a new instance of the singleton holder
@@ -268,12 +274,6 @@ public final class ClassInstanceMaker {
       mv.visitInsn(DUP);
       mv.visitMethodInsn(INVOKESPECIAL, HOLDER_NAME, CONSTRUCTOR_NAME, "()V", false);
       mv.visitFieldInsn(PUTFIELD, proxyName, HOLDER, HOLDER_DESC);
-      // create a new instance of the holder if the singleton instance was constructed
-      mv.visitVarInsn(ALOAD, 0);
-      mv.visitTypeInsn(NEW, INSTANCE_THERE_NAME);
-      mv.visitInsn(DUP);
-      mv.visitMethodInsn(INVOKESPECIAL, INSTANCE_THERE_NAME, CONSTRUCTOR_NAME, "()V", false);
-      mv.visitFieldInsn(PUTFIELD, proxyName, INSTANCE_THERE, INSTANCE_THERE_DESC);
     }
     // finish the constructor write
     mv.visitInsn(RETURN);
@@ -292,9 +292,9 @@ public final class ClassInstanceMaker {
     for (Element element : types) {
       // primitive types need to get loaded in another way from the stack than objects
       if (ReflectionUtils.isPrimitive(element.componentType())) {
-        readerIndex += AsmPrimitives.load((Class<?>) element.componentType(), mv, 2 + readerIndex);
+        readerIndex += AsmPrimitives.load((Class<?>) element.componentType(), mv, 3 + readerIndex);
       } else {
-        mv.visitVarInsn(ALOAD, 2 + readerIndex++);
+        mv.visitVarInsn(ALOAD, 3 + readerIndex++);
       }
     }
   }
@@ -313,15 +313,16 @@ public final class ClassInstanceMaker {
     @NotNull ClassWriter cw,
     @NotNull String name,
     @NotNull Class<?> parent,
+    @NotNull Element self,
     @NotNull Element[] elements
   ) {
     Class<?> defined = ClassDefiners.getDefiner().defineClass(name, parent, cw.toByteArray());
     // instantiate the class
     try {
-      Constructor<?> ctx = defined.getDeclaredConstructor(Element[].class);
+      Constructor<?> ctx = defined.getDeclaredConstructor(Element[].class, Element.class);
       ctx.setAccessible(true);
 
-      return (InstanceMaker) ctx.newInstance((Object) elements);
+      return (InstanceMaker) ctx.newInstance(elements, self);
     } catch (ReflectiveOperationException exception) {
       throw AerogelException.forException(exception);
     }
@@ -336,18 +337,6 @@ public final class ClassInstanceMaker {
   static void appendSingletonWrite(@NotNull MethodVisitor mv, @NotNull String proxyName) {
     // temp store the previous return value
     mv.visitVarInsn(ASTORE, 2);
-    // inform the singleton holder that a value was computed
-    mv.visitVarInsn(ALOAD, 0);
-    mv.visitFieldInsn(GETFIELD, proxyName, INSTANCE_THERE, INSTANCE_THERE_DESC);
-    // set it to true
-    mv.visitInsn(ICONST_1);
-    mv.visitMethodInsn(
-      INVOKEVIRTUAL,
-      INSTANCE_THERE_NAME,
-      "set",
-      descToMethodDesc(org.objectweb.asm.Type.BOOLEAN_TYPE.getDescriptor(), void.class),
-      false);
-
     // load the reference field to the stack
     mv.visitVarInsn(ALOAD, 0);
     mv.visitFieldInsn(GETFIELD, proxyName, HOLDER, HOLDER_DESC);
@@ -364,24 +353,36 @@ public final class ClassInstanceMaker {
    * @param mv        the method visitor of the current method.
    * @param proxyName the name of the proxy owning the singleton reference field.
    */
-  static void visitSingletonHolder(@NotNull MethodVisitor mv, @NotNull String proxyName) {
+  static void checkForConstructedValue(@NotNull MethodVisitor mv, @NotNull String proxyName, boolean singleton) {
+    // check if we should visit the singleton holder
+    if (singleton) {
+      // check if the value is already present in the singleton holder
+      mv.visitVarInsn(ALOAD, 0);
+      mv.visitFieldInsn(GETFIELD, proxyName, HOLDER, HOLDER_DESC);
+      mv.visitMethodInsn(INVOKEVIRTUAL, HOLDER_NAME, "get", "()" + OBJECT_DESC, false);
+      // check if we can return now
+      visitReturnIfNonNull(mv);
+    }
+    // check if the InjectionContext has a value available
+    mv.visitVarInsn(ALOAD, 1);
+    // load the element we are constructing
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitFieldInsn(GETFIELD, proxyName, CUR_ELEMENT, ELEMENT_DESC);
+    // visit the findConstructedValue method in the InjectionContext
+    mv.visitMethodInsn(INVOKEINTERFACE, INJ_CONTEXT_NAME, FIND_CONSTRUCTED_VALUE, FIND_CONSTRUCTED_VALUE_DESC, true);
+    // check if we can return now
+    visitReturnIfNonNull(mv);
+  }
+
+  static void visitReturnIfNonNull(@NotNull MethodVisitor mv) {
     Label wasConstructedDimension = new Label();
-    // check if the value was already constructed
-    mv.visitVarInsn(ALOAD, 0);
-    mv.visitFieldInsn(GETFIELD, proxyName, INSTANCE_THERE, INSTANCE_THERE_DESC);
-    mv.visitMethodInsn(
-      INVOKEVIRTUAL,
-      INSTANCE_THERE_NAME,
-      "get",
-      "()" + org.objectweb.asm.Type.BOOLEAN_TYPE.getDescriptor(),
-      false);
-    // if (this.wasInstanceConstructed.get()) then
-    mv.visitJumpInsn(IFEQ, wasConstructedDimension);
-    // load the singleton holder to the stack
-    mv.visitVarInsn(ALOAD, 0);
-    mv.visitFieldInsn(GETFIELD, proxyName, HOLDER, HOLDER_DESC);
-    // load & return the singleton value stored in the holder
-    mv.visitMethodInsn(INVOKEVIRTUAL, HOLDER_NAME, "get", "()" + OBJECT_DESC, false);
+    // store the current value to the stack
+    mv.visitInsn(DUP);
+    mv.visitVarInsn(ASTORE, 2);
+    // if (val != null) then
+    mv.visitJumpInsn(IFNULL, wasConstructedDimension);
+    // return the current non-null value of the stack
+    mv.visitVarInsn(ALOAD, 2);
     mv.visitInsn(ARETURN);
     mv.visitLabel(wasConstructedDimension);
   }
@@ -432,7 +433,7 @@ public final class ClassInstanceMaker {
     }
     // read the element from the class intern array
     mv.visitVarInsn(ALOAD, 0);
-    mv.visitFieldInsn(GETFIELD, ot, ELEMENTS, ELEMENT_DESC);
+    mv.visitFieldInsn(GETFIELD, ot, ELEMENTS, ELEMENTS_DESC);
     pushInt(mv, index);
     mv.visitInsn(AALOAD);
     // get its value from the injection context, or just the binding if a Provider is requested
@@ -453,9 +454,9 @@ public final class ClassInstanceMaker {
     }
     // unwrap the primitive type if needed - a provider could cause a type mismatch here so ignore that check
     if (!provider && type.isPrimitive()) {
-      typeWriterIndex.addAndGet(AsmPrimitives.storeUnbox(type, mv, 2 + typeWriterIndex.get()));
+      typeWriterIndex.addAndGet(AsmPrimitives.storeUnbox(type, mv, 3 + typeWriterIndex.get()));
     } else {
-      mv.visitVarInsn(ASTORE, 2 + typeWriterIndex.getAndIncrement());
+      mv.visitVarInsn(ASTORE, 3 + typeWriterIndex.getAndIncrement());
     }
     // return the extracted generic type
     return Element.get(generic)

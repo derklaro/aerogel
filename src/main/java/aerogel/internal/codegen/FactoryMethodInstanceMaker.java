@@ -37,7 +37,7 @@ import static aerogel.internal.codegen.ClassInstanceMaker.appendSingletonWrite;
 import static aerogel.internal.codegen.ClassInstanceMaker.defineAndConstruct;
 import static aerogel.internal.codegen.ClassInstanceMaker.loadParameters;
 import static aerogel.internal.codegen.ClassInstanceMaker.storeParameters;
-import static aerogel.internal.codegen.ClassInstanceMaker.visitSingletonHolder;
+import static aerogel.internal.codegen.ClassInstanceMaker.checkForConstructedValue;
 import static aerogel.internal.codegen.ClassInstanceMaker.writeConstructor;
 import static aerogel.internal.codegen.ClassInstanceMaker.writeFields;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -75,7 +75,11 @@ public final class FactoryMethodInstanceMaker {
    * @return the created instance maker for the factory method based construction.
    * @throws aerogel.AerogelException if an exception occurs when defining and loading the class.
    */
-  public static @NotNull InstanceMaker forMethod(@NotNull Method method, boolean shouldBeSingleton) {
+  public static @NotNull InstanceMaker forMethod(
+    @NotNull Element self,
+    @NotNull Method method,
+    boolean shouldBeSingleton
+  ) {
     // extract the wrapping class of the method
     Class<?> ct = method.getDeclaringClass();
     // the types used for the class init
@@ -101,7 +105,7 @@ public final class FactoryMethodInstanceMaker {
     mv.visitCode();
     // if this is a singleton check first if the instance is already loaded
     if (shouldBeSingleton) {
-      visitSingletonHolder(mv, proxyName);
+      checkForConstructedValue(mv, proxyName, true);
     }
     // check if the constructor does take arguments (if not that makes the life easier)
     if (method.getParameterCount() == 0) {
@@ -134,6 +138,6 @@ public final class FactoryMethodInstanceMaker {
 
     cw.visitEnd();
     // construct
-    return defineAndConstruct(cw, proxyName, ct, elements);
+    return defineAndConstruct(cw, proxyName, ct, self, elements);
   }
 }

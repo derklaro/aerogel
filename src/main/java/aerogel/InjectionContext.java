@@ -82,6 +82,8 @@ public interface InjectionContext {
   @Unmodifiable
   @NotNull Map<Element, Object> overriddenTypes();
 
+  @Nullable <T> T findConstructedValue(@NotNull Element element);
+
   /**
    * Tries to find or construct the given element in the known types or the associated injector.
    *

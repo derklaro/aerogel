@@ -65,7 +65,7 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     boolean shouldBeSingleton
   ) {
     super(targetType, bindingType, injector);
-    this.constructor = ClassInstanceMaker.forConstructor(injectionPoint, shouldBeSingleton);
+    this.constructor = ClassInstanceMaker.forConstructor(targetType, injectionPoint, shouldBeSingleton);
   }
 
   /**
@@ -127,6 +127,7 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
   public <T> @Nullable T get(@NotNull InjectionContext context) {
     // construct the value
     T value = (T) this.constructor.getInstance(context);
+    // (1.3.0): check if value of this type was constructed during the construct of the
     // push the construction done notice to the context
     context.constructDone(this.targetType, value, true);
     context.constructDone(this.bindingType, value, false);

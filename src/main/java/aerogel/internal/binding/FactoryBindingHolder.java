@@ -60,7 +60,7 @@ public final class FactoryBindingHolder extends AbstractBindingHolder {
     boolean shouldBeSingleton
   ) {
     super(type, binding, injector);
-    this.instanceMaker = FactoryMethodInstanceMaker.forMethod(factoryMethod, shouldBeSingleton);
+    this.instanceMaker = FactoryMethodInstanceMaker.forMethod(type, factoryMethod, shouldBeSingleton);
   }
 
   /**

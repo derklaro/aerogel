@@ -24,8 +24,6 @@
 
 package aerogel.internal.context;
 
-import static aerogel.internal.utility.Preconditions.checkArgument;
-
 import aerogel.AerogelException;
 import aerogel.Element;
 import aerogel.InjectionContext;
@@ -112,6 +110,15 @@ public final class DefaultInjectionContext implements InjectionContext {
    */
   @Override
   @SuppressWarnings("unchecked")
+  public <T> @Nullable T findConstructedValue(@NotNull Element element) {
+    return (T) this.knownTypes.get(element);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @SuppressWarnings("unchecked")
   public <T> @Nullable T findInstance(@NotNull Element element) {
     Objects.requireNonNull(element, "element");
     // check if the type was overridden when creating the context
@@ -184,7 +191,6 @@ public final class DefaultInjectionContext implements InjectionContext {
       }
     } else {
       // store to the known types as there is no reference yet
-      checkArgument(!(result instanceof InjectionTimeProxyable), "Unable to store a proxy handler instance");
       this.knownTypes.put(element, result);
       if (doInjectMembers) {
         this.injectMembers(element, result); // inject after storing to prevent infinite loops
