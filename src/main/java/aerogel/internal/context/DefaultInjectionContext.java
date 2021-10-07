@@ -24,6 +24,8 @@
 
 package aerogel.internal.context;
 
+import static aerogel.internal.utility.Preconditions.checkArgument;
+
 import aerogel.AerogelException;
 import aerogel.Element;
 import aerogel.InjectionContext;
@@ -111,7 +113,9 @@ public final class DefaultInjectionContext implements InjectionContext {
   @Override
   @SuppressWarnings("unchecked")
   public <T> @Nullable T findConstructedValue(@NotNull Element element) {
-    return (T) this.knownTypes.get(element);
+    Object val = this.knownTypes.get(element);
+    // we do not return dynamic created proxy types as they should not be used for construction or general use
+    return val == null || val instanceof InjectionTimeProxyable ? null : (T) val;
   }
 
   /**
@@ -189,8 +193,11 @@ public final class DefaultInjectionContext implements InjectionContext {
         }
         ((InjectionTimeProxyable) current).setDelegate(result);
       }
+      // do not let an existing value reset the current injecting value...
+      return;
     } else {
-      if (result instanceof InjectionTimeProxyable) return;
+      // do not store proxies as they should be stored after creation and never get injected or used by anyone else
+      checkArgument(!(result instanceof InjectionTimeProxyable), "Unable to store a proxy handler instance");
       // store to the known types as there is no reference yet if we are currently still constructing
       if (this.currentElement != null) {
         this.knownTypes.put(element, result);
