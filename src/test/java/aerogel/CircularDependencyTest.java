@@ -32,84 +32,46 @@ public class CircularDependencyTest {
   @Test
   void testCircularDependencyManagement() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.fixed(Element.get(String.class).requireName("TestData"), "Very cool test"));
-    injector.install(Bindings.constructing(Element.get(TestHolder.class), Element.get(TestImpl.class)));
+    ApplicationMainClass mainClass = injector.instance(ApplicationMainClass.class);
 
-    Root root = injector.instance(Root.class);
+    Assertions.assertNotNull(mainClass);
+    Assertions.assertNotNull(mainClass.api);
+    Assertions.assertNotNull(mainClass.api.main());
 
-    Assertions.assertNotNull(root);
-    Assertions.assertNotNull(root.test);
-    Assertions.assertNotNull(root.data);
-    Assertions.assertNotNull(root.data.test);
-    Assertions.assertNotNull(root.data.test.root());
-    Assertions.assertNotNull(root.test.rootProvider());
-
-    Assertions.assertEquals("Very cool test", root.test.testData());
-    Assertions.assertEquals("Very cool test", root.data.test.testData());
-
-    Assertions.assertSame(root, root.test.root());
-    Assertions.assertSame(root, root.data.test.root());
-    Assertions.assertSame(root, root.test.rootProvider().get());
+    Assertions.assertSame(mainClass, mainClass.api.main());
   }
 
-  public interface TestHolder {
+  @ProvidedBy(ApplicationApiImpl.class)
+  private interface ApplicationApi {
 
-    String testData();
-
-    Root root();
-
-    Provider<Root> rootProvider();
+    default ApplicationMainClass main() {
+      return null;
+    }
   }
 
   @Singleton
-  private static final class Root {
+  private static class ApplicationMainClass {
 
-    private final TestHolder test;
-    private final Data data;
+    public final ApplicationApi api;
 
     @Inject
-    public Root(TestHolder test, Data data) {
-      this.test = test;
-      this.data = data;
+    public ApplicationMainClass(ApplicationApi api) {
+      this.api = api;
     }
   }
 
-  private static final class Data {
+  private static class ApplicationApiImpl implements ApplicationApi {
 
-    private final TestHolder test;
-
-    @Inject
-    public Data(TestHolder test) {
-      this.test = test;
-    }
-  }
-
-  public static final class TestImpl implements TestHolder {
-
-    private final String testData;
-    private final Root root;
-    private final Provider<Root> rootProvider;
+    public final ApplicationMainClass applicationMainClass;
 
     @Inject
-    private TestImpl(@Name("TestData") String testData, Root root, Provider<Root> rootProvider) {
-      this.testData = testData;
-      this.root = root;
-      this.rootProvider = rootProvider;
+    public ApplicationApiImpl(ApplicationMainClass applicationMainClass) {
+      this.applicationMainClass = applicationMainClass;
     }
 
     @Override
-    public String testData() {
-      return this.testData;
-    }
-
-    @Override
-    public Root root() {
-      return this.root;
-    }
-
-    @Override
-    public Provider<Root> rootProvider() {
-      return this.rootProvider;
+    public ApplicationMainClass main() {
+      return this.applicationMainClass;
     }
   }
 }
