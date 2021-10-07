@@ -190,8 +190,12 @@ public final class DefaultInjectionContext implements InjectionContext {
         ((InjectionTimeProxyable) current).setDelegate(result);
       }
     } else {
-      // store to the known types as there is no reference yet
-      this.knownTypes.put(element, result);
+      if (result instanceof InjectionTimeProxyable) return;
+      // store to the known types as there is no reference yet if we are currently still constructing
+      if (this.currentElement != null) {
+        this.knownTypes.put(element, result);
+      }
+      // check if we should run the field and member injection
       if (doInjectMembers) {
         this.injectMembers(element, result); // inject after storing to prevent infinite loops
       }

@@ -35,10 +35,11 @@ public class CircularDependencyTest {
     ApplicationMainClass mainClass = injector.instance(ApplicationMainClass.class);
 
     Assertions.assertNotNull(mainClass);
-    Assertions.assertNotNull(mainClass.api);
-    Assertions.assertNotNull(mainClass.api.main());
+    Assertions.assertNotNull(mainClass.api1);
+    Assertions.assertNotNull(mainClass.api1.main());
 
-    Assertions.assertSame(mainClass, mainClass.api.main());
+    Assertions.assertSame(mainClass, mainClass.api1.main());
+    Assertions.assertNotSame(mainClass.api1, mainClass.api2);
   }
 
   @ProvidedBy(ApplicationApiImpl.class)
@@ -49,14 +50,15 @@ public class CircularDependencyTest {
     }
   }
 
-  @Singleton
   private static class ApplicationMainClass {
 
-    public final ApplicationApi api;
+    public final ApplicationApi api1;
+    public final ApplicationApi api2;
 
     @Inject
-    public ApplicationMainClass(ApplicationApi api) {
-      this.api = api;
+    public ApplicationMainClass(ApplicationApi api1, ApplicationApi api2) {
+      this.api1 = api1;
+      this.api2 = api2;
     }
   }
 

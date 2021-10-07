@@ -24,6 +24,7 @@
 
 package aerogel;
 
+import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -51,6 +52,8 @@ public class ClassInjectionTest {
     Assertions.assertNotNull(injectableClass);
     Assertions.assertEquals("test", injectableClass.test);
     Assertions.assertEquals("test1234", injectableClass.namedString);
+
+    Assertions.assertNotEquals(injectableClass.holderA.theString, injectableClass.holderB.theString);
   }
 
   private static final class InjectableClass {
@@ -67,11 +70,20 @@ public class ClassInjectionTest {
 
     private final String test;
     private final String namedString;
+    private final RandHolder holderA;
+    private final RandHolder holderB;
 
     @Inject
-    public InjectableNamedClass(String test, @Name("testing") String namedString) {
+    public InjectableNamedClass(String test, @Name("testing") String namedString, RandHolder a, RandHolder b) {
       this.test = test;
       this.namedString = namedString;
+      this.holderA = a;
+      this.holderB = b;
     }
+  }
+
+  private static final class RandHolder {
+
+    private final String theString = UUID.randomUUID().toString();
   }
 }
