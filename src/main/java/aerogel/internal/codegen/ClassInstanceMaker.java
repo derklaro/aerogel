@@ -170,10 +170,6 @@ public final class ClassInstanceMaker {
       mv.visitTypeInsn(NEW, intName(ct));
       mv.visitInsn(DUP);
       mv.visitMethodInsn(INVOKESPECIAL, intName(ct), CONSTRUCTOR_NAME, "()V", false);
-      // if this is a singleton store the value in the AtomicReference
-      if (singleton) {
-        appendSingletonWrite(mv, proxyName);
-      }
       // no types for the class init are required
       elements = NO_ELEMENT;
     } else {
@@ -186,10 +182,10 @@ public final class ClassInstanceMaker {
       loadParameters(elements, mv);
       // instantiate the constructor with the parameters
       mv.visitMethodInsn(INVOKESPECIAL, intName(ct), CONSTRUCTOR_NAME, consDesc(target), false);
-      // if this is a singleton store the value in the AtomicReference
-      if (singleton) {
-        appendSingletonWrite(mv, proxyName);
-      }
+    }
+    // if this is a singleton store the value in the AtomicReference
+    if (singleton) {
+      appendSingletonWrite(mv, proxyName);
     }
     // return the created value
     mv.visitInsn(ARETURN);

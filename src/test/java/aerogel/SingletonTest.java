@@ -29,6 +29,11 @@ import org.junit.jupiter.api.Test;
 
 public class SingletonTest {
 
+  @Name("holder")
+  private static StringHolder factoryStringHolder() {
+    return new StringHolder();
+  }
+
   @Test
   void testConstructingSingleton() {
     Injector injector = Injector.newInjector();
@@ -43,6 +48,20 @@ public class SingletonTest {
     Assertions.assertEquals("test", value2.test);
 
     Assertions.assertSame(value, value2);
+  }
+
+  @Test
+  void testFactoryMethodSingleton() throws NoSuchMethodException {
+    Injector injector = Injector.newInjector();
+    injector.install(Bindings.factory(SingletonTest.class.getDeclaredMethod("factoryStringHolder")));
+
+    StringHolder holderA = injector.instance(Element.get(StringHolder.class).requireName("holder"));
+    Assertions.assertNotNull(holderA);
+
+    StringHolder holderB = injector.instance(Element.get(StringHolder.class).requireName("holder"));
+    Assertions.assertNotNull(holderB);
+
+    Assertions.assertSame(holderA, holderB);
   }
 
   @Singleton

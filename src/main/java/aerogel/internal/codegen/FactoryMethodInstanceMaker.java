@@ -121,10 +121,10 @@ public final class FactoryMethodInstanceMaker {
       loadParameters(elements, mv);
       // invoke the method with these arguments
       mv.visitMethodInsn(INVOKESTATIC, intName(ct), method.getName(), methodDesc(method), ct.isInterface());
-      // if this is a singleton store the value in the AtomicReference
-      if (shouldBeSingleton) {
-        appendSingletonWrite(mv, proxyName);
-      }
+    }
+    // if this is a singleton store the value in the AtomicReference
+    if (shouldBeSingleton) {
+      appendSingletonWrite(mv, proxyName);
     }
     // if the return type of the class is primitive we need to box it as the next instance takes care
     // of the primitive / non-primitive conversion and the method signature indicates an object return type
