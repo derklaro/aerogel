@@ -74,6 +74,19 @@ public final class Application {
 }
 ```
 
+##### Circular proxies
+
+Aerogel will create circular proxies of interfaces when necessary. These proxies will be used to break circular
+dependencies (`Provider` can be used to reach the same goal but can be a bit annoying to use).
+
+There are some limitations when proxies are used:
+
+* Injecting the same type twice when the type is proxied will result in the same instance instead of two different
+  instances.
+* Injected proxies into classes are not available in the constructor are the type which got injected is required for the
+  implementation of the proxied interface to be constructed. (This applies as well to all `Provider` methods when you
+  try to prevent circular dependencies in a constructor)
+
 ### How to (Auto)
 
 The auto module is used to generate binding data during compile time. This data is emitted to a file
