@@ -40,10 +40,20 @@ public class CircularDependencyTest {
     Assertions.assertNotNull(mainClass.api1.main());
     Assertions.assertNotNull(mainClass.randomHolder);
 
+    Assertions.assertSame(mainClass.api1, mainClass.api2);
     Assertions.assertSame(mainClass, mainClass.api1.main());
-    // @todo: can we implement this? Currently trying to inject the same value twice on a circular instance will inject
-    // @todo: the same value twice and there is no real way to get around that...
-    // Assertions.assertNotSame(mainClass.api1, mainClass.api2);
+  }
+
+  @Test
+  void testProviderCircularDependencyManagement() {
+    Injector injector = Injector.newInjector();
+    ApplicationProviderMainClass mainClass = injector.instance(ApplicationProviderMainClass.class);
+
+    Assertions.assertNotNull(mainClass);
+    Assertions.assertNotNull(mainClass.apiProvider);
+    Assertions.assertNotNull(mainClass.randomHolder);
+
+    Assertions.assertNotSame(mainClass.apiProvider.get(), mainClass.apiProvider.get());
   }
 
   @ProvidedBy(ApplicationApiImpl.class)
@@ -65,6 +75,18 @@ public class CircularDependencyTest {
       this.api1 = api1;
       this.api2 = api2;
       this.randomHolder = randomHolder;
+    }
+  }
+
+  private static class ApplicationProviderMainClass {
+
+    public final RandomHolder randomHolder;
+    public final Provider<ApplicationApi> apiProvider;
+
+    @Inject
+    public ApplicationProviderMainClass(Provider<ApplicationApi> apiProvider, RandomHolder randomHolder) {
+      this.randomHolder = randomHolder;
+      this.apiProvider = apiProvider;
     }
   }
 
