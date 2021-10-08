@@ -82,6 +82,15 @@ public interface InjectionContext {
   @Unmodifiable
   @NotNull Map<Element, Object> overriddenTypes();
 
+  /**
+   * Gets an already constructed value of the current injection lifecycle. Proxies created during the injection time
+   * should never get returned by this method.
+   *
+   * @param element the element to find an already constructed value of.
+   * @param <T>     the expected type of element.
+   * @return the already constructed element or {@code null} if not yet constructed.
+   * @since 1.3.0
+   */
   @Nullable <T> T findConstructedValue(@NotNull Element element);
 
   /**

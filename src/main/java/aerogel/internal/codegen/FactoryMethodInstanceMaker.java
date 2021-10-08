@@ -34,10 +34,10 @@ import static aerogel.internal.codegen.ClassInstanceMaker.INJ_CONTEXT_DESC;
 import static aerogel.internal.codegen.ClassInstanceMaker.INSTANCE_MAKER;
 import static aerogel.internal.codegen.ClassInstanceMaker.NO_ELEMENT;
 import static aerogel.internal.codegen.ClassInstanceMaker.appendSingletonWrite;
+import static aerogel.internal.codegen.ClassInstanceMaker.checkForConstructedValue;
 import static aerogel.internal.codegen.ClassInstanceMaker.defineAndConstruct;
 import static aerogel.internal.codegen.ClassInstanceMaker.loadParameters;
 import static aerogel.internal.codegen.ClassInstanceMaker.storeParameters;
-import static aerogel.internal.codegen.ClassInstanceMaker.checkForConstructedValue;
 import static aerogel.internal.codegen.ClassInstanceMaker.writeConstructor;
 import static aerogel.internal.codegen.ClassInstanceMaker.writeFields;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -70,6 +70,7 @@ public final class FactoryMethodInstanceMaker {
   /**
    * Makes an instance maker for the given factory method.
    *
+   * @param self              the element type for which the instance maker gets created.
    * @param method            the method to create the instance maker for.
    * @param shouldBeSingleton if the resulting object should be a singleton.
    * @return the created instance maker for the factory method based construction.

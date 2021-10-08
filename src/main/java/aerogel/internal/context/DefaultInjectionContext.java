@@ -202,7 +202,7 @@ public final class DefaultInjectionContext implements InjectionContext {
       if (this.currentElement != null) {
         this.knownTypes.put(element, result);
       }
-      // check if we should run the field and member injection
+      // check if we should run the member injection
       if (doInjectMembers) {
         this.injectMembers(element, result); // inject after storing to prevent infinite loops
       }

@@ -127,6 +127,7 @@ public final class ClassInstanceMaker {
   /**
    * Makes an instance maker for the given constructor.
    *
+   * @param self      the element type for which the instance maker gets created.
    * @param target    the target constructor to use for injection.
    * @param singleton if the resulting object should be a singleton.
    * @return the created instance maker for the constructor injection.
@@ -304,7 +305,8 @@ public final class ClassInstanceMaker {
    *
    * @param cw       the class writer used for construction of the type.
    * @param name     the name of the constructed class.
-   * @param parent   the parent class of the constructed class (as we are generating anonymous classes)
+   * @param parent   the parent class of the constructed class (as we are generating anonymous classes).
+   * @param self     the element for which the instance maker gets created.
    * @param elements the elements of the parameters used for injection.
    * @return the instance of the newly created instance maker.
    * @throws AerogelException if an exception occurs when defining and loading the class.
@@ -352,6 +354,7 @@ public final class ClassInstanceMaker {
    *
    * @param mv        the method visitor of the current method.
    * @param proxyName the name of the proxy owning the singleton reference field.
+   * @param singleton if the resulting object should only have one instance per injector.
    */
   static void checkForConstructedValue(@NotNull MethodVisitor mv, @NotNull String proxyName, boolean singleton) {
     // check if we should visit the singleton holder
@@ -374,6 +377,12 @@ public final class ClassInstanceMaker {
     visitReturnIfNonNull(mv);
   }
 
+  /**
+   * Visits the return code to return the top element from the current stack.
+   *
+   * @param mv the method visitor to visit the operands on.
+   * @since 1.3.0
+   */
   static void visitReturnIfNonNull(@NotNull MethodVisitor mv) {
     Label wasConstructedDimension = new Label();
     // store the current value to the stack
