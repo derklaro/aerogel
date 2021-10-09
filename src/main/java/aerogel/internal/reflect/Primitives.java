@@ -92,9 +92,9 @@ public final class Primitives {
       return true;
     }
     // get the raw super type of the given type
-    Type rawType = ReflectionUtils.rawType(type);
+    Class<?> rawType = ReflectionUtils.rawType(type);
     // check if the raw type equals to the given boxed type class
-    return boxed.getClass().equals(rawType);
+    return rawType.isAssignableFrom(boxed.getClass());
   }
 
   /**
