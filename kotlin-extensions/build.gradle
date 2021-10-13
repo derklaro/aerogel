@@ -1,6 +1,6 @@
 plugins {
   id 'org.jetbrains.dokka' version '1.5.31'
-  id 'org.jetbrains.kotlin.jvm' version '1.6.0-M1'
+  id 'org.jetbrains.kotlin.jvm' version '1.6.0-RC'
 }
 
 description = 'Extension for aerogel supporting the enhanced kotlin inline generics'
