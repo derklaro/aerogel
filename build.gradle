@@ -56,7 +56,7 @@ allprojects {
     // testing of the jakarta integration
     testImplementation group: 'jakarta.inject', name: 'jakarta.inject-tck', version: '2.0.1'
     // bug spotting
-    compileOnly group: 'org.jetbrains', name: 'annotations', version: '22.0.0'
+    compileOnly group: 'org.jetbrains', name: 'annotations', version: '23.0.0'
   }
 
   test {
