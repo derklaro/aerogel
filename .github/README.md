@@ -31,7 +31,7 @@ repositories {
 }
 
 dependencies {
-  implentation group: 'io.github.derklaro', name: 'aerogel', version: '<VERSION>'
+  implementation("com.github.derklaro", "aerogel", "<VERSION>")
 }
 ```
 
