@@ -22,3 +22,15 @@
  * THE SOFTWARE.
  */
 
+package dev.derklaro.aerogel.kotlin
+
+import dev.derklaro.aerogel.Element
+
+/**
+ * Creates a new [Element] for the specified generic type [T].
+ *
+ * @see Element.get
+ * @author Pasqual K.
+ * @since 1.0
+ */
+inline fun <reified T> element() = Element.get(T::class.java)

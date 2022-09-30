@@ -22,3 +22,35 @@
  * THE SOFTWARE.
  */
 
+package dev.derklaro.aerogel.auto;
+
+import dev.derklaro.aerogel.ProvidedBy;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * Defines which type the annotated class is bound to. It will be used when type lookups are made to find the class
+ * implementing or extending the required abstract instance. It works like {@link ProvidedBy} in the opposite
+ * direction. Please note that in order for this annotation to work the annotation scanning must get enabled when
+ * building an injector instance.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
+@Documented
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Provides {
+
+  /**
+   * Defines which class this instance should be bound to. The given type must be super interface or class of the
+   * annotated class in order for this annotation to work correctly.
+   *
+   * @return the type to which the annotated class should get bound.
+   */
+  @NotNull Class<?>[] value();
+}

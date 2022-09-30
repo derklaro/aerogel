@@ -22,3 +22,26 @@
  * THE SOFTWARE.
  */
 
+package dev.derklaro.aerogel.internal.codegen;
+
+import dev.derklaro.aerogel.InjectionContext;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+/**
+ * Represents a class which can create an instance in any way of another class.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
+@FunctionalInterface
+public interface InstanceMaker {
+
+  /**
+   * Gets the instance of this maker based on the given injection context.
+   *
+   * @param context the context to use for creating the instance.
+   * @return the created instance, may be null.
+   */
+  @Nullable Object getInstance(@NotNull InjectionContext context);
+}

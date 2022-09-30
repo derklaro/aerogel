@@ -22,3 +22,28 @@
  * THE SOFTWARE.
  */
 
+package dev.derklaro.aerogel.internal.unsafe;
+
+import dev.derklaro.aerogel.AerogelException;
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * Internal utility class to define classes in the runtime.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
+@FunctionalInterface
+public interface ClassDefiner {
+
+  /**
+   * Defines the given class {@code bytecode} and return the constructed class object.
+   *
+   * @param name     the name of the class to construct.
+   * @param parent   the parent class of this class as we are assuming to define an anonymous class.
+   * @param bytecode the bytecode of the class to define.
+   * @return the constructed class object from the given {@code bytecode}.
+   * @throws AerogelException if the class defining failed.
+   */
+  @NotNull Class<?> defineClass(@NotNull String name, @NotNull Class<?> parent, byte[] bytecode);
+}

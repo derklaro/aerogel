@@ -22,3 +22,29 @@
  * THE SOFTWARE.
  */
 
+package dev.derklaro.aerogel;
+
+import org.jetbrains.annotations.NotNull;
+
+/**
+ * Represents a not yet constructed binding which can be bound to any constructor either by invoking {@link
+ * #construct(Injector)} directly using the {@link Injector} to which the binding should get bound or by using {@link
+ * Injector#install(BindingConstructor)} or {@link Injector#install(Iterable)}. See {@link Bindings} for some
+ * pre-defined ways to bind a value.
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
+@FunctionalInterface
+public interface BindingConstructor {
+
+  /**
+   * Constructs this binding and installs it to the injector. The construction can result in an {@link AerogelException}
+   * but should not result in any other exception.
+   *
+   * @param injector the injector which is currently installing the binding.
+   * @return the constructed binding holder based on the given {@code injector}.
+   * @throws AerogelException if the construction failed.
+   */
+  @NotNull BindingHolder construct(@NotNull Injector injector) throws AerogelException;
+}

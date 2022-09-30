@@ -38,9 +38,9 @@ dependencies {
 You can now start building your application based on the input:
 
 ```java
-import aerogel.Injector;
-import aerogel.Bindings;
-import aerogel.Element;
+import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.Bindings;
+import dev.derklaro.aerogel.Element;
 
 public final class Application {
 
@@ -115,7 +115,7 @@ dependencies {
 We can for example do something like this (it's an example and not best practice tho - keep your code clean):
 
 ```java
-import aerogel.auto.Factory;
+import auto.dev.derklaro.aerogel.Factory;
 
 public final class Bindings {
 
@@ -140,8 +140,8 @@ public final class Bindings {
 Bindings can now get loaded in the runtime:
 
 ```java
-import aerogel.Injector;
-import aerogel.auto.AutoAnnotationRegistry;
+import dev.derklaro.aerogel.Injector;
+import auto.dev.derklaro.aerogel.AutoAnnotationRegistry;
 
 public final class Application {
 
@@ -180,7 +180,7 @@ dependencies {
 There are now replacements for everything which works with generics. Here are some examples:
 
 ```kotlin
-import aerogel.Injector
+import dev.derklaro.aerogel.Injector
 import aerogel.kotlin.fixed
 import aerogel.kotlin.instance
 import aerogel.kotlin.element

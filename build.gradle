@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021 Pasqual K. and contributors
+ * Copyright (c) 2021-2022 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,25 +23,23 @@
  */
 
 plugins {
-  id 'org.cadixdev.licenser' version '0.6.1'
+  id 'com.diffplug.spotless' version '6.11.0'
   id 'com.github.johnrengelman.shadow' version '7.1.2'
   id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
 }
 
 allprojects {
-  group 'io.github.derklaro'
-  version '1.4.0'
+  version '2.0.0'
+  group 'dev.derklaro'
 
-  defaultTasks 'build', 'checkLicenses', 'test', 'shadowJar'
+  defaultTasks 'build', 'test', 'shadowJar'
 
   apply plugin: 'signing'
   apply plugin: 'checkstyle'
   apply plugin: 'java-library'
   apply plugin: 'maven-publish'
-  apply plugin: 'org.cadixdev.licenser'
 
   repositories {
-    mavenLocal()
     mavenCentral()
   }
 
@@ -126,7 +124,7 @@ allprojects {
           developers {
             developer {
               name = 'Pasqual Koschmieder'
-              email = 'pasqual.koschmieder@gmail.com'
+              email = 'git@derklaro.dev'
             }
           }
 
@@ -168,7 +166,7 @@ allprojects {
   }
 
   checkstyle {
-    toolVersion = '9.0'
+    toolVersion = '10.3.4'
   }
 
   tasks.withType(Checkstyle) {
@@ -177,11 +175,14 @@ allprojects {
     configFile = project.rootProject.file('checkstyle.xml')
   }
 
-  license {
-    include '**/*.kt'
-    include '**/*.java'
-    include '**/*.gradle'
-    header = project.rootProject.file('license_header.txt')
+  spotless {
+    java {
+      licenseHeaderFile(rootProject.file('license_header.txt'))
+    }
+
+    kotlin {
+      licenseHeaderFile(rootProject.file('license_header.txt'))
+    }
   }
 
   shadowJar {
@@ -190,7 +191,7 @@ allprojects {
     archiveClassifier.set(null)
     archiveBaseName.set(project.name)
     // relocate internal dependencies to prevent compatibility issues
-    relocate 'org.objectweb.asm', 'aerogel.relocate.asm'
+    relocate 'org.objectweb.asm', 'dev.derklaro.aerogel.relocate.asm'
     // auto remove all classes which we don't need in the final jar
     minimize()
   }

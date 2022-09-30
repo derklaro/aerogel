@@ -22,3 +22,29 @@
  * THE SOFTWARE.
  */
 
+package dev.derklaro.aerogel.auto;
+
+import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.Singleton;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * Binds the annotated method as a factory method for the return type of the method. Arguments supplied to the factory
+ * methods are taken from the associated {@link Injector}. A factory method must be static and returning a type
+ * other than {@code void}. The can have any access modifier (public, protected, private, ...). Factory methods are
+ * singleton aware, meaning that if the return type is marked as {@link Singleton} the factory method will only
+ * get called once per injector inheritance (child injectors will use the instantiated binding of parent injectors).
+ *
+ * @author Pasqual K.
+ * @since 1.0
+ */
+@Documented
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Factory {
+
+}

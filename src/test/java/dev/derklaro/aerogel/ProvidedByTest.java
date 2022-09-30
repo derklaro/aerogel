@@ -22,3 +22,40 @@
  * THE SOFTWARE.
  */
 
+package dev.derklaro.aerogel;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+public class ProvidedByTest {
+
+  @Test
+  void testProvidedByDetection() {
+    JustAnotherInterface value = Assertions.assertDoesNotThrow(
+      () -> Injector.newInjector().instance(JustAnotherInterface.class));
+
+    Assertions.assertNotNull(value);
+    Assertions.assertEquals("Hello world :)", value.helloWorld());
+    Assertions.assertEquals("Goodbye everyone", value.helloPeople());
+  }
+
+  @ProvidedBy(JustAnotherInterfaceImpl.class)
+  public interface JustAnotherInterface {
+
+    default String helloWorld() {
+      return "Hello world :)";
+    }
+
+    default String helloPeople() {
+      return "Hello people";
+    }
+  }
+
+  public static final class JustAnotherInterfaceImpl implements JustAnotherInterface {
+
+    @Override
+    public String helloPeople() {
+      return "Goodbye everyone";
+    }
+  }
+}

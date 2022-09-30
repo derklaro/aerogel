@@ -22,3 +22,37 @@
  * THE SOFTWARE.
  */
 
+package dev.derklaro.aerogel.kotlin
+
+import dev.derklaro.aerogel.InjectionContext
+import dev.derklaro.aerogel.InjectionContext.Builder
+
+/**
+ * Tries to get or construct an instance of the given type [T], the instance may be null if null was bound.
+ *
+ * @see InjectionContext.findInstance
+ * @author Pasqual K.
+ * @since 1.0
+ */
+inline fun <reified T> InjectionContext.findInstance(): T? = this.findInstance(element<T>())
+
+/**
+ * Used to indicate that the construction of [result] typed [T] was done successfully. The resulting instance may be
+ * null in case null was bound to it. [injectMembers] is used to determine if all members in [result] should be injected.
+ *
+ * @see InjectionContext.constructDone
+ * @author Pasqual K.
+ * @since 1.0
+ */
+inline fun <reified T> InjectionContext.constructDone(result: Any?, injectMembers: Boolean = true) {
+  this.constructDone(element<T>(), result, injectMembers)
+}
+
+/**
+ * Overrides the given generic element [T] with the provided [value].
+ *
+ * @see Builder.override
+ * @author Pasqual K.
+ * @since 1.0
+ */
+inline fun <reified T> Builder.override(value: T?): Builder = this.override(element<T>(), value)

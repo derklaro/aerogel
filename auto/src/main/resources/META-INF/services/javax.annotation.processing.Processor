@@ -22,4 +22,4 @@
 # THE SOFTWARE.
 #
 
-aerogel.auto.internal.processor.AutoInjectAnnotationProcessor
+dev.derklaro.aerogel.auto.internal.processor.AutoInjectAnnotationProcessor
