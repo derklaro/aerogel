@@ -48,8 +48,8 @@ public interface Element {
    * @return a new element for the given {@code type}.
    * @throws NullPointerException if {@code type} is null.
    */
-  static @NotNull Element get(@NotNull Type type) {
-    Objects.requireNonNull(type, "A type is required to construct an element");
+  static @NotNull Element forType(@NotNull Type type) {
+    Objects.requireNonNull(type, "type");
     return new DefaultElement(type);
   }
 
@@ -73,7 +73,7 @@ public interface Element {
    * @return all required annotations of this element.
    */
   @UnmodifiableView
-  @NotNull Collection<AnnotationComparer> annotationComparer();
+  @NotNull Collection<AnnotationPredicate<?>> requiredAnnotations();
 
   /**
    * Sets the required name of this element.
@@ -86,20 +86,29 @@ public interface Element {
   /**
    * Adds the given annotations as required annotations.
    *
-   * @param annotations the annotations to add.
+   * @param annotation the annotations to add.
    * @return the same instance as used to call the method, for chaining.
-   * @throws NullPointerException if an element of {@code annotations} is null.
+   * @throws NullPointerException if the given annotation is null.
    */
-  @NotNull Element requireAnnotations(@NotNull Annotation... annotations);
+  @NotNull Element requireAnnotation(@NotNull Annotation annotation);
 
   /**
    * Adds the given annotation types as required annotations.
    *
-   * @param annotationTypes the annotation types to add.
+   * @param annotationType the annotation types to add.
    * @return the same instance as used to call the method, for chaining.
-   * @throws NullPointerException if an element of {@code annotationTypes} is null.
+   * @throws NullPointerException if the given annotation type is null.
    */
-  @NotNull Element requireAnnotations(@NotNull Class<?>... annotationTypes);
+  @NotNull Element requireAnnotation(@NotNull Class<? extends Annotation> annotationType);
+
+  /**
+   * Adds the given annotation predicates as a requirement for this element.
+   *
+   * @param predicate the predicate to add.
+   * @return the same instance as used to call the method, for chaining.
+   * @throws NullPointerException if the given predicate is null.
+   */
+  @NotNull Element requireAnnotation(@NotNull AnnotationPredicate<?> predicate);
 
   /**
    * {@inheritDoc}

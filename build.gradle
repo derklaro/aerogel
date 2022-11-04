@@ -24,7 +24,6 @@
 
 plugins {
   id 'com.diffplug.spotless' version '6.11.0'
-  id 'com.github.johnrengelman.shadow' version '7.1.2'
   id 'io.github.gradle-nexus.publish-plugin' version '1.1.0'
 }
 
@@ -32,12 +31,13 @@ allprojects {
   version '2.0.0'
   group 'dev.derklaro'
 
-  defaultTasks 'build', 'test', 'shadowJar'
+  defaultTasks 'build', 'test'
 
   apply plugin: 'signing'
   apply plugin: 'checkstyle'
   apply plugin: 'java-library'
   apply plugin: 'maven-publish'
+  apply plugin: 'com.diffplug.spotless'
 
   repositories {
     mavenCentral()
@@ -45,7 +45,7 @@ allprojects {
 
   dependencies {
     // runtime dependencies
-    implementation group: 'org.ow2.asm', name: 'asm', version: '9.3'
+    implementation group: 'org.ow2.asm', name: 'asm', version: '9.4'
     implementation group: 'jakarta.inject', name: 'jakarta.inject-api', version: '2.0.1'
     // testing
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.9.1'
@@ -69,17 +69,6 @@ allprojects {
     }
   }
 
-  jar {
-    manifest {
-      attributes 'Specification-Vendor': 'derklaro'
-      attributes 'Specification-Title': project.name
-      attributes 'Specification-Version': project.version
-      attributes 'Automatic-Module-Name': project.name.replace('-', '.')
-      attributes 'Git-Branch': 'git branch --show-current'.execute().text.trim()
-      attributes 'Git-Commit': 'git rev-parse --verify --short HEAD'.execute().text.trim()
-    }
-  }
-
   javadoc {
     options.encoding = 'UTF-8'
     options.windowTitle = 'Aerogel Javadocs'
@@ -91,17 +80,9 @@ allprojects {
     }
   }
 
-  compileJava {
+  tasks.withType(JavaCompile).configureEach {
     sourceCompatibility = '8'
     targetCompatibility = '8'
-
-    options.encoding = 'UTF-8'
-  }
-
-  compileTestJava {
-    sourceCompatibility = '8'
-    targetCompatibility = '8'
-
     options.encoding = 'UTF-8'
   }
 
@@ -160,16 +141,11 @@ allprojects {
     }
   }
 
-  signing {
-    useGpgCmd()
-    sign publishing.publications.library
-  }
-
   checkstyle {
-    toolVersion = '10.3.4'
+    toolVersion = '10.4'
   }
 
-  tasks.withType(Checkstyle) {
+  tasks.withType(Checkstyle).configureEach {
     maxErrors = 0
     maxWarnings = 0
     configFile = project.rootProject.file('checkstyle.xml')
@@ -185,30 +161,24 @@ allprojects {
     }
   }
 
-  shadowJar {
-    // base settings of the output jar
-    archiveVersion.set(null)
-    archiveClassifier.set(null)
-    archiveBaseName.set(project.name)
-    // relocate internal dependencies to prevent compatibility issues
-    relocate 'org.objectweb.asm', 'dev.derklaro.aerogel.relocate.asm'
-    // auto remove all classes which we don't need in the final jar
-    minimize()
-  }
-
-  tasks.withType(AbstractArchiveTask) {
+  tasks.withType(AbstractArchiveTask).configureEach {
     reproducibleFileOrder = true
     preserveFileTimestamps = false
   }
 
-  tasks.withType(Sign) {
+  tasks.withType(Sign).configureEach {
     onlyIf {
       !project.rootProject.version.endsWith('-SNAPSHOT')
     }
   }
+
+  signing {
+    useGpgCmd()
+    sign publishing.publications.library
+  }
 }
 
-description = 'A very lightweight jvm dependency injection framework'
+description = 'A very lightweight jvm dependency injection library'
 
 nexusPublishing {
   repositories {

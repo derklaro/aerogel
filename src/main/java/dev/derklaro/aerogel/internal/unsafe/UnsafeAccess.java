@@ -25,6 +25,9 @@
 package dev.derklaro.aerogel.internal.unsafe;
 
 import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
+import sun.misc.Unsafe;
 
 /**
  * Gives access to the {@code Unsafe} class of the jvm which allows access to previously inaccessible magic.
@@ -37,28 +40,25 @@ final class UnsafeAccess {
   /**
    * The {@code unsafe} class object if present.
    */
-  static final Class<?> UNSAFE_CLASS;
-  /**
-   * The jvm static {@code Unsafe} instance if present.
-   */
-  static final Object THE_UNSAFE_INSTANCE;
+  static final Unsafe U;
 
   static {
-    Class<?> unsafeClass = null;
-    Object theUnsafeInstance = null;
+    Unsafe unsafe = null;
 
     try {
       // get the unsafe class
-      unsafeClass = Class.forName("sun.misc.Unsafe");
+      Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
       // get the unsafe instance
-      Field theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
-      theUnsafeField.setAccessible(true);
-      theUnsafeInstance = theUnsafeField.get(null);
+      unsafe = AccessController.doPrivileged((PrivilegedExceptionAction<Unsafe>) () -> {
+        Field theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
+        theUnsafeField.setAccessible(true);
+        return (Unsafe) theUnsafeField.get(null);
+      });
     } catch (Exception ignored) {
     }
+
     // assign to the static final fields
-    UNSAFE_CLASS = unsafeClass;
-    THE_UNSAFE_INSTANCE = theUnsafeInstance;
+    U = unsafe;
   }
 
   private UnsafeAccess() {
@@ -71,6 +71,6 @@ final class UnsafeAccess {
    * @return if the {@code Unsafe} class and instance were successfully loaded.
    */
   static boolean isAvailable() {
-    return UNSAFE_CLASS != null && THE_UNSAFE_INSTANCE != null;
+    return U != null;
   }
 }

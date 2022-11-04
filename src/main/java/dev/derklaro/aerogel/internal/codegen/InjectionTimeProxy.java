@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel.internal.codegen;
 
-import static dev.derklaro.aerogel.internal.asm.AsmUtils.methodDesc;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PROTECTED;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -42,9 +41,9 @@ import static org.objectweb.asm.Opcodes.V1_8;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.internal.asm.AsmPrimitives;
+import dev.derklaro.aerogel.internal.asm.AsmUtils;
 import dev.derklaro.aerogel.internal.unsafe.ClassDefiners;
 import dev.derklaro.aerogel.internal.utility.Preconditions;
-import dev.derklaro.aerogel.internal.asm.AsmUtils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;

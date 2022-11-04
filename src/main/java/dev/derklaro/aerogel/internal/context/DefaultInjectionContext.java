@@ -57,7 +57,7 @@ public final class DefaultInjectionContext implements InjectionContext {
   /**
    * An element representing an injection context without any extra properties
    */
-  private static final Element INJECTION_CONTEXT_ELEMENT = Element.get(InjectionContext.class);
+  private static final Element INJECTION_CONTEXT_ELEMENT = Element.forType(InjectionContext.class);
 
   private final Injector injector;
   private final ElementStack elementStack;

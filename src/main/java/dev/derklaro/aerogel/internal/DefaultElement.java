@@ -24,21 +24,22 @@
 
 package dev.derklaro.aerogel.internal;
 
-import dev.derklaro.aerogel.AnnotationComparer;
+import dev.derklaro.aerogel.AnnotationPredicate;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.internal.utility.ToStringHelper;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CopyOnWriteArrayList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnmodifiableView;
 
 /**
- * The default implementation of an element. See {@link Element#get(Type)}.
+ * The default implementation of an element. See {@link Element#forType(Type)}.
  *
  * @author Pasqual K.
  * @since 1.0
@@ -46,7 +47,7 @@ import org.jetbrains.annotations.Nullable;
 public final class DefaultElement implements Element {
 
   private final Type componentType;
-  private final List<AnnotationComparer> annotationComparer;
+  private final List<AnnotationPredicate<?>> annotationPredicates;
 
   private String requiredName;
 
@@ -57,7 +58,7 @@ public final class DefaultElement implements Element {
    */
   public DefaultElement(@NotNull Type componentType) {
     this.componentType = componentType;
-    this.annotationComparer = new CopyOnWriteArrayList<>();
+    this.annotationPredicates = new LinkedList<>();
   }
 
   /**
@@ -80,8 +81,9 @@ public final class DefaultElement implements Element {
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Collection<AnnotationComparer> annotationComparer() {
-    return Collections.unmodifiableCollection(this.annotationComparer);
+  @UnmodifiableView
+  public @NotNull Collection<AnnotationPredicate<?>> requiredAnnotations() {
+    return Collections.unmodifiableCollection(this.annotationPredicates);
   }
 
   /**
@@ -97,12 +99,9 @@ public final class DefaultElement implements Element {
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Element requireAnnotations(@NotNull Annotation... annotations) {
-    // create a new annotation comparer for every annotation
-    for (Annotation annotation : annotations) {
-      Objects.requireNonNull(annotation, "annotation is null");
-      this.annotationComparer.add(AnnotationComparerMaker.make(annotation));
-    }
+  public @NotNull Element requireAnnotation(@NotNull Annotation annotation) {
+    Objects.requireNonNull(annotation, "annotation");
+    this.annotationPredicates.add(AnnotationPredicateFactory.construct(annotation));
     // for chaining
     return this;
   }
@@ -111,12 +110,20 @@ public final class DefaultElement implements Element {
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Element requireAnnotations(@NotNull Class<?>... annotationTypes) {
-    // create a new annotation comparer for every annotation
-    for (Class<?> annotationType : annotationTypes) {
-      Objects.requireNonNull(annotationType, "annotation type is null");
-      this.annotationComparer.add(AnnotationComparerMaker.make(annotationType));
-    }
+  public @NotNull Element requireAnnotation(@NotNull Class<? extends Annotation> annotationType) {
+    Objects.requireNonNull(annotationType, "type");
+    this.annotationPredicates.add(AnnotationPredicateFactory.construct(annotationType));
+    // for chaining
+    return this;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull Element requireAnnotation(@NotNull AnnotationPredicate<?> predicate) {
+    Objects.requireNonNull(predicate, "predicate");
+    this.annotationPredicates.add(predicate);
     // for chaining
     return this;
   }
@@ -129,7 +136,7 @@ public final class DefaultElement implements Element {
     return ToStringHelper.from(this)
       .putField("componentType", this.componentType)
       .putField("requiredName", this.requiredName)
-      .putCollection("requiredAnnotations", this.annotationComparer)
+      .putCollection("requiredAnnotations", this.annotationPredicates)
       .toString();
   }
 
@@ -138,7 +145,7 @@ public final class DefaultElement implements Element {
    */
   @Override
   public int hashCode() {
-    return Objects.hash(this.requiredName, this.componentType, this.annotationComparer);
+    return Objects.hash(this.requiredName, this.componentType, this.annotationPredicates);
   }
 
   /**
@@ -159,16 +166,16 @@ public final class DefaultElement implements Element {
     }
     // compare the annotation strategies
     // save an iterator if they are either both empty
-    if (this.annotationComparer.isEmpty() && that.annotationComparer.isEmpty()) {
+    if (this.annotationPredicates.isEmpty() && that.annotationPredicates.isEmpty()) {
       return true;
     }
     // or not the same size
-    if (this.annotationComparer.size() != that.annotationComparer.size()) {
+    if (this.annotationPredicates.size() != that.annotationPredicates.size()) {
       return false;
     }
     // check every comparer
-    for (int i = 0; i < this.annotationComparer.size(); i++) {
-      if (!this.annotationComparer.get(i).equals(that.annotationComparer.get(i))) {
+    for (int i = 0; i < this.annotationPredicates.size(); i++) {
+      if (!this.annotationPredicates.get(i).equals(that.annotationPredicates.get(i))) {
         return false;
       }
     }

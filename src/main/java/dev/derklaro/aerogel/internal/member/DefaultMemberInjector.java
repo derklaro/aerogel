@@ -30,11 +30,14 @@ import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjectionSettings;
 import dev.derklaro.aerogel.MemberInjector;
+import dev.derklaro.aerogel.PostConstruct;
 import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.internal.asm.AsmUtils;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.ReflectionUtils;
+import dev.derklaro.aerogel.internal.unsafe.UnsafeMemberAccess;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
+import dev.derklaro.aerogel.internal.utility.Preconditions;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -45,12 +48,13 @@ import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Set;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -91,14 +95,9 @@ public final class DefaultMemberInjector implements MemberInjector {
 
   private final Collection<InjectableMethod> staticMethods;
   private final Collection<InjectableMethod> instanceMethods;
+  private final Collection<InjectableMethod> postConstructMethods;
 
-  // static member injection should only be done once, never twice
-  // @todo: notify the parent member injectors to not inject the static members again
-  private final AtomicBoolean didStaticFieldInjection = new AtomicBoolean();
-  private final AtomicBoolean didStaticSupertypeFieldInjection = new AtomicBoolean();
-
-  private final AtomicBoolean didStaticMethodInjection = new AtomicBoolean();
-  private final AtomicBoolean didStaticSupertypeMethodInjection = new AtomicBoolean();
+  private final Set<MemberType> injectedMemberTypes = EnumSet.noneOf(MemberType.class);
 
   /**
    * Constructs a new default member injection instance.
@@ -115,6 +114,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     // these are holding two things - the method signature mapped to the actual value
     Map<String, InjectableMethod> staticMethods = null;
     Map<String, InjectableMethod> instanceMethods = null;
+    Map<String, InjectableMethod> postConstructMethods = null;
 
     // read all fields & methods in reverse (super fields & method should get injected before implementation ones)
     List<Class<?>> hierarchyTree = ReflectionUtils.hierarchyTree(target);
@@ -123,7 +123,11 @@ public final class DefaultMemberInjector implements MemberInjector {
       // methods
       for (Method method : targetClass.getDeclaredMethods()) {
         // check if the method is marked as @Inject
-        if (!method.isBridge() && !method.isSynthetic()) {
+        if (!method.isBridge()
+          && !method.isSynthetic()
+          && !Modifier.isNative(method.getModifiers())
+          && !Modifier.isAbstract(method.getModifiers())
+        ) {
           // the signature is used to check if we already found a comparable method
           String visibility = ReflectionUtils.shortVisibilitySummary(method);
           String signature = String.format("[%s]%s%s", visibility, method.getName(), AsmUtils.methodDesc(method));
@@ -142,7 +146,50 @@ public final class DefaultMemberInjector implements MemberInjector {
                 instanceMethods.remove(signature);
               }
             }
-            // continue - the method is not annotated as @Inject
+          }
+
+          // check for a PostConstruct method
+          if (!method.isAnnotationPresent(PostConstruct.class)) {
+            // check if the method was already read but the overridden method is no longer annotated
+            // in this case remove the method
+            if (postConstructMethods != null) {
+              postConstructMethods.remove(signature);
+            }
+          }
+
+          // disable these checks - we do want to access them
+          UnsafeMemberAccess.forceMakeAccessible(method);
+
+          if (JakartaBridge.isInjectable(method)) {
+            // check if the method is an instance or static method
+            if (Modifier.isStatic(method.getModifiers())) {
+              // put the method in the map if there was never a method in there before
+              // otherwise check if we already saw a method like that one
+              if (staticMethods == null) {
+                staticMethods = new HashMap<>();
+                staticMethods.put(signature, new InjectableMethod(method));
+              } else if (!staticMethods.containsKey(signature)) {
+                staticMethods.put(signature, new InjectableMethod(method));
+              }
+            } else {
+              // put the method in the map if there was never a method in there before
+              // otherwise check if we already saw a method like that one
+              if (instanceMethods == null) {
+                instanceMethods = new HashMap<>();
+              }
+              instanceMethods.putIfAbsent(signature, new InjectableMethod(method));
+            }
+          } else if (method.isAnnotationPresent(PostConstruct.class)) {
+            Preconditions.checkArgument(!Modifier.isStatic(method.getModifiers()), "@PostConstruct method is static");
+            Preconditions.checkArgument(method.getParameterCount() == 0, "@PostConstruct method takes arguments");
+            // put the method in the map if there was never a method in there before
+            // otherwise check if we already saw a method like that one
+            if (postConstructMethods == null) {
+              postConstructMethods = new HashMap<>();
+            }
+            postConstructMethods.putIfAbsent(signature, new InjectableMethod(method));
+          } else {
+            // nothing relevant
             continue;
           }
 
@@ -152,29 +199,6 @@ public final class DefaultMemberInjector implements MemberInjector {
               "Method %s in %s is abstract and cannot get injected",
               method.getName(),
               method.getDeclaringClass()));
-          }
-
-          // disable these checks - we do want to access them
-          method.setAccessible(true); // @todo: catch exceptions with this method & add option to ignore them
-          // check if the method is an instance or static method
-          if (Modifier.isStatic(method.getModifiers())) {
-            // put the method in the map if there was never a method in there before
-            // otherwise check if we already saw a method like that one
-            if (staticMethods == null) {
-              staticMethods = new HashMap<>();
-              staticMethods.put(signature, new InjectableMethod(method));
-            } else if (!staticMethods.containsKey(signature)) {
-              staticMethods.put(signature, new InjectableMethod(method));
-            }
-          } else {
-            // put the method in the map if there was never a method in there before
-            // otherwise check if we already saw a method like that one
-            if (instanceMethods == null) {
-              instanceMethods = new HashMap<>();
-              instanceMethods.put(signature, new InjectableMethod(method));
-            } else if (!instanceMethods.containsKey(signature)) {
-              instanceMethods.put(signature, new InjectableMethod(method));
-            }
           }
         }
       }
@@ -193,7 +217,7 @@ public final class DefaultMemberInjector implements MemberInjector {
               field.getDeclaringClass()));
           }
           // disable these checks - we do want to access them
-          field.setAccessible(true); // @todo: catch exceptions with this method & add option to ignore them
+          UnsafeMemberAccess.forceMakeAccessible(field);
           // check if the field is an instance or static field
           if (Modifier.isStatic(field.getModifiers())) {
             // put the field in the map if there was never a field in there before
@@ -213,12 +237,14 @@ public final class DefaultMemberInjector implements MemberInjector {
         }
       }
     }
+
     // assign the collection values in the class to the values of the maps
     this.staticFields = staticFields == null ? Collections.emptySet() : staticFields;
     this.instanceFields = instanceFields == null ? Collections.emptySet() : instanceFields;
 
     this.staticMethods = staticMethods == null ? Collections.emptySet() : staticMethods.values();
     this.instanceMethods = instanceMethods == null ? Collections.emptySet() : instanceMethods.values();
+    this.postConstructMethods = postConstructMethods == null ? Collections.emptySet() : postConstructMethods.values();
 
     // initialize the predicates to test whether a member belongs to the direct target class or not
     this.onlyThisClass = member -> member.getDeclaringClass() == this.targetClass;
@@ -267,19 +293,19 @@ public final class DefaultMemberInjector implements MemberInjector {
     // according to the jakarta injection rules, all fields then all methods need to get injected
     // every static method must only be injected once
     // supertype fields
-    if (!didStaticSupertypeFieldInjection.getAndSet(true)) {
+    if (this.injectedMemberTypes.add(MemberType.INHERITED_FIELD)) {
       this.injectStaticFields(settings, context, this.onlyNotThisClass);
     }
     // supertype methods
-    if (!didStaticSupertypeMethodInjection.getAndSet(true)) {
+    if (this.injectedMemberTypes.add(MemberType.INHERITED_METHOD)) {
       this.injectStaticMethods(settings, context, this.onlyNotThisClass);
     }
-    // supertype fields
-    if (!this.didStaticFieldInjection.getAndSet(true)) {
+    // direct fields
+    if (this.injectedMemberTypes.add(MemberType.FIELD)) {
       this.injectStaticFields(settings, context, this.onlyThisClass);
     }
-    // supertype fields
-    if (!didStaticMethodInjection.getAndSet(true)) {
+    // direct methods
+    if (this.injectedMemberTypes.add(MemberType.METHOD)) {
       this.injectStaticMethods(settings, context, this.onlyThisClass);
     }
   }
@@ -318,6 +344,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     this.injectInstanceMethods(instance, settings, context, this.onlyNotThisClass);
     this.injectInstanceFields(instance, settings, context, this.onlyThisClass);
     this.injectInstanceMethods(instance, settings, context, this.onlyThisClass);
+    this.executePostConstructListeners(instance, settings);
   }
 
   /**
@@ -505,6 +532,23 @@ public final class DefaultMemberInjector implements MemberInjector {
         if (preTester.test(injectable.method) && this.methodMatches(injectable.method, settings)) {
           this.injectMethod(instance, injectable, context);
         }
+      }
+    }
+  }
+
+  /**
+   * Executes all post construct listeners.
+   *
+   * @param instance the instance to inject the methods on.
+   * @param settings the settings of the injection.
+   * @throws AerogelException if the method injection fails.
+   */
+  private void executePostConstructListeners(@NotNull Object instance, @NotNull MemberInjectionSettings settings) {
+    // check if we need to execute post construct listeners
+    if (settings.executePostConstructListeners()) {
+      // loop and search for every method we should execute
+      for (InjectableMethod injectable : this.postConstructMethods) {
+        this.injectMethod(instance, injectable, null);
       }
     }
   }

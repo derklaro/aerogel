@@ -1,25 +1,21 @@
 plugins {
-  id 'org.jetbrains.dokka' version '1.7.10'
-  id 'org.jetbrains.kotlin.jvm' version '1.7.10'
+  id 'org.jetbrains.dokka' version '1.7.20'
+  id 'org.jetbrains.kotlin.jvm' version '1.7.20'
 }
 
 description = 'Extension for aerogel supporting the enhanced kotlin inline generics'
 
 dependencies {
-  implementation rootProject
+  api rootProject
 }
 
-test {
-  dependsOn ':shadowJar'
-}
-
-task dokkaJavadocJar(type: Jar) {
+tasks.register('dokkaJavadocJar', Jar) {
   from dokkaJavadoc
   archiveClassifier.set('javadoc')
 }
 
 publishing {
-  publications.getByName("library") {
+  publications.named("library") {
     artifact dokkaJavadocJar
   }
 }

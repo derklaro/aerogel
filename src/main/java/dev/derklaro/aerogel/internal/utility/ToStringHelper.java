@@ -46,7 +46,7 @@ public final class ToStringHelper {
    *
    * @param instance the instance for which the toString method result will be created.
    */
-  public ToStringHelper(@NotNull Object instance) {
+  private ToStringHelper(@NotNull Object instance) {
     this.stringBuilder = new StringBuilder(instance.getClass().getSimpleName()).append("(");
   }
 

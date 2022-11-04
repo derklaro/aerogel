@@ -37,8 +37,8 @@ import org.jetbrains.annotations.NotNull;
 public interface MemberInjectionSettings {
 
   /**
-   * Creates a new builder for {@link MemberInjectionSettings}. All settings are enabled by default except for {@link
-   * #injectOnlyUninitializedFields()} which is disabled by default.
+   * Creates a new builder for {@link MemberInjectionSettings}. All settings are enabled by default except for
+   * {@link #injectOnlyUninitializedFields()} which is disabled by default.
    *
    * @return a new builder for {@link MemberInjectionSettings}.
    */
@@ -113,6 +113,14 @@ public interface MemberInjectionSettings {
    * @return if only uninitialized fields should get injected.
    */
   boolean injectOnlyUninitializedFields();
+
+  /**
+   * Get if method annotated with @PostConstruct should get executed when injecting members.
+   *
+   * @return if post construction listeners should get executed.
+   * @since 2.0
+   */
+  boolean executePostConstructListeners();
 
   /**
    * Represents a builder for {@link MemberInjectionSettings}.
@@ -192,13 +200,23 @@ public interface MemberInjectionSettings {
     /**
      * Sets if a field should only be initialized if the field was not yet initialized. A field is considered
      * uninitialized if it's current value is {@code null} or if the primitive type has its default uninitialized value
-     * as described in the oracle documentation <a href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html">here</a>.
-     * This defaults to {@code false}.
+     * as described in the oracle documentation <a
+     * href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html">here</a>. This defaults to
+     * {@code false}.
      *
-     * @param injectOnlyUninitializedFields if only uninitailized fields should get injected.
+     * @param injectOnlyUninitializedFields if only uninitialized fields should get injected.
      * @return the same builder instance as used for calling the method, for chaining.
      */
     @NotNull Builder injectOnlyUninitializedFields(boolean injectOnlyUninitializedFields);
+
+    /**
+     * Sets if method annotated with @PostConstruct should get executed after injecting all members.
+     *
+     * @param executePostConstructListeners if post construction listeners should get executed.
+     * @return the same builder instance as used for calling the method, for chaining.
+     * @since 2.0
+     */
+    @NotNull Builder executePostConstructListeners(boolean executePostConstructListeners);
 
     /**
      * Builds a new {@link MemberInjectionSettings} based on the given settings. A builder can get re-used after a call

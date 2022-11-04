@@ -32,21 +32,21 @@ public class ChildInjectorTest {
   @Test
   void testChildInjectorConstruction() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.constructing(Element.get(StringHolder.class)));
+    injector.install(Bindings.constructing(Element.forType(StringHolder.class)));
 
     StringHolder value = injector.instance(StringHolder.class);
     Assertions.assertNotNull(value);
     Assertions.assertEquals("test", value.test);
 
     Injector child = injector.newChildInjector();
-    Assertions.assertNull(child.fastBinding(Element.get(StringHolder.class)));
+    Assertions.assertNull(child.fastBinding(Element.forType(StringHolder.class)));
 
     StringHolder value2 = child.instance(StringHolder.class);
     Assertions.assertNotNull(value2);
     Assertions.assertEquals("test", value2.test);
 
     Assertions.assertSame(value, value2);
-    Assertions.assertNotNull(child.fastBinding(Element.get(StringHolder.class)));
+    Assertions.assertNotNull(child.fastBinding(Element.forType(StringHolder.class)));
   }
 
   @Test
@@ -60,7 +60,7 @@ public class ChildInjectorTest {
     Assertions.assertSame(injector, injector.instance(Injector.class));
     Assertions.assertSame(childInjector, childInjector.instance(Injector.class));
 
-    injector.install(Bindings.fixed(Element.get(String.class), "Hello World!"));
+    injector.install(Bindings.fixed(Element.forType(String.class), "Hello World!"));
 
     Assertions.assertEquals(1, injector.allBindings().size());
     Assertions.assertEquals(1, childInjector.allBindings().size());
@@ -71,7 +71,7 @@ public class ChildInjectorTest {
     Assertions.assertEquals("Hello World!", injector.instance(String.class));
     Assertions.assertEquals("Hello World!", childInjector.instance(String.class));
 
-    childInjector.install(Bindings.fixed(Element.get(int.class), 1234));
+    childInjector.install(Bindings.fixed(Element.forType(int.class), 1234));
 
     Assertions.assertThrows(AerogelException.class, () -> injector.instance(int.class));
     Assertions.assertEquals(1234, childInjector.instance(int.class));

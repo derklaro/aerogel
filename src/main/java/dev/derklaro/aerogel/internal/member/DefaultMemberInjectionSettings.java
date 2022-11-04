@@ -43,6 +43,7 @@ final class DefaultMemberInjectionSettings implements MemberInjectionSettings {
   private final boolean injectInstanceFields;
   private final boolean injectInheritedFields;
   private final boolean injectOnlyUninitializedFields;
+  private final boolean executePostConstructListeners;
 
   public DefaultMemberInjectionSettings(
     boolean injectPrivateMethods,
@@ -53,7 +54,8 @@ final class DefaultMemberInjectionSettings implements MemberInjectionSettings {
     boolean injectStaticFields,
     boolean injectInstanceFields,
     boolean injectInheritedFields,
-    boolean injectOnlyUninitializedFields
+    boolean injectOnlyUninitializedFields,
+    boolean executePostConstructListeners
   ) {
     this.injectPrivateMethods = injectPrivateMethods;
     this.injectStaticMethods = injectStaticMethods;
@@ -64,6 +66,7 @@ final class DefaultMemberInjectionSettings implements MemberInjectionSettings {
     this.injectInstanceFields = injectInstanceFields;
     this.injectInheritedFields = injectInheritedFields;
     this.injectOnlyUninitializedFields = injectOnlyUninitializedFields;
+    this.executePostConstructListeners = executePostConstructListeners;
   }
 
   /**
@@ -136,5 +139,13 @@ final class DefaultMemberInjectionSettings implements MemberInjectionSettings {
   @Override
   public boolean injectOnlyUninitializedFields() {
     return this.injectOnlyUninitializedFields;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean executePostConstructListeners() {
+    return this.executePostConstructListeners;
   }
 }

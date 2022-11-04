@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel.internal.codegen;
 
-import static dev.derklaro.aerogel.internal.asm.AsmUtils.methodDesc;
 import static org.objectweb.asm.Opcodes.AALOAD;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SUPER;
@@ -52,11 +51,11 @@ import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.internal.asm.AsmPrimitives;
+import dev.derklaro.aerogel.internal.asm.AsmUtils;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.ReflectionUtils;
 import dev.derklaro.aerogel.internal.unsafe.ClassDefiners;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
-import dev.derklaro.aerogel.internal.asm.AsmUtils;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -149,7 +148,12 @@ public final class ClassInstanceMaker {
     writeConstructor(cw, proxyName, singleton);
 
     // visit the getInstance() method
-    mv = cw.visitMethod(ACC_PUBLIC, GET_INSTANCE, AsmUtils.descToMethodDesc(INJ_CONTEXT_DESC, Object.class), null, null);
+    mv = cw.visitMethod(
+      ACC_PUBLIC,
+      GET_INSTANCE,
+      AsmUtils.descToMethodDesc(INJ_CONTEXT_DESC, Object.class),
+      null,
+      null);
     mv.visitCode();
     // if this is a singleton check first if the instance is already loaded
     if (singleton) {
@@ -172,7 +176,12 @@ public final class ClassInstanceMaker {
       // load all elements from the stack
       loadParameters(elements, mv);
       // instantiate the constructor with the parameters
-      mv.visitMethodInsn(INVOKESPECIAL, AsmUtils.intName(ct), AsmUtils.CONSTRUCTOR_NAME, AsmUtils.consDesc(target), false);
+      mv.visitMethodInsn(
+        INVOKESPECIAL,
+        AsmUtils.intName(ct),
+        AsmUtils.CONSTRUCTOR_NAME,
+        AsmUtils.consDesc(target),
+        false);
     }
     // if this is a singleton store the value in the AtomicReference
     if (singleton) {
@@ -246,7 +255,9 @@ public final class ClassInstanceMaker {
    */
   static void writeConstructor(@NotNull ClassWriter cw, @NotNull String proxyName, boolean singleton) {
     // visit the constructor
-    MethodVisitor mv = AsmUtils.beginConstructor(cw, AsmUtils.descToMethodDesc(ELEMENTS_DESC + ELEMENT_DESC, void.class));
+    MethodVisitor mv = AsmUtils.beginConstructor(
+      cw,
+      AsmUtils.descToMethodDesc(ELEMENTS_DESC + ELEMENT_DESC, void.class));
     // assign the type field
     mv.visitVarInsn(ALOAD, 1);
     mv.visitFieldInsn(PUTFIELD, proxyName, ELEMENTS, ELEMENTS_DESC);
@@ -333,7 +344,12 @@ public final class ClassInstanceMaker {
     mv.visitVarInsn(ALOAD, 2);
     mv.visitInsn(DUP2);
     // set the value in the reference
-    mv.visitMethodInsn(INVOKEVIRTUAL, HOLDER_NAME, "set", AsmUtils.descToMethodDesc(AsmUtils.OBJECT_DESC, void.class), false);
+    mv.visitMethodInsn(
+      INVOKEVIRTUAL,
+      HOLDER_NAME,
+      "set",
+      AsmUtils.descToMethodDesc(AsmUtils.OBJECT_DESC, void.class),
+      false);
   }
 
   /**
@@ -454,9 +470,12 @@ public final class ClassInstanceMaker {
     } else {
       mv.visitVarInsn(ASTORE, 3 + typeWriterIndex.getAndIncrement());
     }
+
     // return the extracted generic type
-    return Element.get(generic)
-      .requireName(name)
-      .requireAnnotations(qualifiedAnnotations);
+    Element element = Element.forType(generic).requireName(name);
+    for (Annotation annotation : qualifiedAnnotations) {
+      element = element.requireAnnotation(annotation);
+    }
+    return element;
   }
 }

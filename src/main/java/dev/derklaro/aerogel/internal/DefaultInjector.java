@@ -55,7 +55,7 @@ public final class DefaultInjector implements Injector {
   /**
    * Represents the injector element without any annotations or a name which makes it special
    */
-  private static final Element INJECTOR_ELEMENT = Element.get(Injector.class);
+  private static final Element INJECTOR_ELEMENT = Element.forType(Injector.class);
 
   private final Injector parent;
   private final Map<Element, BindingHolder> bindings;
@@ -96,7 +96,7 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public <T> T instance(@NotNull Class<T> type) {
-    return this.instance(Element.get(type));
+    return this.instance(Element.forType(type));
   }
 
   /**
@@ -104,7 +104,7 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public <T> T instance(@NotNull Type type) {
-    return this.instance(Element.get(type));
+    return this.instance(Element.forType(type));
   }
 
   /**
@@ -180,7 +180,7 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @NotNull BindingHolder binding(@NotNull Type target) {
-    return this.binding(Element.get(target));
+    return this.binding(Element.forType(target));
   }
 
   /**
@@ -198,7 +198,7 @@ public final class DefaultInjector implements Injector {
       return holder;
     }
     // check if the element has special parameters - in this case we will strictly not mock the element
-    if (element.requiredName() != null || !element.annotationComparer().isEmpty()) {
+    if (element.requiredName() != null || !element.requiredAnnotations().isEmpty()) {
       throw AerogelException.forMessageWithoutStack(
         "Element " + element + " has special properties, unable to make a runtime binding for it");
     }

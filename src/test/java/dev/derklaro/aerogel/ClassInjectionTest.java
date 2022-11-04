@@ -33,7 +33,7 @@ public class ClassInjectionTest {
   @Test
   void testClassInject() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.fixed(Element.get(String.class), "test"));
+    injector.install(Bindings.fixed(Element.forType(String.class), "test"));
 
     InjectableClass injectableClass = injector.instance(InjectableClass.class);
 
@@ -44,8 +44,8 @@ public class ClassInjectionTest {
   @Test
   void testNamedClassInject() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.fixed(Element.get(String.class), "test"));
-    injector.install(Bindings.fixed(Element.get(String.class).requireName("testing"), "test1234"));
+    injector.install(Bindings.fixed(Element.forType(String.class), "test"));
+    injector.install(Bindings.fixed(Element.forType(String.class).requireName("testing"), "test1234"));
 
     InjectableNamedClass injectableClass = injector.instance(InjectableNamedClass.class);
 

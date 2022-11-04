@@ -63,30 +63,23 @@ final class LookupClassDefiner implements ClassDefiner {
       try {
         // get the trusted lookup field
         Field implLookup = Lookup.class.getDeclaredField("IMPL_LOOKUP");
-        // get the lookup base and offset
-        Object base = UnsafeAccess.UNSAFE_CLASS
-          .getMethod("staticFieldBase", Field.class)
-          .invoke(UnsafeAccess.THE_UNSAFE_INSTANCE, implLookup);
-        long offset = (long) UnsafeAccess.UNSAFE_CLASS
-          .getMethod("staticFieldOffset", Field.class)
-          .invoke(UnsafeAccess.THE_UNSAFE_INSTANCE, implLookup);
-        // get the trusted lookup from the field
-        trustedLookup = (Lookup) UnsafeAccess.UNSAFE_CLASS
-          .getMethod("getObject", Object.class, long.class)
-          .invoke(UnsafeAccess.THE_UNSAFE_INSTANCE, base, offset);
-        // get the options for defining hidden clases
+        trustedLookup = (Lookup) UnsafeMemberAccess.forceMakeAccessible(implLookup).get(null);
+
+        // get the options for defining hidden (or nestmate) classes
         hiddenClassOptions = classOptionArray();
-        // get the method to define a hidden class
+
+        // get the method to define a hidden class (Java 9+)
+        //noinspection JavaReflectionMemberAccess
         Method defineHiddenClassMethod = Lookup.class.getMethod("defineHiddenClass",
           byte[].class,
           boolean.class,
           hiddenClassOptions.getClass());
         defineHiddenClassMethod.setAccessible(true);
-        // convert to method handle
         defineHiddenMethod = defineHiddenClassMethod;
       } catch (Throwable ignored) {
       }
     }
+
     // set the static final fields
     TRUSTED_LOOKUP = trustedLookup;
     HIDDEN_CLASS_OPTIONS = hiddenClassOptions;

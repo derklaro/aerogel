@@ -24,12 +24,10 @@
 
 package dev.derklaro.aerogel.auto;
 
-import com.google.testing.compile.JavaFileObjects;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
-import java.io.IOException;
 import javax.tools.JavaFileObject;
 
 final class TestJavaClassBuilder {
@@ -59,15 +57,6 @@ final class TestJavaClassBuilder {
   }
 
   public JavaFileObject build() {
-    TypeSpec typeSpec = this.typeSpec.build();
-    StringBuilder javaFileOutput = new StringBuilder();
-
-    try {
-      JavaFile.builder("", typeSpec).build().writeTo(javaFileOutput);
-    } catch (IOException ignored) {
-      // ????
-    }
-
-    return JavaFileObjects.forSourceString(typeSpec.name, javaFileOutput.toString());
+    return JavaFile.builder("", this.typeSpec.build()).build().toJavaFileObject();
   }
 }

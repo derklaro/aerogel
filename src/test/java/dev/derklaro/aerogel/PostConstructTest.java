@@ -22,40 +22,50 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.unsafe;
+package dev.derklaro.aerogel;
 
-import dev.derklaro.aerogel.AerogelException;
-import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-/**
- * A class defining method for legacy jvm implementations (Java 7 - 14) which is deprecated since Java 15 in honor of
- * the Lookup class defining method. This method uses the {@code defineAnonymousClass} class provided by the jvm
- * internal {@code Unsafe} class.
- *
- * @author Pasqual K.
- * @since 1.0
- */
-final class UnsafeClassDefiner implements ClassDefiner {
+public class PostConstructTest {
 
-  /**
-   * Checks if the {@code defineAnonymousClass} is available and this defining method can be used.
-   *
-   * @return if the {@code defineAnonymousClass} is available and this defining method can be used.
-   */
-  public static boolean isAvailable() {
-    return UnsafeAccess.isAvailable();
+  @Test
+  void testValidPostConstructListenersAreCalled() {
+    Injector injector = Injector.newInjector();
+
+    PostConstructListenerCorrect instance = injector.instance(PostConstructListenerCorrect.class);
+    Assertions.assertEquals(2, instance.postConstructCalls);
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull Class<?> defineClass(@NotNull String name, @NotNull Class<?> parent, byte[] bytecode) {
-    try {
-      // Use unsafe to define the class
-      return UnsafeAccess.U.defineAnonymousClass(parent, bytecode, null);
-    } catch (Throwable throwable) {
-      throw AerogelException.forMessagedException("Unable to define class " + name, throwable);
+  @Test
+  void testInvalidPostConstructListenersThrowingException() {
+    Injector injector = Injector.newInjector();
+    Assertions.assertThrows(AerogelException.class, () -> injector.instance(PostConstructListenerIncorrect.class));
+  }
+
+  private static final class PostConstructListenerCorrect {
+
+    private int postConstructCalls = 0;
+
+    @PostConstruct
+    private void postConstructListener1() {
+      this.postConstructCalls++;
+    }
+
+    @PostConstruct
+    private void postConstructListener2() {
+      this.postConstructCalls++;
+    }
+  }
+
+  private static final class PostConstructListenerIncorrect {
+
+    @PostConstruct
+    private void postConstructListener1() {
+    }
+
+    @PostConstruct
+    private void postConstructListener2(int argument) {
     }
   }
 }

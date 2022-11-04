@@ -160,7 +160,7 @@ public interface Bindings {
       // create a new factory binding
       return new FactoryBindingHolder(
         type,
-        Element.get(factoryMethod.getGenericReturnType()),
+        Element.forType(factoryMethod.getGenericReturnType()),
         injector,
         factoryMethod,
         singleton);

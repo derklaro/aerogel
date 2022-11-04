@@ -27,9 +27,9 @@ package dev.derklaro.aerogel;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Represents a not yet constructed binding which can be bound to any constructor either by invoking {@link
- * #construct(Injector)} directly using the {@link Injector} to which the binding should get bound or by using {@link
- * Injector#install(BindingConstructor)} or {@link Injector#install(Iterable)}. See {@link Bindings} for some
+ * Represents a not yet constructed binding which can be bound to any constructor either by invoking
+ * {@link #construct(Injector)} directly using the {@link Injector} to which the binding should get bound or by using
+ * {@link Injector#install(BindingConstructor)} or {@link Injector#install(Iterable)}. See {@link Bindings} for some
  * pre-defined ways to bind a value.
  *
  * @author Pasqual K.

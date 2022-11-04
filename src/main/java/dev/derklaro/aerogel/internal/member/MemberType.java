@@ -22,40 +22,30 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.unsafe;
-
-import dev.derklaro.aerogel.AerogelException;
-import org.jetbrains.annotations.NotNull;
+package dev.derklaro.aerogel.internal.member;
 
 /**
- * A class defining method for legacy jvm implementations (Java 7 - 14) which is deprecated since Java 15 in honor of
- * the Lookup class defining method. This method uses the {@code defineAnonymousClass} class provided by the jvm
- * internal {@code Unsafe} class.
+ * A collection of all member types which are injectable.
  *
  * @author Pasqual K.
- * @since 1.0
+ * @since 2.0
  */
-final class UnsafeClassDefiner implements ClassDefiner {
+enum MemberType {
 
   /**
-   * Checks if the {@code defineAnonymousClass} is available and this defining method can be used.
-   *
-   * @return if the {@code defineAnonymousClass} is available and this defining method can be used.
+   * A field which is directly declared in a class.
    */
-  public static boolean isAvailable() {
-    return UnsafeAccess.isAvailable();
-  }
-
+  FIELD,
   /**
-   * {@inheritDoc}
+   * A field which is inherited from a super class.
    */
-  @Override
-  public @NotNull Class<?> defineClass(@NotNull String name, @NotNull Class<?> parent, byte[] bytecode) {
-    try {
-      // Use unsafe to define the class
-      return UnsafeAccess.U.defineAnonymousClass(parent, bytecode, null);
-    } catch (Throwable throwable) {
-      throw AerogelException.forMessagedException("Unable to define class " + name, throwable);
-    }
-  }
+  INHERITED_FIELD,
+  /**
+   * A method which is directly declared in a class.
+   */
+  METHOD,
+  /**
+   * A method which is inherited from a super class.
+   */
+  INHERITED_METHOD
 }

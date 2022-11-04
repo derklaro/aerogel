@@ -37,7 +37,7 @@ public class SingletonTest {
   @Test
   void testConstructingSingleton() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.constructing(Element.get(StringHolder.class)));
+    injector.install(Bindings.constructing(Element.forType(StringHolder.class)));
 
     StringHolder value = injector.instance(StringHolder.class);
     Assertions.assertNotNull(value);
@@ -55,10 +55,10 @@ public class SingletonTest {
     Injector injector = Injector.newInjector();
     injector.install(Bindings.factory(SingletonTest.class.getDeclaredMethod("factoryStringHolder")));
 
-    StringHolder holderA = injector.instance(Element.get(StringHolder.class).requireName("holder"));
+    StringHolder holderA = injector.instance(Element.forType(StringHolder.class).requireName("holder"));
     Assertions.assertNotNull(holderA);
 
-    StringHolder holderB = injector.instance(Element.get(StringHolder.class).requireName("holder"));
+    StringHolder holderB = injector.instance(Element.forType(StringHolder.class).requireName("holder"));
     Assertions.assertNotNull(holderB);
 
     Assertions.assertSame(holderA, holderB);

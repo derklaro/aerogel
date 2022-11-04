@@ -1,13 +1,12 @@
 description = 'Extension for aerogel supporting automatic binding creation compile and runtime based'
 
 dependencies {
-  implementation rootProject
+  api rootProject
   testImplementation group: 'com.squareup', name: 'javapoet', version: '1.13.0'
   testImplementation group: 'com.google.testing.compile', name: 'compile-testing', version: '0.19'
 }
 
 test {
-  dependsOn ':shadowJar'
   // for testing with the google test compile lib
   if (JavaVersion.current().isJava9Compatible()) {
     doFirst {

@@ -25,9 +25,9 @@
 package dev.derklaro.aerogel.internal.utility;
 
 import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.Qualifier;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.ReflectionUtils;
-import dev.derklaro.aerogel.Qualifier;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -70,8 +70,13 @@ public final class ElementHelper {
       : field.getGenericType();
     // extract all annotations
     Annotation[] qualifierAnnotations = extractQualifierAnnotations(annotations);
+
     // create an element based on the information
-    return Element.get(type).requireName(name).requireAnnotations(qualifierAnnotations);
+    Element element = Element.forType(type).requireName(name);
+    for (Annotation annotation : qualifierAnnotations) {
+      element = element.requireAnnotation(annotation);
+    }
+    return element;
   }
 
   /**
@@ -90,8 +95,13 @@ public final class ElementHelper {
       : parameter.getParameterizedType();
     // extract all annotations
     Annotation[] qualifierAnnotations = extractQualifierAnnotations(annotations);
+
     // create an element based on the information
-    return Element.get(type).requireName(name).requireAnnotations(qualifierAnnotations);
+    Element element = Element.forType(type).requireName(name);
+    for (Annotation annotation : qualifierAnnotations) {
+      element = element.requireAnnotation(annotation);
+    }
+    return element;
   }
 
   /**
@@ -105,8 +115,13 @@ public final class ElementHelper {
     String name = JakartaBridge.nameOf(method);
     // extract the qualifier annotations
     Annotation[] qualifierAnnotations = extractQualifierAnnotations(method.getDeclaredAnnotations());
-    // build the element based on the information
-    return Element.get(method.getGenericReturnType()).requireName(name).requireAnnotations(qualifierAnnotations);
+
+    // create an element based on the information
+    Element element = Element.forType(method.getGenericReturnType()).requireName(name);
+    for (Annotation annotation : qualifierAnnotations) {
+      element = element.requireAnnotation(annotation);
+    }
+    return element;
   }
 
   /**
@@ -120,8 +135,13 @@ public final class ElementHelper {
     String name = JakartaBridge.nameOf(clazz);
     // extract the qualifier annotations
     Annotation[] qualifierAnnotations = extractQualifierAnnotations(clazz.getDeclaredAnnotations());
-    // build the element based on the information
-    return Element.get(clazz).requireName(name).requireAnnotations(qualifierAnnotations);
+
+    // create an element based on the information
+    Element element = Element.forType(clazz).requireName(name);
+    for (Annotation annotation : qualifierAnnotations) {
+      element = element.requireAnnotation(annotation);
+    }
+    return element;
   }
 
   /**

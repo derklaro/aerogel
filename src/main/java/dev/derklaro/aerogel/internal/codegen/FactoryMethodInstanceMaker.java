@@ -24,16 +24,15 @@
 
 package dev.derklaro.aerogel.internal.codegen;
 
-import static dev.derklaro.aerogel.internal.asm.AsmUtils.methodDesc;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SUPER;
 import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.V1_8;
 
+import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.internal.asm.AsmPrimitives;
-import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.internal.asm.AsmUtils;
 import java.lang.reflect.Method;
 import org.jetbrains.annotations.NotNull;
@@ -82,15 +81,25 @@ public final class FactoryMethodInstanceMaker {
     MethodVisitor mv;
     ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
     // target Java 8 classes as the minimum requirement
-    cw.visit(V1_8, AsmUtils.PUBLIC_FINAL | ACC_SUPER, proxyName, null, AsmUtils.OBJECT, ClassInstanceMaker.INSTANCE_MAKER);
+    cw.visit(
+      V1_8,
+      AsmUtils.PUBLIC_FINAL | ACC_SUPER,
+      proxyName,
+      null,
+      AsmUtils.OBJECT,
+      ClassInstanceMaker.INSTANCE_MAKER);
     // writes all necessary fields to the class
     ClassInstanceMaker.writeFields(cw, shouldBeSingleton);
     // write the constructor
     ClassInstanceMaker.writeConstructor(cw, proxyName, shouldBeSingleton);
 
     // visit the getInstance() method
-    mv = cw.visitMethod(ACC_PUBLIC, ClassInstanceMaker.GET_INSTANCE, AsmUtils.descToMethodDesc(
-        ClassInstanceMaker.INJ_CONTEXT_DESC, Object.class), null, null);
+    mv = cw.visitMethod(
+      ACC_PUBLIC,
+      ClassInstanceMaker.GET_INSTANCE,
+      AsmUtils.descToMethodDesc(ClassInstanceMaker.INJ_CONTEXT_DESC, Object.class),
+      null,
+      null);
     mv.visitCode();
     // if this is a singleton check first if the instance is already loaded
     if (shouldBeSingleton) {
@@ -99,7 +108,12 @@ public final class FactoryMethodInstanceMaker {
     // check if the constructor does take arguments (if not that makes the life easier)
     if (method.getParameterCount() == 0) {
       // just call the method (which must always be a static method)
-      mv.visitMethodInsn(INVOKESTATIC, AsmUtils.intName(ct), method.getName(), AsmUtils.methodDesc(method), ct.isInterface());
+      mv.visitMethodInsn(
+        INVOKESTATIC,
+        AsmUtils.intName(ct),
+        method.getName(),
+        AsmUtils.methodDesc(method),
+        ct.isInterface());
       // no types needed for the invocation
       elements = ClassInstanceMaker.NO_ELEMENT;
     } else {
@@ -108,7 +122,12 @@ public final class FactoryMethodInstanceMaker {
       // load all parameters
       ClassInstanceMaker.loadParameters(elements, mv);
       // invoke the method with these arguments
-      mv.visitMethodInsn(INVOKESTATIC, AsmUtils.intName(ct), method.getName(), AsmUtils.methodDesc(method), ct.isInterface());
+      mv.visitMethodInsn(
+        INVOKESTATIC,
+        AsmUtils.intName(ct),
+        method.getName(),
+        AsmUtils.methodDesc(method),
+        ct.isInterface());
     }
     // if this is a singleton store the value in the AtomicReference
     if (shouldBeSingleton) {

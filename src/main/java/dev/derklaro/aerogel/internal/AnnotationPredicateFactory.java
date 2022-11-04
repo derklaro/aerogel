@@ -24,7 +24,7 @@
 
 package dev.derklaro.aerogel.internal;
 
-import dev.derklaro.aerogel.AnnotationComparer;
+import dev.derklaro.aerogel.AnnotationPredicate;
 import java.lang.annotation.Annotation;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,9 +39,9 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 1.0
  */
-public final class AnnotationComparerMaker {
+public final class AnnotationPredicateFactory {
 
-  private AnnotationComparerMaker() {
+  private AnnotationPredicateFactory() {
     throw new UnsupportedOperationException();
   }
 
@@ -49,16 +49,17 @@ public final class AnnotationComparerMaker {
    * Makes a new annotation comparer. The returned comparer will only compare against the type of the given annotation
    * if the annotation has no fields, or it checks if the annotation provided and given do equal.
    *
-   * @param forAnnotation the annotation to create an annotation comparer for.
+   * @param annotation the annotation to create an annotation comparer for.
    * @return the created annotation comparer for the given annotation.
    */
-  public static @NotNull AnnotationComparer make(@NotNull Annotation forAnnotation) {
+  @SuppressWarnings("unchecked")
+  public static @NotNull <A extends Annotation> AnnotationPredicate<A> construct(@NotNull Annotation annotation) {
     // check if the annotation has no types - we can then fall back to use the type
-    if (forAnnotation.annotationType().getDeclaredMethods().length == 0) {
-      return new TypeBasedAnnotationComparer(forAnnotation.annotationType());
+    if (annotation.annotationType().getDeclaredMethods().length == 0) {
+      return new TypeBasedAnnotationPredicate<>((Class<A>) annotation.annotationType());
     } else {
       // use strict comparison
-      return new InstanceBasedAnnotationComparer(forAnnotation);
+      return new InstanceBasedAnnotationPredicate<>(annotation);
     }
   }
 
@@ -68,8 +69,8 @@ public final class AnnotationComparerMaker {
    * @param forAnnotationType the type of annotation to check for.
    * @return the created annotation comparer for the given annotation type.
    */
-  public static @NotNull AnnotationComparer make(@NotNull Class<?> forAnnotationType) {
-    return new TypeBasedAnnotationComparer(forAnnotationType);
+  public static @NotNull <A extends Annotation> AnnotationPredicate<A> construct(@NotNull Class<A> forAnnotationType) {
+    return new TypeBasedAnnotationPredicate<>(forAnnotationType);
   }
 
   /**
@@ -78,16 +79,16 @@ public final class AnnotationComparerMaker {
    * @author Pasqual K.
    * @since 1.0
    */
-  private static final class TypeBasedAnnotationComparer implements AnnotationComparer {
+  private static final class TypeBasedAnnotationPredicate<A extends Annotation> implements AnnotationPredicate<A> {
 
-    private final Class<?> annotationType;
+    private final Class<A> annotationType;
 
     /**
-     * Creates a new {@link TypeBasedAnnotationComparer} instance.
+     * Creates a new {@link TypeBasedAnnotationPredicate} instance.
      *
      * @param annotationType the type of annotation to check for.
      */
-    public TypeBasedAnnotationComparer(Class<?> annotationType) {
+    public TypeBasedAnnotationPredicate(@NotNull Class<A> annotationType) {
       this.annotationType = annotationType;
     }
 
@@ -95,8 +96,16 @@ public final class AnnotationComparerMaker {
      * {@inheritDoc}
      */
     @Override
-    public boolean doesEqual(@NotNull Annotation annotation) {
+    public boolean test(@NotNull Annotation annotation) {
       return this.annotationType.equals(annotation.annotationType());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull Class<A> annotationType() {
+      return this.annotationType;
     }
 
     /**
@@ -107,11 +116,11 @@ public final class AnnotationComparerMaker {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof TypeBasedAnnotationComparer)) {
+      if (!(o instanceof TypeBasedAnnotationPredicate)) {
         return false;
       }
       // check if the annotation type is equal
-      return this.annotationType.equals(((TypeBasedAnnotationComparer) o).annotationType);
+      return this.annotationType.equals(((TypeBasedAnnotationPredicate<?>) o).annotationType);
     }
 
     /**
@@ -126,7 +135,7 @@ public final class AnnotationComparerMaker {
      * {@inheritDoc}
      */
     @Override
-    public String toString() {
+    public @NotNull String toString() {
       return '@' + this.annotationType.getName();
     }
   }
@@ -137,16 +146,16 @@ public final class AnnotationComparerMaker {
    * @author Pasqual K.
    * @since 1.0
    */
-  private static final class InstanceBasedAnnotationComparer implements AnnotationComparer {
+  private static final class InstanceBasedAnnotationPredicate<A extends Annotation> implements AnnotationPredicate<A> {
 
     private final Annotation annotation;
 
     /**
-     * Creates a new {@link InstanceBasedAnnotationComparer} instance.
+     * Creates a new {@link InstanceBasedAnnotationPredicate} instance.
      *
      * @param annotation the annotation to create the annotation comparer for.
      */
-    public InstanceBasedAnnotationComparer(Annotation annotation) {
+    public InstanceBasedAnnotationPredicate(@NotNull Annotation annotation) {
       this.annotation = annotation;
     }
 
@@ -154,8 +163,17 @@ public final class AnnotationComparerMaker {
      * {@inheritDoc}
      */
     @Override
-    public boolean doesEqual(@NotNull Annotation annotation) {
+    public boolean test(@NotNull Annotation annotation) {
       return this.annotation.equals(annotation);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public @NotNull Class<A> annotationType() {
+      return (Class<A>) this.annotation.annotationType();
     }
 
     /**
@@ -166,11 +184,11 @@ public final class AnnotationComparerMaker {
       if (this == o) {
         return true;
       }
-      if (!(o instanceof InstanceBasedAnnotationComparer)) {
+      if (!(o instanceof InstanceBasedAnnotationPredicate)) {
         return false;
       }
       // check if the annotation type is equal
-      return this.annotation.equals(((InstanceBasedAnnotationComparer) o).annotation);
+      return this.annotation.equals(((InstanceBasedAnnotationPredicate<?>) o).annotation);
     }
 
     /**
@@ -185,7 +203,7 @@ public final class AnnotationComparerMaker {
      * {@inheritDoc}
      */
     @Override
-    public String toString() {
+    public @NotNull String toString() {
       return this.annotation.toString();
     }
   }

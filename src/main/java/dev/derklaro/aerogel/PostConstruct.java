@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel;
 
-import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -32,52 +31,38 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Identifies qualifier annotations. These annotations are used for annotation matching in an {@link Injector}. See
- * {@link Element#requireAnnotation(Class[])} and {@link Element#requireAnnotation(Annotation...)}.
+ * The post construct annotation can be placed on an instance method (non-static) which needs to be executed after the
+ * successful creation and member injection of a class. This method can be applied to multiple methods in a class, which
+ * are called in the natural java method ordering. Each instance creation will trigger a new call to all annotated
+ * methods.
  *
- * <p>A qualifier annotation...
+ * <p>A post construct method needs to meet the following criteria:
+ * <ol>
+ *   <li>The method takes no arguments.
+ *   <li>The method can return something, but the return value is ignored.
+ *   <li>The method must be public, protected, package private or private.
+ *   <li>The method must not be static, native or abstract.
+ * </ol>
  *
- * <ul>
- *   <li>... must be annotated with {@literal @}Qualifier.</li>
- *   <li>... must be {@literal @}Retention(RetentionPolicy.RUNTIME).</li>
- *   <li>... can have attributes (will be matched in the runtime differently).</li>
- * </ul>
- *
- * <p>A custom qualifier annotation can look like:
- *
- * <pre>
- *   &#064;aerogel.Qualifier
- *   &#064;java.lang.annotation.Documented
- *   &#064;java.lang.annotation.Retention(RUNTIME)
- *   public @interface Employee {
- *     Type type() default NORMAL;
- *
- *     public enum Type {
- *       SENIOR,
- *       NORMAL,
- *       GONE
- *     }
- *   }
- * </pre>
- *
- * <p>It can then be used as follows for injection when a binding was created for the {@code NORMAL} and {@code SENIOR}
- * employee type:
- *
+ * <p>Example usage:
  * <pre>
  *   public class Company {
  *     &#064;Inject
- *     public Company(&#064;Employee Employee johnWick, &#064;Employee(type = Type.SENIOR) Employee spiderMan) {
+ *     private String name;
  *
+ *     &#064;PostConstruct
+ *     public void postConstruct() {
+ *       System.out.printf("Company with name %s constructed.", this.name);
  *     }
  *   }
  * </pre>
  *
  * @author Pasqual K.
- * @since 1.0
+ * @since 2.0
  */
 @Documented
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.ANNOTATION_TYPE)
-public @interface Qualifier {
+public @interface PostConstruct {
 
 }

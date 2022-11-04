@@ -44,7 +44,8 @@ public final class DefaultMemberInjectionSettingsBuilder implements Builder {
   private boolean injectStaticFields = true;
   private boolean injectInstanceFields = true;
   private boolean injectInheritedFields = true;
-  private boolean injectOnlyUninitializedFields;
+  private boolean injectOnlyUninitializedFields = false;
+  private boolean executePostConstructListeners = true;
 
   /**
    * {@inheritDoc}
@@ -131,6 +132,15 @@ public final class DefaultMemberInjectionSettingsBuilder implements Builder {
    * {@inheritDoc}
    */
   @Override
+  public @NotNull Builder executePostConstructListeners(boolean executePostConstructListeners) {
+    this.executePostConstructListeners = executePostConstructListeners;
+    return this;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public @NotNull MemberInjectionSettings build() {
     return new DefaultMemberInjectionSettings(
       this.injectPrivateMethods,
@@ -141,6 +151,7 @@ public final class DefaultMemberInjectionSettingsBuilder implements Builder {
       this.injectStaticFields,
       this.injectInstanceFields,
       this.injectInheritedFields,
-      this.injectOnlyUninitializedFields);
+      this.injectOnlyUninitializedFields,
+      this.executePostConstructListeners);
   }
 }

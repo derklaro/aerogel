@@ -71,7 +71,7 @@ import org.jetbrains.annotations.Nullable;
  * @since 1.0
  */
 @FunctionalInterface
-public interface Provider<T> {
+public interface Provider<T> extends Supplier<T> {
 
   /**
    * Get an immediate provider of the given element - the {@link #get()} method will always return the provided
@@ -81,7 +81,7 @@ public interface Provider<T> {
    * @param <C>      the type of the {@code provided} argument.
    * @return a provider returning {@code provided} for every {@link #get()} call.
    */
-  static @NotNull <C> Provider<C> of(@Nullable C provided) {
+  static @NotNull <C> Provider<C> immediate(@Nullable C provided) {
     return new ImmediateProvider<>(provided);
   }
 
@@ -92,6 +92,7 @@ public interface Provider<T> {
    * @return a fully constructed instance of the type {@code T}.
    * @throws AerogelException if any exception occurs during the construction of the underlying type.
    */
+  @Override
   @Nullable T get() throws AerogelException;
 
   /**
@@ -135,8 +136,8 @@ public interface Provider<T> {
   /**
    * Returns a new {@link Provider} whose value is the value of this provider or the given {@code defaultValue} if not
    * present. The resulting provider is synced to this provider meaning that every time get is called on the created
-   * provider it queries the value of this provider and determines if the value of this or the given {@code
-   * defaultValue} should be used.
+   * provider it queries the value of this provider and determines if the value of this or the given
+   * {@code defaultValue} should be used.
    *
    * @param defaultValue the default value to return if the current provider has no value.
    * @return the new provider.
@@ -149,8 +150,8 @@ public interface Provider<T> {
   /**
    * Returns a new {@link Provider} whose value is the value of this provider or the value of the given {@code fallback}
    * provider if not present. The resulting provider is synced to this provider meaning that every time get is called on
-   * the created provider it queries the value of this provider and determines if the value of this or the given {@code
-   * fallback} provider should be used.
+   * the created provider it queries the value of this provider and determines if the value of this or the given
+   * {@code fallback} provider should be used.
    *
    * @param fallback the provider to query the value from if the current provider has no value.
    * @return the new provider.
@@ -227,9 +228,9 @@ public interface Provider<T> {
   /**
    * Returns a new {@link Provider} which value will be combined result of this and the given {@code second} provider.
    * The resulting provider is synced to this provider meaning that every time get is called on the created provider it
-   * queries the value of this provider, the value of the {@code second} provider and applies it to the given {@code
-   * combiner}. If the value of the current (this) or the {@code second} provider is null the mapper combiner will not
-   * be called and the new provider will return {@code null}.
+   * queries the value of this provider, the value of the {@code second} provider and applies it to the given
+   * {@code combiner}. If the value of the current (this) or the {@code second} provider is null the mapper combiner
+   * will not be called and the new provider will return {@code null}.
    *
    * @param second   the provider to combine this provider with.
    * @param combiner the combiner for this and the second provider's values.

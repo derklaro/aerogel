@@ -32,7 +32,7 @@ public class BindingsTest {
   @Test
   void testFixedBinding() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.fixed(Element.get(String.class), "Test"));
+    injector.install(Bindings.fixed(Element.forType(String.class), "Test"));
 
     String test = injector.instance(String.class);
     String test1 = injector.instance(String.class);
@@ -49,7 +49,7 @@ public class BindingsTest {
   @Test
   void testConstructingBinding() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.constructing(Element.get(StringHolder.class)));
+    injector.install(Bindings.constructing(Element.forType(StringHolder.class)));
 
     StringHolder value = injector.instance(StringHolder.class);
     Assertions.assertNotNull(value);
@@ -64,7 +64,7 @@ public class BindingsTest {
   void testInvalidConstructingBinding() {
     Assertions.assertThrows(
       AerogelException.class,
-      () -> Injector.newInjector().install(Bindings.constructing(Element.get(NotConstructable.class))));
+      () -> Injector.newInjector().install(Bindings.constructing(Element.forType(NotConstructable.class))));
   }
 
   @Test

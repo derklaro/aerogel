@@ -95,7 +95,7 @@ public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
   @Override
   public @NotNull Set<BindingConstructor> makeBinding(@NotNull DataInputStream in) throws IOException {
     try {
-      Element type = Element.get(loadClass(in.readUTF())); // the class to which all provided classes should get bound
+      Element type = Element.forType(loadClass(in.readUTF())); // the class to which all provided classes should get bound
       // load the classes to which the binding provides
       Class<?>[] providedClasses = new Class<?>[in.readInt()];
       for (int i = 0; i < providedClasses.length; i++) {
