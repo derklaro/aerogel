@@ -25,6 +25,7 @@
 package dev.derklaro.aerogel.internal.utility;
 
 import java.util.Collection;
+import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,7 +57,8 @@ public final class ToStringHelper {
    * @param instance the instance for which the toString method result will be created.
    * @return the constructed builder.
    */
-  public static @NotNull ToStringHelper from(@NotNull Object instance) {
+  public static @NotNull ToStringHelper create(@NotNull Object instance) {
+    Objects.requireNonNull(instance, "instance");
     return new ToStringHelper(instance);
   }
 

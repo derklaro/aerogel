@@ -133,7 +133,7 @@ public final class DefaultElement implements Element {
    */
   @Override
   public @NotNull String toString() {
-    return ToStringHelper.from(this)
+    return ToStringHelper.create(this)
       .putField("componentType", this.componentType)
       .putField("requiredName", this.requiredName)
       .putCollection("requiredAnnotations", this.annotationPredicates)
