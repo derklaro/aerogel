@@ -77,7 +77,7 @@ final class UnsafeClassDefiner implements ClassDefiner {
   public @NotNull Class<?> defineClass(@NotNull String name, @NotNull Class<?> parent, byte[] bytecode) {
     try {
       // Use unsafe to define the class
-      return (Class<?>) DEFINE_HANDLE.invokeExact(UnsafeAccess.U, parent, bytecode, null);
+      return (Class<?>) DEFINE_HANDLE.invokeExact(UnsafeAccess.U, parent, bytecode, (Object[]) null);
     } catch (Throwable throwable) {
       throw AerogelException.forMessagedException("Unable to define class " + name, throwable);
     }
