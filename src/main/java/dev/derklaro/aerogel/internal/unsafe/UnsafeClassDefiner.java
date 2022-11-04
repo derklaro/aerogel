@@ -25,7 +25,11 @@
 package dev.derklaro.aerogel.internal.unsafe;
 
 import dev.derklaro.aerogel.AerogelException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import org.jetbrains.annotations.NotNull;
+import sun.misc.Unsafe;
 
 /**
  * A class defining method for legacy jvm implementations (Java 7 - 14) which is deprecated since Java 15 in honor of
@@ -37,13 +41,33 @@ import org.jetbrains.annotations.NotNull;
  */
 final class UnsafeClassDefiner implements ClassDefiner {
 
+  private static final MethodHandle DEFINE_HANDLE;
+
+  static {
+    MethodHandle defineHandle;
+
+    try {
+      // Unsafe.defineAnonymousClass(HostClass, ByteCode, CpPatches)
+      defineHandle = MethodHandles.lookup().findVirtual(
+        Unsafe.class,
+        "defineAnonymousClass",
+        MethodType.methodType(Class.class, Class.class, byte[].class, Object[].class));
+    } catch (Exception exception) {
+      // unable to retrieve
+      defineHandle = null;
+    }
+
+    // assign the handle
+    DEFINE_HANDLE = defineHandle;
+  }
+
   /**
    * Checks if the {@code defineAnonymousClass} is available and this defining method can be used.
    *
    * @return if the {@code defineAnonymousClass} is available and this defining method can be used.
    */
   public static boolean isAvailable() {
-    return UnsafeAccess.isAvailable();
+    return UnsafeAccess.isAvailable() && DEFINE_HANDLE != null;
   }
 
   /**
@@ -53,7 +77,7 @@ final class UnsafeClassDefiner implements ClassDefiner {
   public @NotNull Class<?> defineClass(@NotNull String name, @NotNull Class<?> parent, byte[] bytecode) {
     try {
       // Use unsafe to define the class
-      return UnsafeAccess.U.defineAnonymousClass(parent, bytecode, null);
+      return (Class<?>) DEFINE_HANDLE.invokeExact(UnsafeAccess.U, parent, bytecode, null);
     } catch (Throwable throwable) {
       throw AerogelException.forMessagedException("Unable to define class " + name, throwable);
     }
