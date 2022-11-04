@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '11', '17', '19' ]
+        java: [ '11', '17', '18' ]
     name: ${{ matrix.java }}
 
     steps:
