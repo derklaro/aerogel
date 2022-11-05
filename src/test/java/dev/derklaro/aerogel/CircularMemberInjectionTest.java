@@ -27,34 +27,45 @@ package dev.derklaro.aerogel;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class OrderTest {
+public class CircularMemberInjectionTest {
 
   @Test
-  void testOrderIsAppliedToMethods() {
+  void testCircularMemberInjection() {
     Injector injector = Injector.newInjector();
-    InjectableClass instance = injector.instance(InjectableClass.class);
+    injector.install(Bindings.fixed(Element.forType(String.class).requireName("test"), "Hello World"));
 
-    Assertions.assertEquals(2, instance.calls);
-    Assertions.assertEquals(5, instance.value);
+    SomeClass instance = Assertions.assertDoesNotThrow(() -> injector.instance(SomeClass.class));
+    Assertions.assertNotNull(instance);
+    Assertions.assertEquals("Hello World", instance.helloWorld);
+    Assertions.assertNotNull(instance.someOtherClass);
+    Assertions.assertSame(instance, instance.someOtherClass.someClass);
   }
 
-  private static final class InjectableClass {
+  @Singleton
+  private static final class SomeClass {
 
-    private int value;
-    private int calls;
+    private final String helloWorld;
+    private SomeOtherClass someOtherClass;
 
-    @Order(25)
-    @PostConstruct
-    private void highPriority() {
-      this.calls++;
-      this.value = 5;
+    @Inject
+    public SomeClass(@Name("test") String helloWorld) {
+      this.helloWorld = helloWorld;
     }
 
-    @Order(0)
-    @PostConstruct
-    private void lowPriority() {
-      this.calls++;
-      this.value = 10;
+    @Inject
+    public void constructDone(SomeOtherClass otherClass) {
+      this.someOtherClass = otherClass;
+    }
+  }
+
+  @Singleton
+  private static final class SomeOtherClass {
+
+    private final SomeClass someClass;
+
+    @Inject
+    public SomeOtherClass(SomeClass someClass) {
+      this.someClass = someClass;
     }
   }
 }

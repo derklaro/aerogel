@@ -24,17 +24,18 @@
 
 package dev.derklaro.aerogel.internal.binding;
 
+import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.ProvidedBy;
 import dev.derklaro.aerogel.internal.codegen.ClassInstanceMaker;
+import dev.derklaro.aerogel.internal.codegen.InstanceCreateResult;
 import dev.derklaro.aerogel.internal.codegen.InstanceMaker;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.InjectionClassLookup;
 import dev.derklaro.aerogel.internal.reflect.ReflectionUtils;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
-import dev.derklaro.aerogel.AerogelException;
 import java.lang.reflect.Constructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -124,14 +125,14 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
    * {@inheritDoc}
    */
   @Override
-  @SuppressWarnings("unchecked")
   public <T> @Nullable T get(@NotNull InjectionContext context) {
     // construct the value
-    T value = (T) this.constructor.getInstance(context);
+    InstanceCreateResult result = this.constructor.getInstance(context);
+    T constructedValue = result.constructedValue();
     // push the construction done notice to the context
-    context.constructDone(this.targetType, value, true);
-    context.constructDone(this.bindingType, value, false);
+    context.constructDone(this.targetType, constructedValue, result.doMemberInjection());
+    context.constructDone(this.bindingType, constructedValue, false);
     // return
-    return value;
+    return constructedValue;
   }
 }

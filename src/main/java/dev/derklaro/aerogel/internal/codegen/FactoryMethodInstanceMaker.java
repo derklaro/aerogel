@@ -26,7 +26,8 @@ package dev.derklaro.aerogel.internal.codegen;
 
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_SUPER;
-import static org.objectweb.asm.Opcodes.ARETURN;
+import static org.objectweb.asm.Opcodes.ALOAD;
+import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.V1_8;
 
@@ -97,7 +98,7 @@ public final class FactoryMethodInstanceMaker {
     mv = cw.visitMethod(
       ACC_PUBLIC,
       ClassInstanceMaker.GET_INSTANCE,
-      AsmUtils.descToMethodDesc(ClassInstanceMaker.INJ_CONTEXT_DESC, Object.class),
+      AsmUtils.descToMethodDesc(ClassInstanceMaker.INJ_CONTEXT_DESC, InstanceCreateResult.class),
       null,
       null);
     mv.visitCode();
@@ -138,8 +139,11 @@ public final class FactoryMethodInstanceMaker {
     if (method.getReturnType().isPrimitive()) {
       AsmPrimitives.pushBox(method.getReturnType(), mv);
     }
+
     // return the last value of the stack
-    mv.visitInsn(ARETURN);
+    mv.visitVarInsn(ASTORE, 2);
+    ClassInstanceMaker.packValueIntoResultAndReturn(mv, visitor -> visitor.visitVarInsn(ALOAD, 2), true);
+
     // finish the method
     mv.visitMaxs(0, 0);
     mv.visitEnd();

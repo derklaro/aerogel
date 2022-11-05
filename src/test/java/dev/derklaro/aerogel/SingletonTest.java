@@ -24,20 +24,34 @@
 
 package dev.derklaro.aerogel;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class SingletonTest {
+
+  private static int calls = 0;
+
+  @Name("intValue")
+  private static int intValue() {
+    return calls++;
+  }
 
   @Name("holder")
   private static StringHolder factoryStringHolder() {
     return new StringHolder();
   }
 
+  @AfterEach
+  void resetCalls() {
+    calls = 0;
+  }
+
   @Test
-  void testConstructingSingleton() {
+  void testConstructingSingleton() throws NoSuchMethodException {
     Injector injector = Injector.newInjector();
     injector.install(Bindings.constructing(Element.forType(StringHolder.class)));
+    injector.install(Bindings.factory(SingletonTest.class.getDeclaredMethod("intValue")));
 
     StringHolder value = injector.instance(StringHolder.class);
     Assertions.assertNotNull(value);
@@ -48,11 +62,14 @@ public class SingletonTest {
     Assertions.assertEquals("test", value2.test);
 
     Assertions.assertSame(value, value2);
+    Assertions.assertEquals(1, calls);
+    Assertions.assertEquals(value.intValue, value2.intValue);
   }
 
   @Test
   void testFactoryMethodSingleton() throws NoSuchMethodException {
     Injector injector = Injector.newInjector();
+    injector.install(Bindings.factory(SingletonTest.class.getDeclaredMethod("intValue")));
     injector.install(Bindings.factory(SingletonTest.class.getDeclaredMethod("factoryStringHolder")));
 
     StringHolder holderA = injector.instance(Element.forType(StringHolder.class).requireName("holder"));
@@ -62,11 +79,17 @@ public class SingletonTest {
     Assertions.assertNotNull(holderB);
 
     Assertions.assertSame(holderA, holderB);
+    Assertions.assertEquals(1, calls);
+    Assertions.assertEquals(holderA.intValue, holderB.intValue);
   }
 
   @Singleton
   private static final class StringHolder {
 
     private final String test = "test";
+
+    @Inject
+    @Name("intValue")
+    private int intValue; // ensures that member injection is only done once for singletons
   }
 }

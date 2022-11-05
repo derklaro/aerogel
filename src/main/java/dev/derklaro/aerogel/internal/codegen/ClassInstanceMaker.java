@@ -63,10 +63,12 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 /**
  * An instance maker generator which creates instances using constructor injection.
@@ -95,6 +97,12 @@ public final class ClassInstanceMaker {
   static final String INJECTOR_BINDING = "binding";
   static final String INJECTOR_NAME = org.objectweb.asm.Type.getInternalName(Injector.class);
   static final String INJECTOR_BINDING_DESC = AsmUtils.methodDesc(BindingHolder.class, Element.class);
+  // the create result
+  static final String CREATE_RESULT_NAME = org.objectweb.asm.Type.getInternalName(InstanceCreateResult.class);
+  static final String CREATE_CONST_DESC = org.objectweb.asm.Type.getMethodDescriptor(
+    org.objectweb.asm.Type.VOID_TYPE,
+    org.objectweb.asm.Type.getType(Object.class),
+    org.objectweb.asm.Type.BOOLEAN_TYPE);
   // the provider wrapping stuff
   static final String PROVIDER_NAME = org.objectweb.asm.Type.getInternalName(Provider.class);
   static final String JAKARTA_BRIDGE = org.objectweb.asm.Type.getInternalName(JakartaBridge.class);
@@ -151,7 +159,7 @@ public final class ClassInstanceMaker {
     mv = cw.visitMethod(
       ACC_PUBLIC,
       GET_INSTANCE,
-      AsmUtils.descToMethodDesc(INJ_CONTEXT_DESC, Object.class),
+      AsmUtils.descToMethodDesc(INJ_CONTEXT_DESC, InstanceCreateResult.class),
       null,
       null);
     mv.visitCode();
@@ -187,8 +195,11 @@ public final class ClassInstanceMaker {
     if (singleton) {
       appendSingletonWrite(mv, proxyName);
     }
+
     // return the created value
-    mv.visitInsn(ARETURN);
+    mv.visitVarInsn(ASTORE, 2);
+    packValueIntoResultAndReturn(mv, visitor -> visitor.visitVarInsn(ALOAD, 2), true);
+
     // finish the class
     mv.visitMaxs(0, 0);
     mv.visitEnd();
@@ -394,9 +405,24 @@ public final class ClassInstanceMaker {
     // if (val != null) then
     mv.visitJumpInsn(IFNULL, wasConstructedDimension);
     // return the current non-null value of the stack
-    mv.visitVarInsn(ALOAD, 2);
-    mv.visitInsn(ARETURN);
+    packValueIntoResultAndReturn(mv, visitor -> visitor.visitVarInsn(ALOAD, 2), false);
     mv.visitLabel(wasConstructedDimension);
+  }
+
+  static void packValueIntoResultAndReturn(
+    @NotNull MethodVisitor mv,
+    @NotNull Consumer<MethodVisitor> resultLoader,
+    boolean doMemberInjection
+  ) {
+    // begin the construct
+    mv.visitTypeInsn(NEW, CREATE_RESULT_NAME);
+    mv.visitInsn(DUP);
+    // push the created value and the boolean for member injection to the stack
+    resultLoader.accept(mv);
+    mv.visitInsn(doMemberInjection ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
+    // construct and return the result
+    mv.visitMethodInsn(INVOKESPECIAL, CREATE_RESULT_NAME, AsmUtils.CONSTRUCTOR_NAME, CREATE_CONST_DESC, false);
+    mv.visitInsn(ARETURN);
   }
 
   /**

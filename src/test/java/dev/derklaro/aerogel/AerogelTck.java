@@ -51,12 +51,13 @@ public class AerogelTck extends TestCase {
     injector
       .install(Bindings.constructing(Element.forType(Car.class), Element.forType(Convertible.class)))
       .install(Bindings.constructing(Element.forType(Engine.class), Element.forType(V8Engine.class)))
-      .install(Bindings.constructing(Element.forType(Tire.class).requireName("spare"), Element.forType(SpareTire.class)))
-      .install(Bindings.constructing(Element.forType(Seat.class).requireAnnotation(Drivers.class), Element.forType(DriversSeat.class)));
+      .install(Bindings.constructing(
+        Element.forType(Tire.class).requireName("spare"),
+        Element.forType(SpareTire.class)))
+      .install(Bindings.constructing(
+        Element.forType(Seat.class).requireAnnotation(Drivers.class),
+        Element.forType(DriversSeat.class)));
     // run the test
-    return Tck.testsFor(
-      injector.instance(Car.class),
-      true,
-      true);
+    return Tck.testsFor(injector.instance(Car.class), true, true);
   }
 }

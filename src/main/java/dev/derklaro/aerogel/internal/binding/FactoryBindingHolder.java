@@ -28,6 +28,7 @@ import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.internal.codegen.FactoryMethodInstanceMaker;
+import dev.derklaro.aerogel.internal.codegen.InstanceCreateResult;
 import dev.derklaro.aerogel.internal.codegen.InstanceMaker;
 import java.lang.reflect.Method;
 import org.jetbrains.annotations.NotNull;
@@ -67,14 +68,14 @@ public final class FactoryBindingHolder extends AbstractBindingHolder {
    * {@inheritDoc}
    */
   @Override
-  @SuppressWarnings("unchecked")
   public <T> @Nullable T get(@NotNull InjectionContext context) {
     // construct the value
-    T value = (T) this.instanceMaker.getInstance(context);
+    InstanceCreateResult result = this.instanceMaker.getInstance(context);
+    T constructedValue = result.constructedValue();
     // push the construction done notice to the context
-    context.constructDone(this.targetType, value, true);
-    context.constructDone(this.bindingType, value, false);
+    context.constructDone(this.targetType, constructedValue, result.doMemberInjection());
+    context.constructDone(this.bindingType, constructedValue, false);
     // return
-    return value;
+    return constructedValue;
   }
 }

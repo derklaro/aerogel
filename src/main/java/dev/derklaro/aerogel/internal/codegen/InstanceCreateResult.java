@@ -24,23 +24,46 @@
 
 package dev.derklaro.aerogel.internal.codegen;
 
-import dev.derklaro.aerogel.InjectionContext;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * Represents a class which can create an instance in any way of another class.
+ * Represents the result of an instance construction from an {@link InstanceMaker}.
  *
  * @author Pasqual K.
- * @since 1.0
+ * @since 2.0
  */
-@FunctionalInterface
-public interface InstanceMaker {
+public final class InstanceCreateResult {
+
+  private final Object result;
+  private final boolean doMemberInjection;
 
   /**
-   * Gets the instance of this maker based on the given injection context.
+   * Constructs a new instance create result.
    *
-   * @param context the context to use for creating the instance.
-   * @return the result of the instance creation.
+   * @param result            the created instance, might be null.
+   * @param doMemberInjection true if member injection is required, false otherwise.
    */
-  @NotNull InstanceCreateResult getInstance(@NotNull InjectionContext context);
+  public InstanceCreateResult(@Nullable Object result, boolean doMemberInjection) {
+    this.result = result;
+    this.doMemberInjection = doMemberInjection;
+  }
+
+  /**
+   * Get the result of the instance create process, might be null.
+   *
+   * @return the created instance.
+   */
+  @SuppressWarnings("unchecked")
+  public @Nullable <T> T constructedValue() {
+    return (T) this.result;
+  }
+
+  /**
+   * Get if member injection should be executed on the constructed value.
+   *
+   * @return true if member injection is required, false otherwise.
+   */
+  public boolean doMemberInjection() {
+    return this.doMemberInjection;
+  }
 }
