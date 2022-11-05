@@ -30,6 +30,7 @@ import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjectionSettings;
 import dev.derklaro.aerogel.MemberInjector;
+import dev.derklaro.aerogel.Order;
 import dev.derklaro.aerogel.PostConstruct;
 import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.internal.asm.AsmUtils;
@@ -45,6 +46,7 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -242,13 +244,32 @@ public final class DefaultMemberInjector implements MemberInjector {
     this.staticFields = staticFields == null ? Collections.emptySet() : staticFields;
     this.instanceFields = instanceFields == null ? Collections.emptySet() : instanceFields;
 
-    this.staticMethods = staticMethods == null ? Collections.emptySet() : staticMethods.values();
-    this.instanceMethods = instanceMethods == null ? Collections.emptySet() : instanceMethods.values();
-    this.postConstructMethods = postConstructMethods == null ? Collections.emptySet() : postConstructMethods.values();
+    this.staticMethods = sortMethods(staticMethods);
+    this.instanceMethods = sortMethods(instanceMethods);
+    this.postConstructMethods = sortMethods(postConstructMethods);
 
     // initialize the predicates to test whether a member belongs to the direct target class or not
     this.onlyThisClass = member -> member.getDeclaringClass() == this.targetClass;
     this.onlyNotThisClass = member -> member.getDeclaringClass() != this.targetClass;
+  }
+
+  /**
+   * Extracts the values from the given map and sorts them according to the order annotation defined on the methods.
+   *
+   * @param methods the methods to extract and sort.
+   * @return a collection of methods, ordered in the execution order.
+   * @since 2.0
+   */
+  private static @NotNull Collection<InjectableMethod> sortMethods(@Nullable Map<String, InjectableMethod> methods) {
+    // just do nothing if the methods are empty
+    if (methods == null || methods.isEmpty()) {
+      return Collections.emptyList();
+    }
+
+    // extract the methods into a list and sort it
+    List<InjectableMethod> injectableMethods = new ArrayList<>(methods.values());
+    Collections.sort(injectableMethods);
+    return injectableMethods;
   }
 
   /**
@@ -722,8 +743,9 @@ public final class DefaultMemberInjector implements MemberInjector {
    * @author Pasqual K.
    * @since 1.0
    */
-  private static final class InjectableMethod {
+  private static final class InjectableMethod implements Comparable<InjectableMethod> {
 
+    private final int order;
     private final Method method;
     private final boolean optional;
     private final Parameter[] parameters;
@@ -745,6 +767,9 @@ public final class DefaultMemberInjector implements MemberInjector {
       this.parameterTypes = method.getParameterTypes(); // prevents copy of these
       this.parameterAnnotations = method.getParameterAnnotations(); // prevents copy of these
       this.hashCode = this.method.hashCode() ^ Boolean.hashCode(this.optional);
+
+      Order orderAnnotation = method.getAnnotation(Order.class);
+      this.order = orderAnnotation == null ? Order.DEFAULT : orderAnnotation.value();
     }
 
     /**
@@ -753,6 +778,14 @@ public final class DefaultMemberInjector implements MemberInjector {
     @Override
     public int hashCode() {
       return this.hashCode;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int compareTo(@NotNull DefaultMemberInjector.InjectableMethod o) {
+      return Integer.compare(this.order, o.order);
     }
   }
 
