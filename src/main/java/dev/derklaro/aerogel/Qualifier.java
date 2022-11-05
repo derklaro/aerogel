@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
 
 /**
  * Identifies qualifier annotations. These annotations are used for annotation matching in an {@link Injector}. See
- * {@link Element#requireAnnotation(Class[])} and {@link Element#requireAnnotation(Annotation...)}.
+ * {@link Element#requireAnnotation(Class)} and {@link Element#requireAnnotation(Annotation)}.
  *
  * <p>A qualifier annotation...
  *

@@ -38,7 +38,7 @@ import org.jetbrains.annotations.NotNull;
  * </ul>
  *
  * <p>Every {@link Element} holds annotation comparer which can be accessed through {@link Element#requiredAnnotations()}
- * and added via {@link Element#requireAnnotation(Annotation...)} and {@link Element#requireAnnotation(Class[])}.</p>
+ * and added via {@link Element#requireAnnotation(Annotation)} and {@link Element#requireAnnotation(Class)}.</p>
  *
  * @param <A> the type of the annotation to compare.
  * @author Pasqual K.
