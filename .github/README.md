@@ -1,4 +1,4 @@
-Aerogel ![Build Status](https://github.com/derklaro/aerogel/actions/workflows/build.yml/badge.svg) ![LGTM quality rating](https://img.shields.io/lgtm/grade/java/github/derklaro/aerogel) ![Central Release Version](https://img.shields.io/maven-central/v/io.github.derklaro/aerogel)
+Aerogel ![Build Status](https://github.com/derklaro/aerogel/actions/workflows/build.yml/badge.svg) ![LGTM quality rating](https://img.shields.io/lgtm/grade/java/github/derklaro/aerogel) ![Central Release Version](https://img.shields.io/maven-central/v/dev.derklaro.aerogel/aerogel)
 ===========
 
 A lightweight dependency injection framework for Java 8 - 17 which aims for stability, performance and reliability.
@@ -31,7 +31,7 @@ repositories {
 }
 
 dependencies {
-  implementation("com.github.derklaro", "aerogel", "<VERSION>")
+  implementation("dev.derklaro.aerogel", "aerogel", "<VERSION>")
 }
 ```
 
@@ -107,8 +107,8 @@ repositories {
 }
 
 dependencies {
-  implentation group: 'io.github.derklaro', name: 'aerogel-auto', version: '<VERSION>'
-  annotationProcessor group: 'io.github.derklaro', name: 'aerogel-auto', version: '<VERSION>'
+  implentation group: 'dev.derklaro.aerogel', name: 'aerogel-auto', version: '<VERSION>'
+  annotationProcessor group: 'dev.derklaro.aerogel', name: 'aerogel-auto', version: '<VERSION>'
 }
 ```
 
@@ -141,7 +141,7 @@ Bindings can now get loaded in the runtime:
 
 ```java
 import dev.derklaro.aerogel.Injector;
-import auto.dev.derklaro.aerogel.AutoAnnotationRegistry;
+import dev.derklaro.aerogel.auto.AutoAnnotationRegistry;
 
 public final class Application {
 
@@ -173,7 +173,7 @@ repositories {
 }
 
 dependencies {
-  implentation group: 'io.github.derklaro', name: 'aerogel-kotlin-extensions', version: '<VERSION>'
+  implentation group: 'dev.derklaro', name: 'aerogel-kotlin-extensions', version: '<VERSION>'
 }
 ```
 
@@ -181,9 +181,9 @@ There are now replacements for everything which works with generics. Here are so
 
 ```kotlin
 import dev.derklaro.aerogel.Injector
-import aerogel.kotlin.fixed
-import aerogel.kotlin.instance
-import aerogel.kotlin.element
+import dev.derklaro.aerogel.kotlin.fixed
+import dev.derklaro.aerogel.kotlin.instance
+import dev.derklaro.aerogel.kotlin.element
 
 fun main() {
   val injector = Injector.newInjector()
