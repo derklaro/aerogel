@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel.kotlin
 
+import dev.derklaro.aerogel.AerogelException
 import dev.derklaro.aerogel.BindingHolder
 import dev.derklaro.aerogel.Injector
 import dev.derklaro.aerogel.MemberInjector
@@ -31,7 +32,7 @@ import dev.derklaro.aerogel.MemberInjector
 /**
  * Creates or gets the instance of the specified generic type [T], the instance may be null if null was bound.
  *
- * @throws aerogel.AerogelException if no binding is present and no runtime binding can be created.
+ * @throws AerogelException if no binding is present and no runtime binding can be created.
  * @see Injector.instance
  * @author Pasqual K.
  * @since 1.0
@@ -41,7 +42,7 @@ inline fun <reified T> Injector.instance(): T? = this.instance(element<T>())
 /**
  * Creates or gets the binding of the specified generic type [T].
  *
- * @throws aerogel.AerogelException if no binding is present and no runtime binding can be created.
+ * @throws AerogelException if no binding is present and no runtime binding can be created.
  * @see Injector.binding
  * @author Pasqual K.
  * @since 1.0

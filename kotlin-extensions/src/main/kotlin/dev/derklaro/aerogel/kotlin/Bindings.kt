@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel.kotlin
 
+import dev.derklaro.aerogel.AerogelException
 import dev.derklaro.aerogel.BindingConstructor
 import dev.derklaro.aerogel.Bindings
 
@@ -31,7 +32,7 @@ import dev.derklaro.aerogel.Bindings
  * Creates a new constructing binding holder for the given generic type [T].
  *
  * @throws NullPointerException     if {@code element} is null.
- * @throws aerogel.AerogelException if the class more or less than one injectable constructors or is not instantiable.
+ * @throws AerogelException if the class more or less than one injectable constructors or is not instantiable.
  * @see Bindings.constructing
  * @author Pasqual K.
  * @since 1.0
@@ -41,7 +42,7 @@ inline fun <reified T> constructing(): BindingConstructor = Bindings.constructin
 /**
  * Creates a new binding constructor for the generic type [T] which always return the given [value].
  *
- * @throws aerogel.AerogelException if {@code element} is not assignable to {@code value}.
+ * @throws AerogelException if {@code element} is not assignable to {@code value}.
  * @see Bindings.fixed
  * @author Pasqual K.
  * @since 1.0
