@@ -50,6 +50,8 @@ public class FactoryProcessingTest {
   }.getType();
   private static final Type MAP_STRING_STRING_TYPE = new TypeToken<Map<String, String>>() {
   }.getType();
+  private static final Type COLLECTION_STRING_ARRAY_TYPE = new TypeToken<Collection<String>[]>() {
+  }.getType();
 
   @Test
   void testWarningEmitWhenFactoryMethodIsNotStatic() {
@@ -86,6 +88,8 @@ public class FactoryProcessingTest {
         .addParameter(MAP_STRING_STRING_TYPE, "map")
         .addParameter(COLLECTION_STRING_TYPE, "another", Modifier.FINAL)
         .addParameter(int.class, "i")
+        .addParameter(int[][][].class, "intArray")
+        .addParameter(COLLECTION_STRING_ARRAY_TYPE, "colArray")
         .addCode("return $S;", "Hello World")
         .addAnnotation(Factory.class)
         .addModifiers(PUBLIC, STATIC))
@@ -108,7 +112,7 @@ public class FactoryProcessingTest {
       //   - primitive types are correctly shown
       //   - the array flag is present on array types
       Assertions.assertTrue(thrown.getMessage().contains(
-        "testing.Main.helloWorld(java.util.Collection, java.lang.String (0x01), java.util.Map, java.util.Collection, int)"));
+        "testing.Main.helloWorld(java.util.Collection, java.lang.String[], java.util.Map, java.util.Collection, int, int[][][], java.util.Collection[])"));
 
       // ensure that the reason for the exception came because of the dynamically generated class
       ClassNotFoundException cause = Assertions.assertInstanceOf(ClassNotFoundException.class, thrown.getCause());

@@ -24,8 +24,9 @@
 
 package dev.derklaro.aerogel.auto.internal.utility;
 
+import java.lang.reflect.Array;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -34,9 +35,9 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 1.0
  */
-public final class ClassLoadingUtils {
+public final class ClassLoadingUtil {
 
-  private static final Map<String, Class<?>> PRIMITIVE_CLASSES = new ConcurrentHashMap<>(8);
+  private static final Map<String, Class<?>> PRIMITIVE_CLASSES = new HashMap<>(8);
 
   static {
     PRIMITIVE_CLASSES.put("int", int.class);
@@ -49,7 +50,7 @@ public final class ClassLoadingUtils {
     PRIMITIVE_CLASSES.put("boolean", boolean.class);
   }
 
-  private ClassLoadingUtils() {
+  private ClassLoadingUtil() {
     throw new UnsupportedOperationException();
   }
 
@@ -66,6 +67,13 @@ public final class ClassLoadingUtils {
     Class<?> primitive = PRIMITIVE_CLASSES.get(name);
     if (primitive != null) {
       return primitive;
+    }
+
+    // check if the given type is an array
+    if (name.endsWith(TypeUtil.ARRAY_INDICATOR)) {
+      // get the component type and create an array from it
+      Class<?> componentType = loadClass(name.substring(0, name.length() - TypeUtil.ARRAY_INDICATOR.length()));
+      return Array.newInstance(componentType, 0).getClass();
     }
 
     // try to load the class normally

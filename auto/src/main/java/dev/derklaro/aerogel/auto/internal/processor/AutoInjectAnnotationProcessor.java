@@ -24,7 +24,7 @@
 
 package dev.derklaro.aerogel.auto.internal.processor;
 
-import static dev.derklaro.aerogel.auto.internal.utility.AnnotationUtils.typesOfAnnotationValue;
+import static dev.derklaro.aerogel.auto.internal.utility.TypeUtil.typesOfAnnotationValue;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.auto.AutoAnnotationEntry;

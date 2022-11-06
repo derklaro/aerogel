@@ -24,31 +24,28 @@
 
 package dev.derklaro.aerogel.auto.internal.holder;
 
-import static dev.derklaro.aerogel.auto.internal.utility.ClassLoadingUtils.loadClass;
+import static dev.derklaro.aerogel.auto.internal.utility.ClassLoadingUtil.loadClass;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.BindingConstructor;
 import dev.derklaro.aerogel.Bindings;
 import dev.derklaro.aerogel.auto.AutoAnnotationEntry;
 import dev.derklaro.aerogel.auto.Factory;
+import dev.derklaro.aerogel.auto.internal.utility.TypeUtil;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import org.jetbrains.annotations.NotNull;
@@ -61,12 +58,9 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
 
-  // the flags which are indicating the type of entry
-  private static final int FLAG_ARRAY = 0x01;
-
   private final String methodName;
   private final String enclosingClass;
-  private final List<Map.Entry<String, Integer>> methodArguments;
+  private final List<String> methodArguments;
 
   /**
    * Constructs a new empty factory used for deserialization.
@@ -81,6 +75,7 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
    * Constructs a new element.
    *
    * @param element the element which was annotated.
+   * @param types   the environment specific utility instance to work with types.
    */
   public FactoryAutoAnnotationEntry(@NotNull ExecutableElement element, @NotNull Types types) {
     this.methodName = element.getSimpleName().toString();
@@ -93,34 +88,22 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
       // collects each type parameter with the fully qualified type name for later identification of the method
       this.methodArguments = element.getParameters().stream()
         .map(variableElement -> {
-          int flags = 0;
+          // erase the generic data from the element type
+          TypeMirror erasedType = types.erasure(variableElement.asType());
 
-          // extract the component type of the element
-          TypeMirror variableType = variableElement.asType();
-          if (variableType instanceof ArrayType) {
-            flags |= FLAG_ARRAY;
-            variableType = ((ArrayType) variableType).getComponentType();
-          }
+          // if the type of the parameter is an array we need to fetch the info specifically for that
+          if (erasedType.getKind() == TypeKind.ARRAY) {
+            Map.Entry<TypeMirror, Integer> arrayTypeInfo = TypeUtil.innermostComponentType((ArrayType) erasedType);
 
-          // erase the unneeded type information & box the mirror in a type
-          TypeMirror erasedType = types.erasure(variableType);
-          Element typeElement = types.asElement(erasedType);
+            // based on the array type info we can get the element of the component type
+            String runtimeComponentType = TypeUtil.asRuntimeType(arrayTypeInfo.getKey(), types);
+            String array = String.join("", Collections.nCopies(arrayTypeInfo.getValue(), TypeUtil.ARRAY_INDICATOR));
 
-          // if the type element is present we can use that element as the parameter type
-          if (typeElement != null) {
-            return new SimpleImmutableEntry<>(typeElement.toString(), flags);
-          }
-
-          try {
-            // the element might still be primitive, try that
-            PrimitiveType primitive = types.getPrimitiveType(erasedType.getKind());
-            return new SimpleImmutableEntry<>(primitive.toString(), flags);
-          } catch (IllegalArgumentException ex) {
-            // not primitive
-            throw AerogelException.forMessageWithoutStack(String.format(
-              "TypeMirror %s has no corresponding element and is not primitive " + (variableElement.asType()
-                .getClass()),
-              erasedType));
+            // return the runtime type based on the component type and array depth
+            return String.format("%s%s", runtimeComponentType, array);
+          } else {
+            // we can just return the type information as a runtime type info
+            return TypeUtil.asRuntimeType(erasedType, types);
           }
         })
         .collect(Collectors.toCollection(LinkedList::new));
@@ -137,9 +120,8 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
     out.writeUTF(this.enclosingClass); // the class in which the method is located
     out.writeInt(this.methodArguments.size()); // the size of the following argument array
     // write every type of each variable for later method identification
-    for (Map.Entry<String, Integer> argument : this.methodArguments) {
-      out.writeUTF(argument.getKey());
-      out.writeInt(argument.getValue());
+    for (String type : this.methodArguments) {
+      out.writeUTF(type);
     }
   }
 
@@ -151,11 +133,10 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
     String methodName = in.readUTF(); // the name of the factory method
     String enclosingClass = in.readUTF(); // the class which declares the method
     // read the method argument types as an array from the stream
-    //noinspection unchecked
-    Map.Entry<String, Integer>[] typeArguments = new Map.Entry[in.readInt()];
+    String[] typeArguments = new String[in.readInt()];
     // assign each argument
     for (int i = 0; i < typeArguments.length; i++) {
-      typeArguments[i] = new SimpleImmutableEntry<>(in.readUTF(), in.readInt());
+      typeArguments[i] = in.readUTF();
     }
 
     // try to load every type & find the method
@@ -165,18 +146,8 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
       // load the type arguments as classes to a new array
       Class<?>[] types = new Class<?>[typeArguments.length];
       for (int i = 0; i < typeArguments.length; i++) {
-        Map.Entry<String, Integer> entry = typeArguments[i];
-
-        // load the component type of the entry
-        Class<?> componentType = loadClass(entry.getKey());
-        if ((entry.getValue() & FLAG_ARRAY) != 0) {
-          // the type is an array
-          Object array = Array.newInstance(componentType, 0);
-          componentType = array.getClass();
-        }
-
         // register the argument
-        types[i] = componentType;
+        types[i] = loadClass(typeArguments[i]);
       }
 
       // get the factory method from the declaring class & create a constructing holder from that
@@ -187,12 +158,7 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
         "Unable to construct factory binding on %s.%s(%s)",
         enclosingClass,
         methodName,
-        Arrays.stream(typeArguments)
-          .map(entry -> String.format(
-            "%s%s",
-            entry.getKey(),
-            entry.getValue() != 0 ? String.format(" (0x%02X)", 0xFF & entry.getValue()) : ""))
-          .collect(Collectors.joining(", "))
+        String.join(", ", typeArguments)
       ), exception);
     }
   }

@@ -24,7 +24,7 @@
 
 package dev.derklaro.aerogel.auto.internal.holder;
 
-import static dev.derklaro.aerogel.auto.internal.utility.ClassLoadingUtils.loadClass;
+import static dev.derklaro.aerogel.auto.internal.utility.ClassLoadingUtil.loadClass;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.BindingConstructor;
