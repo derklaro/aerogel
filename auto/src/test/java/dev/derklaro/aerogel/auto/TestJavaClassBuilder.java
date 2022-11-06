@@ -57,6 +57,10 @@ final class TestJavaClassBuilder {
   }
 
   public JavaFileObject build() {
-    return JavaFile.builder("", this.typeSpec.build()).build().toJavaFileObject();
+    return build("");
+  }
+
+  public JavaFileObject build(String packageName) {
+    return JavaFile.builder(packageName, this.typeSpec.build()).build().toJavaFileObject();
   }
 }

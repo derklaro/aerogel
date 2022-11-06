@@ -47,21 +47,21 @@ public final class FactoryBindingHolder extends AbstractBindingHolder {
   /**
    * Constructs a new factory binding holder.
    *
-   * @param type              the type of the binding.
    * @param binding           the type to which the given type is bound.
    * @param injector          the injector to which this binding was bound.
    * @param factoryMethod     the factory method to use to construct the instances.
    * @param shouldBeSingleton if the result of the factory call should be a singleton object.
+   * @param type              the type of the binding.
    */
   public FactoryBindingHolder(
-    @NotNull Element type,
     @NotNull Element binding,
     @NotNull Injector injector,
     @NotNull Method factoryMethod,
-    boolean shouldBeSingleton
+    boolean shouldBeSingleton,
+    @NotNull Element... type
   ) {
     super(type, binding, injector);
-    this.instanceMaker = FactoryMethodInstanceMaker.forMethod(type, factoryMethod, shouldBeSingleton);
+    this.instanceMaker = FactoryMethodInstanceMaker.forMethod(binding, factoryMethod, shouldBeSingleton);
   }
 
   /**
@@ -73,7 +73,9 @@ public final class FactoryBindingHolder extends AbstractBindingHolder {
     InstanceCreateResult result = this.instanceMaker.getInstance(context);
     T constructedValue = result.constructedValue();
     // push the construction done notice to the context
-    context.constructDone(this.targetType, constructedValue, result.doMemberInjection());
+    for (int i = 0, typeLength = this.targetType.length; i < typeLength; i++) {
+      context.constructDone(this.targetType[i], constructedValue, i == 0 && result.doMemberInjection());
+    }
     context.constructDone(this.bindingType, constructedValue, false);
     // return
     return constructedValue;

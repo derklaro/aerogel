@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel.auto.internal.utility;
 
-import java.lang.reflect.Array;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +36,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class ClassLoadingUtils {
 
-  private static final String ARRAY_SUFFIX = "[]";
   private static final Map<String, Class<?>> PRIMITIVE_CLASSES = new ConcurrentHashMap<>(8);
 
   static {
@@ -69,12 +67,7 @@ public final class ClassLoadingUtils {
     if (primitive != null) {
       return primitive;
     }
-    // check if the class is an array - in this case strip the last [] and get type of that
-    if (name.endsWith(ARRAY_SUFFIX)) {
-      Class<?> elementClass = loadClass(name.substring(0, name.length() - ARRAY_SUFFIX.length()));
-      // create a new array of the element class to get the array type class
-      return Array.newInstance(elementClass, 0).getClass();
-    }
+
     // try to load the class normally
     return Class.forName(name, false, Thread.currentThread().getContextClassLoader());
   }

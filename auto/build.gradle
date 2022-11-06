@@ -2,6 +2,7 @@ description = 'Extension for aerogel supporting automatic binding creation compi
 
 dependencies {
   api rootProject
+  testImplementation group: 'org.projectlombok', name: 'lombok', version: '1.18.24'
   testImplementation group: 'com.squareup', name: 'javapoet', version: '1.13.0'
   testImplementation group: 'com.google.testing.compile', name: 'compile-testing', version: '0.19'
 }

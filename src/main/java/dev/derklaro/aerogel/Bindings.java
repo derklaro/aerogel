@@ -78,7 +78,7 @@ public interface Bindings {
     checkArgument(isNotPrimitiveOrIsAssignable(type.componentType(), value), "Value is not assignable to type");
     checkArgument(isNotPrimitiveOrIsAssignable(bound.componentType(), value), "Value is not assignable to bound");
 
-    return injector -> new ImmediateBindingHolder(type, bound, injector, value);
+    return injector -> new ImmediateBindingHolder(bound, injector, value, type);
   }
 
   /**
@@ -104,18 +104,19 @@ public interface Bindings {
    * no-args constructor construction. This binding is singleton aware. Parameters of the constructor are taken from the
    * injector.
    *
-   * @param type  the element type.
    * @param bound the element of which the binding should be created.
+   * @param types the element types.
    * @return a new binding constructor which instantiated the given {@code bound} to obtain a new instance.
    * @throws NullPointerException if {@code type} or {@code bound} is null.
    * @throws AerogelException     if the class more or less than one injectable constructors or is not instantiable.
    */
   @Contract(pure = true)
-  static @NotNull BindingConstructor constructing(@NotNull Element type, @NotNull Element bound) {
-    requireNonNull(type, "Fixed bound type must not be null");
+  static @NotNull BindingConstructor constructing(@NotNull Element bound, @NotNull Element... types) {
+    requireNonNull(types, "Fixed bound type must not be null");
     requireNonNull(bound, "Fixed bound value type must not be null");
+    checkArgument(types.length > 0, "At least one target type must be given");
 
-    return injector -> ConstructingBindingHolder.create(injector, type, bound);
+    return injector -> ConstructingBindingHolder.create(injector, bound, types);
   }
 
   /**
@@ -141,8 +142,8 @@ public interface Bindings {
    * @param factoryMethod the method which should be used as the factory method.
    * @return a new binding constructor which calls the given method to create a new instance of the return type.
    * @throws NullPointerException if {@code factoryMethod} is null.
-   * @throws AerogelException     if {@code factoryMethod} is not static, returns void or not the same type as {@code
-   *                              type}.
+   * @throws AerogelException     if {@code factoryMethod} is not static, returns void or not the same type as
+   *                              {@code type}.
    */
   @Contract(pure = true)
   static @NotNull BindingConstructor factory(@NotNull Element type, @NotNull Method factoryMethod) {
@@ -156,14 +157,15 @@ public interface Bindings {
 
     return injector -> {
       // check if the return type is a singleton
-      boolean singleton = JakartaBridge.isSingleton(factoryMethod.getReturnType());
+      boolean singleton = JakartaBridge.isSingleton(factoryMethod.getReturnType())
+        || JakartaBridge.isSingleton(factoryMethod.getDeclaringClass());
       // create a new factory binding
       return new FactoryBindingHolder(
-        type,
         Element.forType(factoryMethod.getGenericReturnType()),
         injector,
         factoryMethod,
-        singleton);
+        singleton,
+        type);
     };
   }
 }

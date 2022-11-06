@@ -53,21 +53,21 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
   /**
    * Creates a new constructing binding instance.
    *
-   * @param targetType        the type of the binding.
    * @param bindingType       the type to which the given type is bound.
    * @param injector          the injector to which this binding was bound.
    * @param injectionPoint    the constructor to use to create the class instances.
    * @param shouldBeSingleton if the result of the instantiation call should be a singleton object.
+   * @param targetType        the type of the binding.
    */
   public ConstructingBindingHolder(
-    @NotNull Element targetType,
     @NotNull Element bindingType,
     @NotNull Injector injector,
     @NotNull Constructor<?> injectionPoint,
-    boolean shouldBeSingleton
+    boolean shouldBeSingleton,
+    @NotNull Element... targetType
   ) {
     super(targetType, bindingType, injector);
-    this.constructor = ClassInstanceMaker.forConstructor(targetType, injectionPoint, shouldBeSingleton);
+    this.constructor = ClassInstanceMaker.forConstructor(bindingType, injectionPoint, shouldBeSingleton);
   }
 
   /**
@@ -85,14 +85,14 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     ProvidedBy provided = type.getAnnotation(ProvidedBy.class);
     // create a binding holder based on the information
     if (provided != null) {
-      return create(injector, element, ElementHelper.buildElement(provided.value()));
+      return create(injector, ElementHelper.buildElement(provided.value()), element);
     } else {
       // check if we can construct the type
       ReflectionUtils.ensureInstantiable(type);
       // get the injection class data from the type
       Constructor<?> injectionPoint = InjectionClassLookup.findInjectableConstructor(type);
       // create the holder
-      return new ConstructingBindingHolder(element, element, injector, injectionPoint, JakartaBridge.isSingleton(type));
+      return new ConstructingBindingHolder(element, injector, injectionPoint, JakartaBridge.isSingleton(type), element);
     }
   }
 
@@ -107,8 +107,8 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
    */
   public static @NotNull ConstructingBindingHolder create(
     @NotNull Injector injector,
-    @NotNull Element element,
-    @NotNull Element bound
+    @NotNull Element bound,
+    @NotNull Element... element
   ) {
     // read the type from the bound element
     Class<?> type = ReflectionUtils.rawType(bound.componentType());
@@ -118,7 +118,7 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     boolean singleton = JakartaBridge.isSingleton(type);
     Constructor<?> injectionPoint = InjectionClassLookup.findInjectableConstructor(type);
     // create the holder
-    return new ConstructingBindingHolder(element, bound, injector, injectionPoint, singleton);
+    return new ConstructingBindingHolder(bound, injector, injectionPoint, singleton, element);
   }
 
   /**
@@ -130,7 +130,9 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     InstanceCreateResult result = this.constructor.getInstance(context);
     T constructedValue = result.constructedValue();
     // push the construction done notice to the context
-    context.constructDone(this.targetType, constructedValue, result.doMemberInjection());
+    for (int i = 0, typeLength = this.targetType.length; i < typeLength; i++) {
+      context.constructDone(this.targetType[i], constructedValue, i == 0 && result.doMemberInjection());
+    }
     context.constructDone(this.bindingType, constructedValue, false);
     // return
     return constructedValue;

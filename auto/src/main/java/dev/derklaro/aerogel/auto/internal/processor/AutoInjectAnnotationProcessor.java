@@ -208,7 +208,7 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
         continue;
       }
       // valid method - emit that
-      this.foundEntries.add(new FactoryAutoAnnotationEntry(executableElement));
+      this.foundEntries.add(new FactoryAutoAnnotationEntry(executableElement, this.processingEnv.getTypeUtils()));
     }
   }
 

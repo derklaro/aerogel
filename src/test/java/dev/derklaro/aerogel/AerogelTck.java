@@ -49,14 +49,14 @@ public class AerogelTck extends TestCase {
     // all bindings as described in https://github.com/eclipse-ee4j/injection-tck/blob/master/README.adoc#configuring-the-di-environment
     // every other binding can be done dynamically during the runtime
     injector
-      .install(Bindings.constructing(Element.forType(Car.class), Element.forType(Convertible.class)))
-      .install(Bindings.constructing(Element.forType(Engine.class), Element.forType(V8Engine.class)))
+      .install(Bindings.constructing(Element.forType(Convertible.class), Element.forType(Car.class)))
+      .install(Bindings.constructing(Element.forType(V8Engine.class), Element.forType(Engine.class)))
       .install(Bindings.constructing(
-        Element.forType(Tire.class).requireName("spare"),
-        Element.forType(SpareTire.class)))
+        Element.forType(SpareTire.class),
+        Element.forType(Tire.class).requireName("spare")))
       .install(Bindings.constructing(
-        Element.forType(Seat.class).requireAnnotation(Drivers.class),
-        Element.forType(DriversSeat.class)));
+        Element.forType(DriversSeat.class),
+        Element.forType(Seat.class).requireAnnotation(Drivers.class)));
     // run the test
     return Tck.testsFor(injector.instance(Car.class), true, true);
   }

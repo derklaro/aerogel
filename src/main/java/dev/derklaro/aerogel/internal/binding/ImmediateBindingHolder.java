@@ -39,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 public final class ImmediateBindingHolder extends AbstractBindingHolder {
 
   private final Object result;
+  private volatile boolean didMemberInjection;
 
   /**
    * Constructs a new immediate binding holder instance.
@@ -49,10 +50,10 @@ public final class ImmediateBindingHolder extends AbstractBindingHolder {
    * @param result      the result which should always get returned.
    */
   public ImmediateBindingHolder(
-    @NotNull Element targetType,
     @NotNull Element bindingType,
     @NotNull Injector injector,
-    @Nullable Object result
+    @Nullable Object result,
+    @NotNull Element... targetType
   ) {
     super(targetType, bindingType, injector);
     this.result = result;
@@ -65,8 +66,12 @@ public final class ImmediateBindingHolder extends AbstractBindingHolder {
   @SuppressWarnings("unchecked")
   public <T> @Nullable T get(@NotNull InjectionContext context) {
     // just notify that this is done
-    context.constructDone(this.targetType, this.result, true);
+    for (int i = 0; i < this.targetType.length; i++) {
+      context.constructDone(this.targetType[i], this.result, i == 0 && !this.didMemberInjection);
+    }
     context.constructDone(this.bindingType, this.result, false);
+    // mark that we did member injection
+    this.didMemberInjection = true;
     // return
     return (T) this.result;
   }

@@ -29,15 +29,27 @@ import static com.squareup.javapoet.MethodSpec.methodBuilder;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
-import dev.derklaro.aerogel.AerogelException;
+import com.google.common.reflect.TypeToken;
 import com.google.testing.compile.Compilation;
+import com.squareup.javapoet.ParameterSpec;
+import dev.derklaro.aerogel.AerogelException;
 import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
+import java.util.Collection;
+import java.util.Map;
+import javax.lang.model.element.Modifier;
 import javax.tools.JavaFileObject;
+import lombok.NonNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class FactoryProcessingTest {
+
+  private static final Type COLLECTION_STRING_TYPE = new TypeToken<Collection<String>>() {
+  }.getType();
+  private static final Type MAP_STRING_STRING_TYPE = new TypeToken<Map<String, String>>() {
+  }.getType();
 
   @Test
   void testWarningEmitWhenFactoryMethodIsNotStatic() {
@@ -65,14 +77,19 @@ public class FactoryProcessingTest {
   }
 
   @Test
-  void testSuccessfulEmitOfFactoryMethod() throws Exception {
+  void testSuccessfulEmitOfFactoryMethod() throws Throwable {
     JavaFileObject toCompile = TestJavaClassBuilder.of("Main")
       .visitMethod(methodBuilder("helloWorld")
         .returns(String.class)
+        .addParameter(ParameterSpec.builder(COLLECTION_STRING_TYPE, "test").addAnnotation(NonNull.class).build())
+        .addParameter(ParameterSpec.builder(String[].class, "array").addAnnotation(NonNull.class).build())
+        .addParameter(MAP_STRING_STRING_TYPE, "map")
+        .addParameter(COLLECTION_STRING_TYPE, "another", Modifier.FINAL)
+        .addParameter(int.class, "i")
         .addCode("return $S;", "Hello World")
         .addAnnotation(Factory.class)
         .addModifiers(PUBLIC, STATIC))
-      .build();
+      .build("testing");
 
     Compilation compilation = CompilationUtils.javacWithProcessor().compile(toCompile);
     assertThat(compilation).succeededWithoutWarnings();
@@ -80,9 +97,23 @@ public class FactoryProcessingTest {
     try (InputStream in = Files.newInputStream(CompilationUtils.outputFileOfProcessor(compilation))) {
       // the main class was only there during compile time - we expect the exception, but we then know that emitting
       // of the factory method works as expected
-      Assertions.assertThrows(
+      Exception thrown = Assertions.assertThrows(
         AerogelException.class,
         () -> AutoAnnotationRegistry.newInstance().makeConstructors(in));
+      // Ensures that:
+      //   - the classes were found correctly
+      //   - the parameters are in the correct order
+      //   - parameterized type information was emitted
+      //   - annotations were emitted
+      //   - primitive types are correctly shown
+      //   - the array flag is present on array types
+      Assertions.assertTrue(thrown.getMessage().contains(
+        "testing.Main.helloWorld(java.util.Collection, java.lang.String (0x01), java.util.Map, java.util.Collection, int)"));
+
+      // ensure that the reason for the exception came because of the dynamically generated class
+      ClassNotFoundException cause = Assertions.assertInstanceOf(ClassNotFoundException.class, thrown.getCause());
+      Assertions.assertNull(cause.getException());
+      Assertions.assertEquals("testing.Main", cause.getMessage());
     }
   }
 }

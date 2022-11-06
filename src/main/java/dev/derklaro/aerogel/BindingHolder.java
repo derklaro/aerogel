@@ -45,12 +45,12 @@ public interface BindingHolder extends Provider<Object> {
   @NotNull Injector injector();
 
   /**
-   * Get the type of the element which is injectable by this binding. The type can for example be an interface whilst
+   * Get the types of the element which are injectable by this binding. The type can for example be an interface whilst
    * {@link #binding()} represents the implementation of it.
    *
    * @return the type of the element which is injectable by this binding.
    */
-  @NotNull Element type();
+  @NotNull Element[] types();
 
   /**
    * Get the type of the element which gets injected when this binding is requested.
@@ -63,7 +63,7 @@ public interface BindingHolder extends Provider<Object> {
    * Get the value of this binding based on the information provided by the given {@code context}.
    *
    * @param context the context in which the injection is about to happen.
-   * @param <T>     the result type which this method should return. This should always be a subtype of {@link #type()}
+   * @param <T>     the result type which this method should return. This should always be a subtype of {@link #types()}
    *                and {@link #binding()}.
    * @return the constructed value of this binding or null if the construction ended up with null.
    * @throws Throwable if any exception occurs during the construction of the underlying type.

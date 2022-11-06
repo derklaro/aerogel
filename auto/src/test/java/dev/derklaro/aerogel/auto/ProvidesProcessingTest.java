@@ -28,10 +28,10 @@ import static com.google.testing.compile.CompilationSubject.assertThat;
 import static javax.lang.model.element.Modifier.ABSTRACT;
 import static javax.lang.model.element.Modifier.PUBLIC;
 
-import dev.derklaro.aerogel.AerogelException;
 import com.google.testing.compile.Compilation;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.TypeSpec;
+import dev.derklaro.aerogel.AerogelException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import javax.tools.JavaFileObject;
@@ -73,7 +73,7 @@ public class ProvidesProcessingTest {
         .addAnnotation(AnnotationSpec.builder(Provides.class)
           .addMember("value", "{$T.class}", AutoAnnotationRegistry.class)
           .build()))
-      .build();
+      .build("testing");
 
     Compilation compilation = CompilationUtils.javacWithProcessor().compile(toCompile);
     assertThat(compilation).succeededWithoutWarnings();
@@ -81,9 +81,14 @@ public class ProvidesProcessingTest {
     try (InputStream in = Files.newInputStream(CompilationUtils.outputFileOfProcessor(compilation))) {
       // the main class was only there during compile time - we expect the exception, but we then know that emitting
       // of the provides annotation was successful
-      Assertions.assertThrows(
+      AerogelException thrown = Assertions.assertThrows(
         AerogelException.class,
         () -> AutoAnnotationRegistry.newInstance().makeConstructors(in));
+
+      // check that the error came because the class is missing
+      ClassNotFoundException cause = Assertions.assertInstanceOf(ClassNotFoundException.class, thrown.getCause());
+      Assertions.assertNull(cause.getException());
+      Assertions.assertEquals("testing.Main", cause.getMessage());
     }
   }
 }

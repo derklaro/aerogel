@@ -72,7 +72,7 @@ public final class DefaultInjector implements Injector {
     this.parent = parent;
     this.bindings = new ConcurrentHashMap<>();
     this.cachedMemberInjectors = new ConcurrentHashMap<>();
-    this.injectorBinding = new ImmediateBindingHolder(INJECTOR_ELEMENT, INJECTOR_ELEMENT, this, this);
+    this.injectorBinding = new ImmediateBindingHolder(INJECTOR_ELEMENT, this, this, INJECTOR_ELEMENT);
   }
 
   /**
@@ -125,7 +125,9 @@ public final class DefaultInjector implements Injector {
     // construct the binding
     BindingHolder holder = Objects.requireNonNull(constructor.construct(this), "holder");
     // registers the binding
-    this.bindings.putIfAbsent(holder.type(), holder);
+    for (Element type : holder.types()) {
+      this.bindings.putIfAbsent(type, holder);
+    }
     // for chaining
     return this;
   }

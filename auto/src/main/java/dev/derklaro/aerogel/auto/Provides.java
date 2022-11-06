@@ -35,8 +35,13 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Defines which type the annotated class is bound to. It will be used when type lookups are made to find the class
  * implementing or extending the required abstract instance. It works like {@link ProvidedBy} in the opposite
- * direction. Please note that in order for this annotation to work the annotation scanning must get enabled when
- * building an injector instance.
+ * direction.
+ *
+ * <p>All given provided classes must be super interfaces/classes of the annotated class. If that is not the case,
+ * injecting a class from the annotated class based on the binding will result in a class cast exception.
+ *
+ * <p>Note that providing instances for primitive and array types is not supported by this annotation. Due to the
+ * limitations of annotations, support for generics (like {@code Collection<String>}) is not possible.
  *
  * @author Pasqual K.
  * @since 1.0

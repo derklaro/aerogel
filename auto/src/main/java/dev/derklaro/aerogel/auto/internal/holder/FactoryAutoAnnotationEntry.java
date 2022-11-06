@@ -34,12 +34,23 @@ import dev.derklaro.aerogel.auto.Factory;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -50,9 +61,12 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
 
+  // the flags which are indicating the type of entry
+  private static final int FLAG_ARRAY = 0x01;
+
   private final String methodName;
   private final String enclosingClass;
-  private final Set<String> methodArguments;
+  private final List<Map.Entry<String, Integer>> methodArguments;
 
   /**
    * Constructs a new empty factory used for deserialization.
@@ -68,18 +82,48 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
    *
    * @param element the element which was annotated.
    */
-  public FactoryAutoAnnotationEntry(@NotNull ExecutableElement element) {
+  public FactoryAutoAnnotationEntry(@NotNull ExecutableElement element, @NotNull Types types) {
     this.methodName = element.getSimpleName().toString();
     // we assume that the executable element is a method element in which case the enclosing element is the declaring class
     this.enclosingClass = ((TypeElement) element.getEnclosingElement()).getQualifiedName().toString();
     // ensure that we extract the arguments correctly
     if (element.getParameters().isEmpty()) {
-      this.methodArguments = Collections.emptySet(); // save an empty set allocation here
+      this.methodArguments = Collections.emptyList(); // save an empty set allocation here
     } else {
       // collects each type parameter with the fully qualified type name for later identification of the method
       this.methodArguments = element.getParameters().stream()
-        .map(typeMirror -> typeMirror.asType().toString())
-        .collect(Collectors.toSet());
+        .map(variableElement -> {
+          int flags = 0;
+
+          // extract the component type of the element
+          TypeMirror variableType = variableElement.asType();
+          if (variableType instanceof ArrayType) {
+            flags |= FLAG_ARRAY;
+            variableType = ((ArrayType) variableType).getComponentType();
+          }
+
+          // erase the unneeded type information & box the mirror in a type
+          TypeMirror erasedType = types.erasure(variableType);
+          Element typeElement = types.asElement(erasedType);
+
+          // if the type element is present we can use that element as the parameter type
+          if (typeElement != null) {
+            return new SimpleImmutableEntry<>(typeElement.toString(), flags);
+          }
+
+          try {
+            // the element might still be primitive, try that
+            PrimitiveType primitive = types.getPrimitiveType(erasedType.getKind());
+            return new SimpleImmutableEntry<>(primitive.toString(), flags);
+          } catch (IllegalArgumentException ex) {
+            // not primitive
+            throw AerogelException.forMessageWithoutStack(String.format(
+              "TypeMirror %s has no corresponding element and is not primitive " + (variableElement.asType()
+                .getClass()),
+              erasedType));
+          }
+        })
+        .collect(Collectors.toCollection(LinkedList::new));
     }
   }
 
@@ -93,8 +137,9 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
     out.writeUTF(this.enclosingClass); // the class in which the method is located
     out.writeInt(this.methodArguments.size()); // the size of the following argument array
     // write every type of each variable for later method identification
-    for (String argument : this.methodArguments) {
-      out.writeUTF(argument);
+    for (Map.Entry<String, Integer> argument : this.methodArguments) {
+      out.writeUTF(argument.getKey());
+      out.writeInt(argument.getValue());
     }
   }
 
@@ -106,11 +151,13 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
     String methodName = in.readUTF(); // the name of the factory method
     String enclosingClass = in.readUTF(); // the class which declares the method
     // read the method argument types as an array from the stream
-    String[] typeArguments = new String[in.readInt()];
+    //noinspection unchecked
+    Map.Entry<String, Integer>[] typeArguments = new Map.Entry[in.readInt()];
     // assign each argument
     for (int i = 0; i < typeArguments.length; i++) {
-      typeArguments[i] = in.readUTF();
+      typeArguments[i] = new SimpleImmutableEntry<>(in.readUTF(), in.readInt());
     }
+
     // try to load every type & find the method
     try {
       // load the declaring class
@@ -118,18 +165,34 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
       // load the type arguments as classes to a new array
       Class<?>[] types = new Class<?>[typeArguments.length];
       for (int i = 0; i < typeArguments.length; i++) {
-        types[i] = loadClass(typeArguments[i]);
+        Map.Entry<String, Integer> entry = typeArguments[i];
+
+        // load the component type of the entry
+        Class<?> componentType = loadClass(entry.getKey());
+        if ((entry.getValue() & FLAG_ARRAY) != 0) {
+          // the type is an array
+          Object array = Array.newInstance(componentType, 0);
+          componentType = array.getClass();
+        }
+
+        // register the argument
+        types[i] = componentType;
       }
-      // get the factory method from the declaring class
+
+      // get the factory method from the declaring class & create a constructing holder from that
       Method factoryMethod = declaringClass.getDeclaredMethod(methodName, types);
-      // create a constructing holder from that
       return Collections.singleton(Bindings.factory(factoryMethod));
     } catch (Exception exception) {
       throw AerogelException.forMessagedException(String.format(
         "Unable to construct factory binding on %s.%s(%s)",
         enclosingClass,
         methodName,
-        String.join(", ", typeArguments)
+        Arrays.stream(typeArguments)
+          .map(entry -> String.format(
+            "%s%s",
+            entry.getKey(),
+            entry.getValue() != 0 ? String.format(" (0x%02X)", 0xFF & entry.getValue()) : ""))
+          .collect(Collectors.joining(", "))
       ), exception);
     }
   }

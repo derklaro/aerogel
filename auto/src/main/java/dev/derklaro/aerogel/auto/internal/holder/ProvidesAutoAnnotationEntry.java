@@ -36,7 +36,7 @@ import dev.derklaro.aerogel.internal.utility.ElementHelper;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -95,16 +95,19 @@ public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
   @Override
   public @NotNull Set<BindingConstructor> makeBinding(@NotNull DataInputStream in) throws IOException {
     try {
-      Element type = Element.forType(loadClass(in.readUTF())); // the class to which all provided classes should get bound
+      // the class to which all provided classes should get bound
+      Element type = Element.forType(loadClass(in.readUTF()));
+
       // load the classes to which the binding provides
-      Class<?>[] providedClasses = new Class<?>[in.readInt()];
-      for (int i = 0; i < providedClasses.length; i++) {
-        providedClasses[i] = loadClass(in.readUTF());
+      Element[] providedElements = new Element[in.readInt()];
+      for (int i = 0; i < providedElements.length; i++) {
+        Class<?> providedClass = loadClass(in.readUTF());
+        providedElements[i] = ElementHelper.buildElement(providedClass);
       }
+
       // make a constructor for each provided class
-      return Arrays.stream(providedClasses)
-        .map(providedClass -> Bindings.constructing(ElementHelper.buildElement(providedClass), type))
-        .collect(Collectors.toSet());
+      BindingConstructor constructor = Bindings.constructing(type, providedElements);
+      return Collections.singleton(constructor);
     } catch (ClassNotFoundException exception) {
       throw AerogelException.forMessagedException("Unable to provide bindings constructors", exception);
     }
