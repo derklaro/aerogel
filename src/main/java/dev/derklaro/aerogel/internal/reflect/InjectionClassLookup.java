@@ -25,8 +25,8 @@
 package dev.derklaro.aerogel.internal.reflect;
 
 import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.Inject;
+import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import java.lang.reflect.Constructor;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,8 +44,7 @@ public final class InjectionClassLookup {
 
   /**
    * Finds the only injectable constructor of the class. An injectable constructor must be unique and annotated as
-   * {@link Inject}. If no constructor in the class is annotated the no-args constructor will be used when
-   * available.
+   * {@link Inject}. If no constructor in the class is annotated the no-args constructor will be used when available.
    *
    * @param clazz the class to find an injectable constructor in.
    * @return the injectable constructor of the class.
@@ -69,6 +68,18 @@ public final class InjectionClassLookup {
         injectionPoint = constructor;
       }
     }
+
+    // check if we found an injection point, if not check if we can check for a record all args constructor
+    if (injectionPoint == null && RecordSupport.available()) {
+      Class<?>[] recordComponentTypes = RecordSupport.recordComponentTypes(clazz);
+      if (recordComponentTypes != null) {
+        try {
+          // try to get the all args constructor of the record
+          injectionPoint = clazz.getDeclaredConstructor(recordComponentTypes);
+        } catch (NoSuchMethodException ignored) {
+        }
+      }
+    }
     // check if we found an injectable constructor
     if (injectionPoint == null) {
       // no constructor was found yet - check for a constructor with 0 arguments
@@ -84,6 +95,7 @@ public final class InjectionClassLookup {
     if (injectionPoint == null) {
       throw AerogelException.forMessage("No injectable constructor in class " + clazz.getName());
     }
+
     // the constructor we filtered out is our injection point
     return injectionPoint;
   }
