@@ -32,7 +32,6 @@ import static org.objectweb.asm.Opcodes.ARETURN;
 import static org.objectweb.asm.Opcodes.ASTORE;
 import static org.objectweb.asm.Opcodes.CHECKCAST;
 import static org.objectweb.asm.Opcodes.DUP;
-import static org.objectweb.asm.Opcodes.DUP2;
 import static org.objectweb.asm.Opcodes.GETFIELD;
 import static org.objectweb.asm.Opcodes.IFNULL;
 import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
@@ -111,6 +110,16 @@ public final class ClassInstanceMaker {
   static final String ELEMENTS = "elements";
   static final Element[] NO_ELEMENT = new Element[0];
   static final String ELEMENTS_DESC = org.objectweb.asm.Type.getDescriptor(Element[].class);
+  // reference util
+  static final String STORE_AND_PACK = "storeAndPack";
+  static final String REFERENCE_UTIL = org.objectweb.asm.Type.getInternalName(ReferenceUtil.class);
+  static final String STORE_REFERENCE_DESC = AsmUtils.methodDesc(
+    InstanceCreateResult.class,
+    AtomicReference.class,
+    Object.class);
+  // ReferenceUtil.unmask
+  static final String UNMASK = "unmaskAndPack";
+  static final String UNMASK_DESC = AsmUtils.methodDesc(InstanceCreateResult.class, Object.class);
   // the element access stuff
   static final String CUR_ELEMENT = "currentElement";
   static final String ELEMENT_DESC = org.objectweb.asm.Type.getDescriptor(Element.class);
@@ -353,14 +362,9 @@ public final class ClassInstanceMaker {
     mv.visitFieldInsn(GETFIELD, proxyName, HOLDER, HOLDER_DESC);
     // load the constructed value
     mv.visitVarInsn(ALOAD, 2);
-    mv.visitInsn(DUP2);
     // set the value in the reference
-    mv.visitMethodInsn(
-      INVOKEVIRTUAL,
-      HOLDER_NAME,
-      "set",
-      AsmUtils.descToMethodDesc(AsmUtils.OBJECT_DESC, void.class),
-      false);
+    mv.visitMethodInsn(INVOKESTATIC, REFERENCE_UTIL, STORE_AND_PACK, STORE_REFERENCE_DESC, false);
+    mv.visitInsn(ARETURN);
   }
 
   /**
@@ -378,7 +382,11 @@ public final class ClassInstanceMaker {
       mv.visitFieldInsn(GETFIELD, proxyName, HOLDER, HOLDER_DESC);
       mv.visitMethodInsn(INVOKEVIRTUAL, HOLDER_NAME, "get", "()" + AsmUtils.OBJECT_DESC, false);
       // check if we can return now
-      visitReturnIfNonNull(mv);
+      visitReturnIfNonNull(mv, visitor -> {
+        visitor.visitVarInsn(ALOAD, 2);
+        visitor.visitMethodInsn(INVOKESTATIC, REFERENCE_UTIL, UNMASK, UNMASK_DESC, false);
+        visitor.visitInsn(ARETURN);
+      });
     }
     // check if the InjectionContext has a value available
     mv.visitVarInsn(ALOAD, 1);
@@ -388,7 +396,7 @@ public final class ClassInstanceMaker {
     // visit the findConstructedValue method in the InjectionContext
     mv.visitMethodInsn(INVOKEINTERFACE, INJ_CONTEXT_NAME, FIND_CONSTRUCTED_VALUE, FIND_CONSTRUCTED_VALUE_DESC, true);
     // check if we can return now
-    visitReturnIfNonNull(mv);
+    visitReturnIfNonNull(mv, v -> packValueIntoResultAndReturn(v, visitor -> visitor.visitVarInsn(ALOAD, 2), false));
   }
 
   /**
@@ -397,7 +405,7 @@ public final class ClassInstanceMaker {
    * @param mv the method visitor to visit the operands on.
    * @since 1.3.0
    */
-  static void visitReturnIfNonNull(@NotNull MethodVisitor mv) {
+  static void visitReturnIfNonNull(@NotNull MethodVisitor mv, @NotNull Consumer<MethodVisitor> ifNonNull) {
     Label wasConstructedDimension = new Label();
     // store the current value to the stack
     mv.visitInsn(DUP);
@@ -405,7 +413,7 @@ public final class ClassInstanceMaker {
     // if (val != null) then
     mv.visitJumpInsn(IFNULL, wasConstructedDimension);
     // return the current non-null value of the stack
-    packValueIntoResultAndReturn(mv, visitor -> visitor.visitVarInsn(ALOAD, 2), false);
+    ifNonNull.accept(mv);
     mv.visitLabel(wasConstructedDimension);
   }
 
