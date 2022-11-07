@@ -24,11 +24,11 @@
 
 package dev.derklaro.aerogel.internal.reflect;
 
-import dev.derklaro.aerogel.internal.utility.Preconditions;
 import dev.derklaro.aerogel.AerogelException;
+import dev.derklaro.aerogel.internal.utility.Preconditions;
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,37 +43,49 @@ public final class Primitives {
   /**
    * Holds all primitive to its wrapper class associations. For example {@code int} is associated with {@code Integer}.
    */
-  private static final Map<Class<?>, Class<?>> PRIMITIVE_TO_WRAPPER = new ConcurrentHashMap<>(9);
+  private static final Map<String, Class<?>> PRIMITIVE_TO_WRAPPER = new HashMap<>(9);
   /**
    * Holds the default values for every primitive data type except for void as defined <a
    * href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html">here</a>.
    */
-  private static final Map<Class<?>, Object> PRIMITIVE_DEFAULT_VALUES = new ConcurrentHashMap<>(8);
+  private static final Map<String, Object> PRIMITIVE_DEFAULT_VALUES = new HashMap<>(8);
 
   static {
     // primitive type -> wrapper type
-    PRIMITIVE_TO_WRAPPER.put(void.class, Void.class);
-    PRIMITIVE_TO_WRAPPER.put(byte.class, Byte.class);
-    PRIMITIVE_TO_WRAPPER.put(long.class, Long.class);
-    PRIMITIVE_TO_WRAPPER.put(short.class, Short.class);
-    PRIMITIVE_TO_WRAPPER.put(int.class, Integer.class);
-    PRIMITIVE_TO_WRAPPER.put(float.class, Float.class);
-    PRIMITIVE_TO_WRAPPER.put(double.class, Double.class);
-    PRIMITIVE_TO_WRAPPER.put(char.class, Character.class);
-    PRIMITIVE_TO_WRAPPER.put(boolean.class, Boolean.class);
+    PRIMITIVE_TO_WRAPPER.put(mask(void.class), Void.class);
+    PRIMITIVE_TO_WRAPPER.put(mask(byte.class), Byte.class);
+    PRIMITIVE_TO_WRAPPER.put(mask(long.class), Long.class);
+    PRIMITIVE_TO_WRAPPER.put(mask(short.class), Short.class);
+    PRIMITIVE_TO_WRAPPER.put(mask(int.class), Integer.class);
+    PRIMITIVE_TO_WRAPPER.put(mask(float.class), Float.class);
+    PRIMITIVE_TO_WRAPPER.put(mask(double.class), Double.class);
+    PRIMITIVE_TO_WRAPPER.put(mask(char.class), Character.class);
+    PRIMITIVE_TO_WRAPPER.put(mask(boolean.class), Boolean.class);
     // primitive type -> default value
-    PRIMITIVE_DEFAULT_VALUES.put(int.class, 0);
-    PRIMITIVE_DEFAULT_VALUES.put(char.class, '\0');
-    PRIMITIVE_DEFAULT_VALUES.put(boolean.class, false);
-    PRIMITIVE_DEFAULT_VALUES.put(byte.class, (byte) 0);
-    PRIMITIVE_DEFAULT_VALUES.put(long.class, (long) 0);
-    PRIMITIVE_DEFAULT_VALUES.put(short.class, (short) 0);
-    PRIMITIVE_DEFAULT_VALUES.put(float.class, (float) 0);
-    PRIMITIVE_DEFAULT_VALUES.put(double.class, (double) 0);
+    PRIMITIVE_DEFAULT_VALUES.put(mask(int.class), 0);
+    PRIMITIVE_DEFAULT_VALUES.put(mask(char.class), '\0');
+    PRIMITIVE_DEFAULT_VALUES.put(mask(boolean.class), false);
+    PRIMITIVE_DEFAULT_VALUES.put(mask(byte.class), (byte) 0);
+    PRIMITIVE_DEFAULT_VALUES.put(mask(long.class), (long) 0);
+    PRIMITIVE_DEFAULT_VALUES.put(mask(short.class), (short) 0);
+    PRIMITIVE_DEFAULT_VALUES.put(mask(float.class), (float) 0);
+    PRIMITIVE_DEFAULT_VALUES.put(mask(double.class), (double) 0);
   }
 
   private Primitives() {
     throw new UnsupportedOperationException();
+  }
+
+  /**
+   * Maks the given class by returning the name of it. This way of accessing the value from a map is faster as Class
+   * does not override hashCode() which leads to a native call, while string does override the method.
+   *
+   * @param clazz the class to mask.
+   * @return the masked value of the class.
+   * @since 2.0
+   */
+  private static @NotNull String mask(@NotNull Class<?> clazz) {
+    return clazz.getName();
   }
 
   /**
@@ -86,7 +98,7 @@ public final class Primitives {
   public static boolean isNotPrimitiveOrIsAssignable(@NotNull Type type, @Nullable Object boxed) {
     // check if the type is a class and primitive
     if (type instanceof Class<?> && ((Class<?>) type).isPrimitive()) {
-      return isOfBoxedType((Class<?>) type, boxed);
+      return boxed != null && isOfBoxedType((Class<?>) type, boxed);
     }
     // not a primitive type - check if the boxed type is null (in this case there is no check possible)
     if (boxed == null) {
@@ -107,7 +119,7 @@ public final class Primitives {
    */
   public static boolean isOfBoxedType(@NotNull Class<?> primitive, @Nullable Object boxed) {
     // get the boxed type the given type should be assignable from
-    Class<?> box = PRIMITIVE_TO_WRAPPER.get(primitive);
+    Class<?> box = PRIMITIVE_TO_WRAPPER.get(mask(primitive));
     // either the box is null or the type assignable to it
     return box != null && boxed != null && box.isAssignableFrom(boxed.getClass());
   }
@@ -123,6 +135,6 @@ public final class Primitives {
   @SuppressWarnings("unchecked")
   public static <T> @NotNull T defaultValue(@NotNull Class<T> type) {
     Preconditions.checkArgument(type.isPrimitive(), "type " + type + " is not primitive");
-    return (T) PRIMITIVE_DEFAULT_VALUES.get(type);
+    return (T) PRIMITIVE_DEFAULT_VALUES.get(mask(type));
   }
 }

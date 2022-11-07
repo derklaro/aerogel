@@ -35,8 +35,8 @@ import static org.objectweb.asm.Opcodes.LSTORE;
 
 import dev.derklaro.aerogel.internal.asm.primitive.DefaultPrimitiveEmitter;
 import dev.derklaro.aerogel.internal.asm.primitive.PrimitiveEmitter;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -52,7 +52,7 @@ public final class AsmPrimitives {
   /**
    * A mapping of the primitive types to an emitter which can push the type to the operator stack.
    */
-  public static final Map<Type, PrimitiveEmitter> EMITTER = new ConcurrentHashMap<>();
+  public static final Map<Type, PrimitiveEmitter> EMITTER = new HashMap<>(8);
 
   static {
     EMITTER.put(Type.BOOLEAN_TYPE, new DefaultPrimitiveEmitter(Boolean.class, boolean.class, ILOAD, ISTORE));

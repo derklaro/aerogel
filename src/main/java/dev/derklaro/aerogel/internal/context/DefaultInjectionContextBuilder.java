@@ -28,9 +28,9 @@ import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.InjectionContext.Builder;
 import dev.derklaro.aerogel.Injector;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,7 +42,7 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class DefaultInjectionContextBuilder implements Builder {
 
-  private final Map<Element, Object> overriddenElements = new ConcurrentHashMap<>();
+  private final Map<Element, Object> overriddenElements = new HashMap<>();
 
   private Injector parentInjector;
 
