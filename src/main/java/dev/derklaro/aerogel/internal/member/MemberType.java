@@ -25,7 +25,7 @@
 package dev.derklaro.aerogel.internal.member;
 
 /**
- * A collection of all member types which are injectable.
+ * A collection of all member types which are static and injectable.
  *
  * @author Pasqual K.
  * @since 2.0

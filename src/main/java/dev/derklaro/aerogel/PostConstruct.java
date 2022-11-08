@@ -32,9 +32,10 @@ import java.lang.annotation.Target;
 
 /**
  * The post construct annotation can be placed on an instance method (non-static) which needs to be executed after the
- * successful creation and member injection of a class. This method can be applied to multiple methods in a class, which
- * are called in the natural java method ordering. Each instance creation will trigger a new call to all annotated
- * methods.
+ * successful creation and member injection of a class. This annotation can be applied to multiple methods in a class.
+ * Each instance creation will trigger a new call to all annotated methods.
+ *
+ * <p>The call oder of post construct listeners can be influenced by using an {@link Order} annotation on the method.
  *
  * <p>A post construct method needs to meet the following criteria:
  * <ol>
@@ -42,6 +43,7 @@ import java.lang.annotation.Target;
  *   <li>The method can return something, but the return value is ignored.
  *   <li>The method must be public, protected, package private or private.
  *   <li>The method must not be static, native or abstract.
+ *   <li>This annotation can not be combined with {@link Inject}.
  * </ol>
  *
  * <p>Example usage:

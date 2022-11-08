@@ -49,6 +49,8 @@ import java.lang.annotation.Target;
  *   </li>
  * </ul>
  *
+ * <p>If the annotation is placed on a method the invocation order can be influenced by using {@link Order}.
+ *
  * @author Pasqual K.
  * @since 1.0
  */

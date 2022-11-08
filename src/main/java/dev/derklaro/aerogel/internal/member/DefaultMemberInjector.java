@@ -99,7 +99,7 @@ public final class DefaultMemberInjector implements MemberInjector {
   private final Collection<InjectableMethod> instanceMethods;
   private final Collection<InjectableMethod> postConstructMethods;
 
-  private final Set<MemberType> injectedMemberTypes = EnumSet.noneOf(MemberType.class);
+  private final Set<MemberType> injectedStaticMemberTypes = EnumSet.noneOf(MemberType.class);
 
   /**
    * Constructs a new default member injection instance.
@@ -312,19 +312,19 @@ public final class DefaultMemberInjector implements MemberInjector {
     // according to the jakarta injection rules, all fields then all methods need to get injected
     // every static method must only be injected once
     // supertype fields
-    if (this.injectedMemberTypes.add(MemberType.INHERITED_FIELD)) {
+    if (this.injectedStaticMemberTypes.add(MemberType.INHERITED_FIELD)) {
       this.injectStaticFields(settings, context, this.onlyNotThisClass);
     }
     // supertype methods
-    if (this.injectedMemberTypes.add(MemberType.INHERITED_METHOD)) {
+    if (this.injectedStaticMemberTypes.add(MemberType.INHERITED_METHOD)) {
       this.injectStaticMethods(settings, context, this.onlyNotThisClass);
     }
     // direct fields
-    if (this.injectedMemberTypes.add(MemberType.FIELD)) {
+    if (this.injectedStaticMemberTypes.add(MemberType.FIELD)) {
       this.injectStaticFields(settings, context, this.onlyThisClass);
     }
     // direct methods
-    if (this.injectedMemberTypes.add(MemberType.METHOD)) {
+    if (this.injectedStaticMemberTypes.add(MemberType.METHOD)) {
       this.injectStaticMethods(settings, context, this.onlyThisClass);
     }
   }
