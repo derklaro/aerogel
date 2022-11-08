@@ -257,6 +257,13 @@ public final class DefaultMemberInjector implements MemberInjector {
     return sortMethods(methods.values());
   }
 
+  /**
+   * Sorts the given collection elements according to the order annotation defined on the methods.
+   *
+   * @param methods the methods to sort.
+   * @return a new collection with the given elements in a sorted order.
+   * @since 2.0
+   */
   private static @NotNull Collection<InjectableMethod> sortMethods(@NotNull Collection<InjectableMethod> methods) {
     List<InjectableMethod> injectableMethods = new ArrayList<>(methods);
     Collections.sort(injectableMethods);
