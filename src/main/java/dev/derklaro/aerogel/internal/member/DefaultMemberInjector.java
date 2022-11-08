@@ -110,99 +110,86 @@ public final class DefaultMemberInjector implements MemberInjector {
   public DefaultMemberInjector(@NotNull Injector injector, @NotNull Class<?> target) {
     this.injector = injector;
     this.targetClass = target;
+
     // these are just all fields, lazy initialized
     Collection<InjectableField> staticFields = null;
     Collection<InjectableField> instanceFields = null;
+
     // these are holding two things - the method signature mapped to the actual value
-    Map<String, InjectableMethod> staticMethods = null;
+    Collection<InjectableMethod> staticMethods = null;
     Map<String, InjectableMethod> instanceMethods = null;
     Map<String, InjectableMethod> postConstructMethods = null;
 
     // read all fields & methods in reverse (super fields & method should get injected before implementation ones)
     List<Class<?>> hierarchyTree = ReflectionUtils.hierarchyTree(target);
-    for (int i = hierarchyTree.size() - 1; i >= 0; i--) {
+    int startIndex = hierarchyTree.size() - 1;
+    for (int i = startIndex; i >= 0; i--) {
       Class<?> targetClass = hierarchyTree.get(i);
       // methods
       for (Method method : targetClass.getDeclaredMethods()) {
-        // check if the method is marked as @Inject
-        if (!method.isBridge()
-          && !method.isSynthetic()
-          && !Modifier.isNative(method.getModifiers())
-          && !Modifier.isAbstract(method.getModifiers())
-        ) {
-          // the signature is used to check if we already found a comparable method
-          String visibility = ReflectionUtils.shortVisibilitySummary(method);
-          String signature = String.format("[%s]%s%s", visibility, method.getName(), AsmUtils.methodDesc(method));
-          // check if the method is an overridden one
-          if (!JakartaBridge.isInjectable(method)) {
-            if (Modifier.isStatic(method.getModifiers())) {
-              // check if the method was already read but the overridden method is no longer annotated
-              // in this case remove the method
-              if (staticMethods != null) {
-                staticMethods.remove(signature);
-              }
-            } else {
-              // check if the method was already read but the overridden method is no longer annotated
-              // in this case remove the method
-              if (instanceMethods != null) {
-                instanceMethods.remove(signature);
-              }
-            }
-          }
+        // only check these once
+        boolean injectable = JakartaBridge.isInjectable(method);
+        boolean postConstructListener = method.isAnnotationPresent(PostConstruct.class);
 
-          // check for a PostConstruct method
-          if (!method.isAnnotationPresent(PostConstruct.class)) {
-            // check if the method was already read but the overridden method is no longer annotated
-            // in this case remove the method
-            if (postConstructMethods != null) {
-              postConstructMethods.remove(signature);
-            }
-          }
+        // if the method is static we can step all further steps
+        if (Modifier.isStatic(method.getModifiers())) {
+          Preconditions.checkArgument(!postConstructListener, "@PostConstruct method is static");
 
-          // disable these checks - we do want to access them
-          UnsafeMemberAccess.forceMakeAccessible(method);
+          // check if the method is injectable
+          if (injectable) {
+            UnsafeMemberAccess.forceMakeAccessible(method);
 
-          if (JakartaBridge.isInjectable(method)) {
-            // check if the method is an instance or static method
-            if (Modifier.isStatic(method.getModifiers())) {
-              // put the method in the map if there was never a method in there before
-              // otherwise check if we already saw a method like that one
-              if (staticMethods == null) {
-                staticMethods = new HashMap<>();
-                staticMethods.put(signature, new InjectableMethod(method));
-              } else if (!staticMethods.containsKey(signature)) {
-                staticMethods.put(signature, new InjectableMethod(method));
-              }
-            } else {
-              // put the method in the map if there was never a method in there before
-              // otherwise check if we already saw a method like that one
-              if (instanceMethods == null) {
-                instanceMethods = new HashMap<>();
-              }
-              instanceMethods.putIfAbsent(signature, new InjectableMethod(method));
+            // initialize the static methods & register the method
+            if (staticMethods == null) {
+              staticMethods = new ArrayList<>();
             }
-          } else if (method.isAnnotationPresent(PostConstruct.class)) {
-            Preconditions.checkArgument(!Modifier.isStatic(method.getModifiers()), "@PostConstruct method is static");
-            Preconditions.checkArgument(method.getParameterCount() == 0, "@PostConstruct method takes arguments");
-            // put the method in the map if there was never a method in there before
-            // otherwise check if we already saw a method like that one
-            if (postConstructMethods == null) {
-              postConstructMethods = new HashMap<>();
-            }
-            postConstructMethods.putIfAbsent(signature, new InjectableMethod(method));
-          } else {
-            // nothing relevant
-            continue;
+            staticMethods.add(new InjectableMethod(method));
           }
-
-          // check if the method is not abstract - how the heck should we invoke them
-          if (Modifier.isAbstract(method.getModifiers())) {
-            throw AerogelException.forMessage(String.format(
-              "Method %s in %s is abstract and cannot get injected",
-              method.getName(),
-              method.getDeclaringClass()));
-          }
+          continue;
         }
+
+        // the signature is used to check if we already found a comparable method
+        String visibility = ReflectionUtils.shortVisibilitySummary(method);
+        String signature = String.format("[%s]%s%s", visibility, method.getName(), AsmUtils.methodDesc(method));
+
+        // check if the method is an overridden one
+        if (!injectable && !postConstructListener) {
+          // check if the method was already read but the overridden method is no longer annotated
+          // in this case remove the method
+          if (instanceMethods != null) {
+            instanceMethods.remove(signature);
+          }
+          if (postConstructMethods != null) {
+            postConstructMethods.remove(signature);
+          }
+          continue;
+        }
+
+        Preconditions.checkArgument(
+          !Modifier.isAbstract(method.getModifiers()),
+          "abstract method is marked as @Inject/@PostConstruct");
+
+        // disable these checks - we do want to access them
+        UnsafeMemberAccess.forceMakeAccessible(method);
+
+        // if the method is a post construct listener we can register it
+        if (postConstructListener) {
+          Preconditions.checkArgument(!injectable, "@PostConstruct method is marked as @Inject");
+          Preconditions.checkArgument(method.getParameterCount() == 0, "@PostConstruct method takes arguments");
+
+          // register the method
+          if (postConstructMethods == null) {
+            postConstructMethods = new HashMap<>();
+          }
+          postConstructMethods.put(signature, new InjectableMethod(method));
+          continue;
+        }
+
+        // at this point the injectable boolean is always true - if there are further checks required add that here
+        if (instanceMethods == null) {
+          instanceMethods = new HashMap<>();
+        }
+        instanceMethods.put(signature, new InjectableMethod(method));
       }
 
       // fields
@@ -244,9 +231,9 @@ public final class DefaultMemberInjector implements MemberInjector {
     this.staticFields = staticFields == null ? Collections.emptySet() : staticFields;
     this.instanceFields = instanceFields == null ? Collections.emptySet() : instanceFields;
 
-    this.staticMethods = sortMethods(staticMethods);
     this.instanceMethods = sortMethods(instanceMethods);
     this.postConstructMethods = sortMethods(postConstructMethods);
+    this.staticMethods = staticMethods == null ? Collections.emptySet() : sortMethods(staticMethods);
 
     // initialize the predicates to test whether a member belongs to the direct target class or not
     this.onlyThisClass = member -> member.getDeclaringClass() == this.targetClass;
@@ -267,7 +254,11 @@ public final class DefaultMemberInjector implements MemberInjector {
     }
 
     // extract the methods into a list and sort it
-    List<InjectableMethod> injectableMethods = new ArrayList<>(methods.values());
+    return sortMethods(methods.values());
+  }
+
+  private static @NotNull Collection<InjectableMethod> sortMethods(@NotNull Collection<InjectableMethod> methods) {
+    List<InjectableMethod> injectableMethods = new ArrayList<>(methods);
     Collections.sort(injectableMethods);
     return injectableMethods;
   }

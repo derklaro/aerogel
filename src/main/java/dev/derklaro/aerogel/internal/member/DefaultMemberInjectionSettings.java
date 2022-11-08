@@ -34,8 +34,6 @@ import dev.derklaro.aerogel.MemberInjectionSettings;
  */
 final class DefaultMemberInjectionSettings implements MemberInjectionSettings {
 
-  // @todo: use the parent member injector for parent classes
-
   private final boolean injectPrivateMethods;
   private final boolean injectStaticMethods;
   private final boolean injectInstanceMethods;
