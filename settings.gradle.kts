@@ -22,10 +22,20 @@
  * THE SOFTWARE.
  */
 
-rootProject.name = 'aerogel'
+enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-include 'auto'
-include 'kotlin-extensions'
+pluginManagement {
+  includeBuild("build-extensions")
+  repositories {
+    gradlePluginPortal()
+  }
+}
 
-// prefixes each sub project with 'aerogel-'
-rootProject.children.forEach(proj -> proj.name = 'aerogel-' + proj.name)
+rootProject.name = "aerogel"
+include("auto", "kotlin-extensions")
+
+// prefixes each subproject with 'aerogel-'
+rootProject.children.forEach {
+  it.name = "aerogel-${it.name}"
+}

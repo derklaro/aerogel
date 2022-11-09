@@ -1,0 +1,54 @@
+metadata.format.version = "1.1"
+
+[versions]
+
+# plugins
+spotless = "6.11.0"
+kotlinJvm = "1.7.21"
+kotlinDokka = "1.7.20"
+nexusPublish = "1.1.0"
+
+# dependencies
+asm = "9.4"
+apiGuardian = "1.1.2"
+annotations = "23.0.0"
+jakartaInject = "2.0.1"
+
+# testing
+junit = "5.9.1"
+lombok = "1.18.24"
+javapoet = "1.13.0"
+compileTesting = "0.19"
+
+
+[libraries]
+
+# dependencies
+asm = { group = "org.ow2.asm", name = "asm", version.ref = "asm" }
+annotations = { group = "org.jetbrains", name = "annotations", version.ref = "annotations" }
+apiGuardian = { group = "org.apiguardian", name = "apiguardian-api", version.ref = "apiGuardian" }
+jakartaInjectApi = { group = "jakarta.inject", name = "jakarta.inject-api", version.ref = "jakartaInject" }
+
+# junit
+junitApi = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit" }
+junitEngine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit" }
+junitVintageEngine = { group = "org.junit.vintage", name = "junit-vintage-engine", version.ref = "junit" }
+
+# testing
+lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
+javapoet = { group = "com.squareup", name = "javapoet", version.ref = "javapoet" }
+jakartaInjectTck = { group = "jakarta.inject", name = "jakarta.inject-tck", version.ref = "jakartaInject" }
+compileTesting = { group = "com.google.testing.compile", name = "compile-testing", version.ref = "compileTesting" }
+
+
+[bundles]
+
+junit = ["junitApi", "junitEngine", "junitVintageEngine"]
+
+
+[plugins]
+
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+kotlinDokka = { id = "org.jetbrains.dokka", version.ref = "kotlinDokka" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlinJvm" }
+nexusPublish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexusPublish" }
