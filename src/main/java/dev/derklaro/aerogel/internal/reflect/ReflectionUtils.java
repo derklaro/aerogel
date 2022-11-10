@@ -60,11 +60,26 @@ public final class ReflectionUtils {
     if (!(type instanceof Class<?>)) {
       throw AerogelException.forMessage(type.getTypeName() + " is not instantiable");
     }
-    // cast to the type
+
     Class<?> clazz = (Class<?>) type;
-    // check if the type is instantiable
-    if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers()) || clazz.isPrimitive() || clazz.isArray()) {
-      throw AerogelException.forMessage(clazz + " is not instantiable");
+    // check for abstract classes
+    if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
+      throw AerogelException.forMessage(clazz + " is an interface or abstract and is not instantiable");
+    }
+
+    // check for primitive types
+    if (clazz.isPrimitive()) {
+      throw AerogelException.forMessage(clazz + " is primitive and is not instantiable");
+    }
+
+    // check for array
+    if (clazz.isArray()) {
+      throw AerogelException.forMessage(clazz + " is an array and is not instantiable");
+    }
+
+    // check for non-static inner classes
+    if (clazz.getEnclosingClass() != null && !Modifier.isStatic(clazz.getModifiers())) {
+      throw AerogelException.forMessage(clazz + " is a non-static inner class and is not instantiable");
     }
   }
 
