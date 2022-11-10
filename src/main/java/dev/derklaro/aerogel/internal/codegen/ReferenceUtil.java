@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel.internal.codegen;
 
+import dev.derklaro.aerogel.internal.utility.NullMask;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,8 +37,6 @@ import org.jetbrains.annotations.Nullable;
  */
 @SuppressWarnings("unused") // called from generated source code
 public final class ReferenceUtil {
-
-  private static final Object NULL = new Object();
 
   private ReferenceUtil() {
     throw new UnsupportedOperationException();
@@ -56,14 +55,14 @@ public final class ReferenceUtil {
     @Nullable Object value
   ) {
     // set the value if no value is already present
-    Object masked = mask(value);
+    Object masked = NullMask.mask(value);
     if (reference.compareAndSet(null, masked)) {
       return new InstanceCreateResult(value, true);
     }
 
     // a value is already present
     Object storedValue = reference.get();
-    return new InstanceCreateResult(unmask(storedValue), false);
+    return new InstanceCreateResult(NullMask.unmask(storedValue), false);
   }
 
   /**
@@ -73,27 +72,7 @@ public final class ReferenceUtil {
    * @return an instance create result containing the unmasked form of the given value.
    */
   public static @NotNull InstanceCreateResult unmaskAndPack(@NotNull Object masked) {
-    Object unmasked = unmask(masked);
+    Object unmasked = NullMask.unmask(masked);
     return new InstanceCreateResult(unmasked, false);
-  }
-
-  /**
-   * Masks the given value if null, returns the same value otherwise.
-   *
-   * @param value the value to mask.
-   * @return a mask if the given value is null, the given value otherwise.
-   */
-  private static @NotNull Object mask(@Nullable Object value) {
-    return value != null ? value : NULL;
-  }
-
-  /**
-   * Unmasks the given value if the masked value is marked as null, returns the same value otherwise.
-   *
-   * @param masked the value to unmask.
-   * @return the unmasked value, or the given value if not masked.
-   */
-  private static @Nullable Object unmask(@NotNull Object masked) {
-    return masked == NULL ? null : masked;
   }
 }

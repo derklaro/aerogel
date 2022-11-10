@@ -28,6 +28,7 @@ import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.InjectionContext.Builder;
 import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.internal.utility.NullMask;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -62,7 +63,7 @@ public final class DefaultInjectionContextBuilder implements Builder {
   public @NotNull <T> InjectionContext.Builder override(@NotNull Element element, @Nullable T instance) {
     this.overriddenElements.put(
       Objects.requireNonNull(element, "Element must be non-null"),
-      instance == null ? InjectionContext.NIL : instance);
+      NullMask.mask(instance));
     return this;
   }
 

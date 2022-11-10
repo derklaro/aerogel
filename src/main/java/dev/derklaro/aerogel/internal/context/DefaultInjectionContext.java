@@ -33,6 +33,7 @@ import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjectionSettings;
 import dev.derklaro.aerogel.internal.codegen.InjectionTimeProxy;
 import dev.derklaro.aerogel.internal.codegen.InjectionTimeProxy.InjectionTimeProxyable;
+import dev.derklaro.aerogel.internal.utility.NullMask;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -128,8 +129,7 @@ public final class DefaultInjectionContext implements InjectionContext {
     // check if the type was overridden when creating the context
     if (this.overriddenTypes.containsKey(element)) {
       Object overriddenElement = this.overriddenTypes.get(element);
-      // NIL is emitted by the builder as some maps might not support null values
-      return overriddenElement == NIL ? null : (T) overriddenElement;
+      return (T) NullMask.unmask(overriddenElement);
     }
     // check if a type was already constructed during the invocation cycle
     if (this.knownTypes.containsKey(element)) {

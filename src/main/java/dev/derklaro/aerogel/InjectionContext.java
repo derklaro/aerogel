@@ -41,11 +41,6 @@ import org.jetbrains.annotations.Unmodifiable;
 public interface InjectionContext {
 
   /**
-   * Represents a null object which is used to indicate that a value of the overridden types is null.
-   */
-  Object NIL = new Object();
-
-  /**
    * Constructs a new builder for an {@link InjectionContext}.
    *
    * @return a new builder for an {@link InjectionContext}.
