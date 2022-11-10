@@ -34,7 +34,7 @@ import dev.derklaro.aerogel.internal.codegen.InstanceCreateResult;
 import dev.derklaro.aerogel.internal.codegen.InstanceMaker;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.InjectionClassLookup;
-import dev.derklaro.aerogel.internal.reflect.ReflectionUtils;
+import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
 import java.lang.reflect.Constructor;
 import org.jetbrains.annotations.NotNull;
@@ -80,7 +80,7 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
    */
   public static @NotNull ConstructingBindingHolder create(@NotNull Injector injector, @NotNull Element element) {
     // read the type from the element
-    Class<?> type = ReflectionUtils.rawType(element.componentType());
+    Class<?> type = ReflectionUtil.rawType(element.componentType());
     // read the component data from the class
     ProvidedBy provided = type.getAnnotation(ProvidedBy.class);
     // create a binding holder based on the information
@@ -88,7 +88,7 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
       return create(injector, ElementHelper.buildElement(provided.value()), element);
     } else {
       // check if we can construct the type
-      ReflectionUtils.ensureInstantiable(type);
+      ReflectionUtil.ensureInstantiable(type);
       // get the injection class data from the type
       Constructor<?> injectionPoint = InjectionClassLookup.findInjectableConstructor(type);
       // create the holder
@@ -111,9 +111,9 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     @NotNull Element... element
   ) {
     // read the type from the bound element
-    Class<?> type = ReflectionUtils.rawType(bound.componentType());
+    Class<?> type = ReflectionUtil.rawType(bound.componentType());
     // check if we can construct the type
-    ReflectionUtils.ensureInstantiable(type);
+    ReflectionUtil.ensureInstantiable(type);
     // get the injection class data from the component type
     boolean singleton = JakartaBridge.isSingleton(type);
     Constructor<?> injectionPoint = InjectionClassLookup.findInjectableConstructor(type);

@@ -44,7 +44,7 @@ public final class AerogelException extends RuntimeException {
    * @param throwable       the cause of the exception.
    * @param allowStackTrace if a stack trace should be appended when throwing the exception.
    */
-  private AerogelException(String message, Throwable throwable, boolean allowStackTrace) {
+  private AerogelException(@Nullable String message, @Nullable Throwable throwable, boolean allowStackTrace) {
     super(message, throwable);
     this.allowStackTrace = allowStackTrace;
   }

@@ -52,9 +52,10 @@ import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.internal.asm.AsmPrimitives;
 import dev.derklaro.aerogel.internal.asm.AsmUtils;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
-import dev.derklaro.aerogel.internal.reflect.ReflectionUtils;
+import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
 import dev.derklaro.aerogel.internal.unsafe.ClassDefiners;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
+import dev.derklaro.aerogel.internal.utility.ReferenceUtil;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -310,7 +311,7 @@ public final class ClassInstanceMaker {
     int readerIndex = 0;
     for (Element element : types) {
       // primitive types need to get loaded in another way from the stack than objects
-      if (ReflectionUtils.isPrimitive(element.componentType())) {
+      if (ReflectionUtil.isPrimitive(element.componentType())) {
         readerIndex += AsmPrimitives.load((Class<?>) element.componentType(), mv, 3 + readerIndex);
       } else {
         mv.visitVarInsn(ALOAD, 3 + readerIndex++);
@@ -463,8 +464,8 @@ public final class ClassInstanceMaker {
     Type generic;
     Class<?> type;
     if (provider) {
-      generic = ReflectionUtils.genericSuperType(parameter.getParameterizedType());
-      type = ReflectionUtils.rawType(ReflectionUtils.genericSuperType(parameter.getParameterizedType()));
+      generic = ReflectionUtil.genericSuperType(parameter.getParameterizedType());
+      type = ReflectionUtil.rawType(ReflectionUtil.genericSuperType(parameter.getParameterizedType()));
     } else {
       // just use the type of the parameter
       type = parameter.getType();

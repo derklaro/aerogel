@@ -22,9 +22,9 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.codegen;
+package dev.derklaro.aerogel.internal.utility;
 
-import dev.derklaro.aerogel.internal.utility.NullMask;
+import dev.derklaro.aerogel.internal.codegen.InstanceCreateResult;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

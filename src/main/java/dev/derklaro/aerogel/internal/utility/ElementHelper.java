@@ -27,7 +27,7 @@ package dev.derklaro.aerogel.internal.utility;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.Qualifier;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
-import dev.derklaro.aerogel.internal.reflect.ReflectionUtils;
+import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -66,7 +66,7 @@ public final class ElementHelper {
     String name = JakartaBridge.nameOf(field);
     // extract the needed type
     Type type = JakartaBridge.isProvider(field.getType())
-      ? ReflectionUtils.genericSuperType(field.getGenericType())
+      ? ReflectionUtil.genericSuperType(field.getGenericType())
       : field.getGenericType();
     // extract all annotations
     Annotation[] qualifierAnnotations = extractQualifierAnnotations(annotations);
@@ -91,7 +91,7 @@ public final class ElementHelper {
     String name = JakartaBridge.nameOf(parameter);
     // extract the needed type
     Type type = JakartaBridge.isProvider(parameter.getType())
-      ? ReflectionUtils.genericSuperType(parameter.getParameterizedType())
+      ? ReflectionUtil.genericSuperType(parameter.getParameterizedType())
       : parameter.getParameterizedType();
     // extract all annotations
     Annotation[] qualifierAnnotations = extractQualifierAnnotations(annotations);

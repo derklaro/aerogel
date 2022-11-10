@@ -31,6 +31,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnknownNullability;
 
 /**
  * Represents a provider as declared by {@link jakarta.inject.Provider}. Any type which is injectable through a normal
@@ -113,7 +114,7 @@ public interface Provider<T> extends Supplier<T> {
    * @return the value provided by this provider or {@code defaultValue} if this provider is unable to provide a value.
    * @since 1.2.0
    */
-  default T getOrElse(@Nullable T defaultValue) {
+  default @UnknownNullability T getOrElse(@Nullable T defaultValue) {
     try {
       return this.get();
     } catch (AerogelException exception) {

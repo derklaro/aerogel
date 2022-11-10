@@ -43,9 +43,9 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual K.
  * @since 1.0
  */
-public final class ReflectionUtils {
+public final class ReflectionUtil {
 
-  private ReflectionUtils() {
+  private ReflectionUtil() {
     throw new UnsupportedOperationException();
   }
 

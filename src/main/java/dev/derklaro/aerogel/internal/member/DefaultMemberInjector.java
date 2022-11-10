@@ -35,7 +35,7 @@ import dev.derklaro.aerogel.PostConstruct;
 import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.internal.asm.AsmUtils;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
-import dev.derklaro.aerogel.internal.reflect.ReflectionUtils;
+import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
 import dev.derklaro.aerogel.internal.unsafe.UnsafeMemberAccess;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
 import dev.derklaro.aerogel.internal.utility.Preconditions;
@@ -121,7 +121,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     Map<String, InjectableMethod> postConstructMethods = null;
 
     // read all fields & methods in reverse (super fields & method should get injected before implementation ones)
-    List<Class<?>> hierarchyTree = ReflectionUtils.hierarchyTree(target);
+    List<Class<?>> hierarchyTree = ReflectionUtil.hierarchyTree(target);
     int startIndex = hierarchyTree.size() - 1;
     for (int i = startIndex; i >= 0; i--) {
       Class<?> targetClass = hierarchyTree.get(i);
@@ -149,7 +149,7 @@ public final class DefaultMemberInjector implements MemberInjector {
         }
 
         // the signature is used to check if we already found a comparable method
-        String visibility = ReflectionUtils.shortVisibilitySummary(method);
+        String visibility = ReflectionUtil.shortVisibilitySummary(method);
         String signature = String.format("[%s]%s%s", visibility, method.getName(), AsmUtils.methodDesc(method));
 
         // check if the method is an overridden one
@@ -727,7 +727,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     if (settings.injectOnlyUninitializedFields()) {
       try {
         // tries to read the field value
-        return ReflectionUtils.isUninitialized(field, on);
+        return ReflectionUtil.isUninitialized(field, on);
       } catch (IllegalAccessException ignored) {
       }
     }

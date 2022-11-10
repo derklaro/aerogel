@@ -30,6 +30,7 @@ import java.util.Collection;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnknownNullability;
 import org.jetbrains.annotations.UnmodifiableView;
 
 /**
@@ -79,7 +80,7 @@ public interface Injector {
    * @throws AerogelException     if no binding is present and no runtime binding can be created.
    * @since 1.2.0
    */
-  <T> T instance(@NotNull Class<T> type);
+  @UnknownNullability <T> T instance(@NotNull Class<T> type);
 
   /**
    * Creates or gets the instance of the given type.
@@ -90,7 +91,7 @@ public interface Injector {
    * @throws NullPointerException if {@code type} is null.
    * @throws AerogelException     if no binding is present and no runtime binding can be created.
    */
-  <T> T instance(@NotNull Type type);
+  @UnknownNullability <T> T instance(@NotNull Type type);
 
   /**
    * Creates or gets the instance of the given element.
@@ -101,7 +102,7 @@ public interface Injector {
    * @throws NullPointerException if {@code type} is null.
    * @throws AerogelException     if no binding is present and no runtime binding can be created.
    */
-  <T> T instance(@NotNull Element element);
+  @UnknownNullability <T> T instance(@NotNull Element element);
 
   /**
    * Installs the binding constructed by the given {@code constructor} to this injector.
