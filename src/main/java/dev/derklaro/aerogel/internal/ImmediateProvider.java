@@ -43,7 +43,7 @@ public final class ImmediateProvider<T> implements Provider<T> {
    *
    * @param provided the element which should be returned by a call to {@link #get()}.
    */
-  public ImmediateProvider(T provided) {
+  public ImmediateProvider(@Nullable T provided) {
     this.provided = provided;
   }
 
