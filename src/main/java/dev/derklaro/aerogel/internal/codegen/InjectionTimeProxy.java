@@ -64,9 +64,9 @@ import org.objectweb.asm.Type;
 public final class InjectionTimeProxy {
 
   private static final String PROXY_NAME_FORMAT = "%s$Proxy_%d";
-  // stuff for the InjectionTimeProxyable class
+  // stuff for the InjectionTimeProxied class
   private static final String SET_DELEGATE_DESC = AsmUtils.methodDesc(void.class, Object.class);
-  private static final String INJECTION_TIME_NAME = Type.getInternalName(InjectionTimeProxyable.class);
+  private static final String INJECTION_TIME_NAME = Type.getInternalName(InjectionTimeProxied.class);
   // stuff for the Preconditions class
   private static final String PRECONDITIONS_NAME = Type.getInternalName(Preconditions.class);
   private static final String CHECK_ARGUMENT_DESC = AsmUtils.methodDesc(void.class, boolean.class, String.class);
@@ -259,7 +259,7 @@ public final class InjectionTimeProxy {
    * @since 1.0
    */
   @FunctionalInterface
-  public interface InjectionTimeProxyable {
+  public interface InjectionTimeProxied {
 
     /**
      * Sets the delegate instance for the current proxy.

@@ -24,16 +24,14 @@
 
 package dev.derklaro.aerogel.internal.context;
 
-import static dev.derklaro.aerogel.internal.utility.Preconditions.checkArgument;
-
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjectionSettings;
 import dev.derklaro.aerogel.internal.codegen.InjectionTimeProxy;
-import dev.derklaro.aerogel.internal.codegen.InjectionTimeProxy.InjectionTimeProxyable;
 import dev.derklaro.aerogel.internal.utility.NullMask;
+import dev.derklaro.aerogel.internal.utility.Preconditions;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -116,7 +114,7 @@ public final class DefaultInjectionContext implements InjectionContext {
   public <T> @Nullable T findConstructedValue(@NotNull Element element) {
     Object val = this.knownTypes.get(element);
     // we do not return dynamic created proxy types as they should not be used for construction or general use
-    return val == null || val instanceof InjectionTimeProxyable ? null : (T) val;
+    return val == null || val instanceof InjectionTimeProxy.InjectionTimeProxied ? null : (T) val;
   }
 
   /**
@@ -187,17 +185,19 @@ public final class DefaultInjectionContext implements InjectionContext {
     // check if there is a need to re-assign the instance
     if (current != null) {
       // if the current known element is proxied assign it to the delegate handler
-      if (current instanceof InjectionTimeProxyable) {
+      if (current instanceof InjectionTimeProxy.InjectionTimeProxied) {
         if (doInjectMembers) {
           this.injectMembers(element, result); // inject before making the proxy available
         }
-        ((InjectionTimeProxyable) current).setDelegate(result);
+        ((InjectionTimeProxy.InjectionTimeProxied) current).setDelegate(result);
       }
       // do not let an existing value reset the current injecting value...
       return;
     } else {
       // do not store proxies as they should be stored after creation and never get injected or used by anyone else
-      checkArgument(!(result instanceof InjectionTimeProxyable), "Unable to store a proxy handler instance");
+      Preconditions.checkArgument(
+        !(result instanceof InjectionTimeProxy.InjectionTimeProxied),
+        "Unable to store a proxy handler instance");
       // store to the known types as there is no reference yet if we are currently still constructing
       if (this.currentElement != null) {
         this.knownTypes.put(element, result);

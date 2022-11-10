@@ -26,7 +26,7 @@ package dev.derklaro.aerogel.auto.internal.utility;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.auto.Provides;
-import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 import javax.lang.model.element.Element;
@@ -93,7 +93,7 @@ public final class TypeUtil {
       result = ((ArrayType) result).getComponentType();
     }
     // pack the result
-    return new SimpleImmutableEntry<>(result, depth);
+    return new AbstractMap.SimpleImmutableEntry<>(result, depth);
   }
 
   /**

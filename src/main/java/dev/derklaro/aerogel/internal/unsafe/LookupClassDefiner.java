@@ -25,7 +25,7 @@
 package dev.derklaro.aerogel.internal.unsafe;
 
 import dev.derklaro.aerogel.AerogelException;
-import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -44,7 +44,7 @@ final class LookupClassDefiner implements ClassDefiner {
    * The jvm trusted lookup instance. It allows access to every lookup even if the access to these classes is denied for
    * the current module.
    */
-  private static final Lookup TRUSTED_LOOKUP;
+  private static final MethodHandles.Lookup TRUSTED_LOOKUP;
   /**
    * The created option array to define a class.
    */
@@ -55,22 +55,22 @@ final class LookupClassDefiner implements ClassDefiner {
   private static final Method DEFINE_HIDDEN_METHOD;
 
   static {
-    Lookup trustedLookup = null;
     Object hiddenClassOptions = null;
     Method defineHiddenMethod = null;
+    MethodHandles.Lookup trustedLookup = null;
 
     if (UnsafeAccess.isAvailable()) {
       try {
         // get the trusted lookup field
-        Field implLookup = Lookup.class.getDeclaredField("IMPL_LOOKUP");
-        trustedLookup = (Lookup) UnsafeMemberAccess.forceMakeAccessible(implLookup).get(null);
+        Field implLookup = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
+        trustedLookup = (MethodHandles.Lookup) UnsafeMemberAccess.forceMakeAccessible(implLookup).get(null);
 
         // get the options for defining hidden (or nestmate) classes
         hiddenClassOptions = classOptionArray();
 
         // get the method to define a hidden class (Java 9+)
         //noinspection JavaReflectionMemberAccess
-        Method defineHiddenClassMethod = Lookup.class.getMethod("defineHiddenClass",
+        Method defineHiddenClassMethod = MethodHandles.Lookup.class.getMethod("defineHiddenClass",
           byte[].class,
           boolean.class,
           hiddenClassOptions.getClass());
@@ -95,7 +95,7 @@ final class LookupClassDefiner implements ClassDefiner {
   @SuppressWarnings({"rawtypes", "unchecked"})
   private static @NotNull Object classOptionArray() throws Exception {
     // the ClassOption enum is a subclass of the Lookup class
-    Class optionClass = Class.forName(Lookup.class.getName() + "$ClassOption");
+    Class optionClass = Class.forName(MethodHandles.Lookup.class.getName() + "$ClassOption");
     // create an array of these options (for now always one option)
     Object resultingOptionArray = Array.newInstance(optionClass, 1);
     // set the first option to NESTMATE
@@ -120,7 +120,7 @@ final class LookupClassDefiner implements ClassDefiner {
   public @NotNull Class<?> defineClass(@NotNull String name, @NotNull Class<?> parent, byte[] bytecode) {
     try {
       // define the method using the method handle
-      Lookup lookup = (Lookup) DEFINE_HIDDEN_METHOD.invoke(
+      MethodHandles.Lookup lookup = (MethodHandles.Lookup) DEFINE_HIDDEN_METHOD.invoke(
         TRUSTED_LOOKUP.in(parent),
         bytecode,
         false,

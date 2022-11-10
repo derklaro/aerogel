@@ -25,16 +25,15 @@
 package dev.derklaro.aerogel.internal.member;
 
 import dev.derklaro.aerogel.MemberInjectionSettings;
-import dev.derklaro.aerogel.MemberInjectionSettings.Builder;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A default implementation of a {@link Builder}.
+ * A default implementation of a {@link MemberInjectionSettings.Builder}.
  *
  * @author Pasqual K.
  * @since 1.0
  */
-public final class DefaultMemberInjectionSettingsBuilder implements Builder {
+public final class DefaultMemberInjectionSettingsBuilder implements MemberInjectionSettings.Builder {
 
   private boolean injectPrivateMethods = true;
   private boolean injectStaticMethods = true;
@@ -132,7 +131,7 @@ public final class DefaultMemberInjectionSettingsBuilder implements Builder {
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Builder executePostConstructListeners(boolean executePostConstructListeners) {
+  public @NotNull MemberInjectionSettings.Builder executePostConstructListeners(boolean executePostConstructListeners) {
     this.executePostConstructListeners = executePostConstructListeners;
     return this;
   }

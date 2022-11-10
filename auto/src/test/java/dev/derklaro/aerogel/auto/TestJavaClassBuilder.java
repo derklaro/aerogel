@@ -57,7 +57,7 @@ final class TestJavaClassBuilder {
   }
 
   public JavaFileObject build() {
-    return build("");
+    return this.build("");
   }
 
   public JavaFileObject build(String packageName) {

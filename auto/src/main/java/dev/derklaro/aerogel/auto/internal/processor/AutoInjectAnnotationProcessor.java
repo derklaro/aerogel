@@ -54,7 +54,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.tools.Diagnostic.Kind;
+import javax.tools.Diagnostic;
 import javax.tools.StandardLocation;
 import org.jetbrains.annotations.NotNull;
 
@@ -185,7 +185,7 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
       // ensure that the element is a method - print a warning if this is not the case
       if (element.getKind() != ElementKind.METHOD) {
         env.getMessager().printMessage(
-          Kind.MANDATORY_WARNING,
+          Diagnostic.Kind.MANDATORY_WARNING,
           String.format(
             "Element of kind %s is annotated as %s but only methods are allowed to be annotated",
             element.getKind(),
@@ -195,7 +195,7 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
       // ensure that the method is static
       if (!element.getModifiers().contains(Modifier.STATIC)) {
         env.getMessager().printMessage(
-          Kind.MANDATORY_WARNING,
+          Diagnostic.Kind.MANDATORY_WARNING,
           String.format("Factory method %s must be static", element.getSimpleName()));
         continue;
       }
@@ -203,7 +203,7 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
       ExecutableElement executableElement = (ExecutableElement) element;
       if (executableElement.getReturnType().getKind() == TypeKind.VOID) {
         env.getMessager().printMessage(
-          Kind.MANDATORY_WARNING,
+          Diagnostic.Kind.MANDATORY_WARNING,
           String.format("Factory method %s returns void but an actual type is expected", element.getSimpleName()));
         continue;
       }
@@ -224,7 +224,7 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
       // ensure that the element is a class - print a warning if this is not the case
       if (element.getKind() != ElementKind.CLASS) {
         env.getMessager().printMessage(
-          Kind.MANDATORY_WARNING,
+          Diagnostic.Kind.MANDATORY_WARNING,
           String.format(
             "Element of kind %s is annotated as %s but only classes are allowed to be annotated",
             element.getKind(),
@@ -234,7 +234,7 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
       // ensure that the class is not abstract
       if (element.getModifiers().contains(Modifier.ABSTRACT)) {
         env.getMessager().printMessage(
-          Kind.MANDATORY_WARNING,
+          Diagnostic.Kind.MANDATORY_WARNING,
           String.format("Binding class %s must not be abstract", element.getSimpleName()));
         continue;
       }
@@ -244,7 +244,7 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
       // ensure that the annotation is actually providing something
       if (value.isEmpty()) {
         env.getMessager().printMessage(
-          Kind.MANDATORY_WARNING,
+          Diagnostic.Kind.MANDATORY_WARNING,
           String.format("Providing class %s provides nothing", element.getSimpleName()));
         continue;
       }

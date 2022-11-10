@@ -31,10 +31,10 @@ import dev.derklaro.aerogel.BindingConstructor;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.auto.AutoAnnotationEntry;
 import dev.derklaro.aerogel.auto.AutoAnnotationRegistry;
-import dev.derklaro.aerogel.auto.internal.holder.FactoryAutoAnnotationEntry;
-import dev.derklaro.aerogel.auto.internal.holder.ProvidesAutoAnnotationEntry;
 import dev.derklaro.aerogel.auto.Factory;
 import dev.derklaro.aerogel.auto.Provides;
+import dev.derklaro.aerogel.auto.internal.holder.FactoryAutoAnnotationEntry;
+import dev.derklaro.aerogel.auto.internal.holder.ProvidesAutoAnnotationEntry;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,8 +57,7 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
   private final Map<String, AutoAnnotationEntry> entries = new ConcurrentHashMap<>();
 
   /**
-   * Constructs a new factory which by default supports the {@link Factory} and {@link
-   * Provides} annotation.
+   * Constructs a new factory which by default supports the {@link Factory} and {@link Provides} annotation.
    */
   public DefaultAutoAnnotationRegistry() {
     this.entries.put("factory", new FactoryAutoAnnotationEntry());

@@ -24,9 +24,9 @@
 
 package dev.derklaro.aerogel.auto;
 
-import dev.derklaro.aerogel.auto.internal.processor.AutoInjectAnnotationProcessor;
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.Compiler;
+import dev.derklaro.aerogel.auto.internal.processor.AutoInjectAnnotationProcessor;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
 

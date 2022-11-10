@@ -112,7 +112,8 @@ public class FactoryProcessingTest {
       //   - primitive types are correctly shown
       //   - the array flag is present on array types
       Assertions.assertTrue(thrown.getMessage().contains(
-        "testing.Main.helloWorld(java.util.Collection, java.lang.String[], java.util.Map, java.util.Collection, int, int[][][], java.util.Collection[])"));
+        "testing.Main.helloWorld(java.util.Collection, java.lang.String[], java.util.Map, java.util.Collection, int,"
+          + " int[][][], java.util.Collection[])"));
 
       // ensure that the reason for the exception came because of the dynamically generated class
       ClassNotFoundException cause = Assertions.assertInstanceOf(ClassNotFoundException.class, thrown.getCause());

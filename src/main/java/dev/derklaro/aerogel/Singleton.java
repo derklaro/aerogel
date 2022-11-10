@@ -24,12 +24,12 @@
 
 package dev.derklaro.aerogel;
 
+import jakarta.inject.Scope;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import jakarta.inject.Scope;
 
 /**
  * Annotate every class or factory method you only want one instance to be created of and then reused. The instance will

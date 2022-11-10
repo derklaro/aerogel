@@ -26,7 +26,6 @@ package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
-import dev.derklaro.aerogel.InjectionContext.Builder;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.internal.utility.NullMask;
 import java.util.HashMap;
@@ -36,12 +35,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A default {@link Builder} implementation.
+ * A default {@link InjectionContext.Builder} implementation.
  *
  * @author Pasqual K.
  * @since 1.0
  */
-public final class DefaultInjectionContextBuilder implements Builder {
+public final class DefaultInjectionContextBuilder implements InjectionContext.Builder {
 
   private final Map<Element, Object> overriddenElements = new HashMap<>();
 

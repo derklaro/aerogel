@@ -83,7 +83,7 @@ final class ElementStack {
    * @return the first element which successfully passed the {@code filter} or null if no element passes.
    */
   public @Nullable Element filter(@NotNull Predicate<Element> filter) {
-    for (Element element : stack) {
+    for (Element element : this.stack) {
       if (filter.test(element)) {
         return element;
       }
