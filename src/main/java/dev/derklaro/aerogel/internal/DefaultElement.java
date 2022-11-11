@@ -132,6 +132,14 @@ public final class DefaultElement implements Element {
    * {@inheritDoc}
    */
   @Override
+  public boolean hasSpecialRequirements() {
+    return this.requiredName != null || !this.annotationPredicates.isEmpty();
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public @NotNull String toString() {
     return ToStringHelper.create(this)
       .putField("componentType", this.componentType)

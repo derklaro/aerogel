@@ -30,6 +30,7 @@ import dev.derklaro.aerogel.BindingHolder;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjector;
+import dev.derklaro.aerogel.SpecifiedInjector;
 import dev.derklaro.aerogel.internal.binding.ConstructingBindingHolder;
 import dev.derklaro.aerogel.internal.binding.ImmediateBindingHolder;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
@@ -42,6 +43,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.UnknownNullability;
 import org.jetbrains.annotations.UnmodifiableView;
 
 /**
@@ -89,6 +91,14 @@ public final class DefaultInjector implements Injector {
   @Override
   public @NotNull Injector newChildInjector() {
     return new DefaultInjector(this);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull SpecifiedInjector newSpecifiedInjector() {
+    return new DefaultSpecifiedInjector(this);
   }
 
   /**
@@ -190,30 +200,45 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @NotNull BindingHolder binding(@NotNull Element element) {
+    return this.bindingOr(element, injector -> ConstructingBindingHolder.create(injector, element));
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @UnknownNullability BindingHolder bindingOr(
+    @NotNull Element element,
+    @NotNull BindingConstructor factory
+  ) {
     Objects.requireNonNull(element, "element");
+    Objects.requireNonNull(factory, "factory");
+
     // get the binding if a parent has already one
     BindingHolder holder = this.bindingOrNull(element);
     if (holder != null) {
       // cache locally to prevent further deep lookups
       this.bindings.putIfAbsent(element, holder);
-      // return the looked-up holder
       return holder;
     }
-    // check if the element has special parameters - in this case we will strictly not mock the element
-    if (element.requiredName() != null || !element.requiredAnnotations().isEmpty()) {
-      throw AerogelException.forMessageWithoutStack(
-        "Element " + element + " has special properties, unable to make a runtime binding for it");
-    }
-    // check if the element is of the type Injector - return us for it
+
+    // check if the element is of the type Injector - return the current injector for it
     if (INJECTOR_ELEMENT.equals(element)) {
       return this.injectorBinding;
     }
-    // create a constructing holder for the class - we can not support other binding types
-    holder = ConstructingBindingHolder.create(this, element);
-    // cache the holder
-    this.bindings.put(element, holder);
-    // return the constructed binding
-    return holder;
+
+    // check if the element has special parameters - in this case we will strictly not mock the element
+    if (element.hasSpecialRequirements()) {
+      throw AerogelException.forMessageWithoutStack(
+        "Element " + element + " has special properties, unable to make a runtime binding for it");
+    }
+
+    // construct a binding and store it, use putIfAbsent to prevent issues when concurrently accessed
+    BindingHolder constructed = factory.construct(this);
+    BindingHolder present = this.bindings.putIfAbsent(element, constructed);
+
+    // return the constructed or old binding holder
+    return present != null ? present : constructed;
   }
 
   /**

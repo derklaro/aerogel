@@ -29,6 +29,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Objects;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
@@ -109,6 +110,15 @@ public interface Element {
    * @throws NullPointerException if the given predicate is null.
    */
   @NotNull Element requireAnnotation(@NotNull AnnotationPredicate<?> predicate);
+
+  /**
+   * Get if this element has special requirements.
+   *
+   * @return true if this element has special requirements, false otherwise.
+   * @since 2.0
+   */
+  @API(status = API.Status.STABLE, since = "2.0")
+  boolean hasSpecialRequirements();
 
   /**
    * {@inheritDoc}

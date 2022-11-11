@@ -27,10 +27,12 @@ package dev.derklaro.aerogel;
 import dev.derklaro.aerogel.internal.DefaultInjector;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jetbrains.annotations.UnmodifiableView;
 
 /**
@@ -69,6 +71,16 @@ public interface Injector {
    * @return a new child injector of this injector.
    */
   @NotNull Injector newChildInjector();
+
+  /**
+   * Returns a new specified injector which has this injector as its parent injector. Note that specified injectors can
+   * be the parent of a specified injector as well.
+   *
+   * @return a new specified injector of this injector.
+   * @since 2.0
+   */
+  @API(status = API.Status.EXPERIMENTAL, since = "2.0")
+  @NotNull SpecifiedInjector newSpecifiedInjector();
 
   /**
    * Creates or gets the instance of the given class type.
@@ -164,6 +176,20 @@ public interface Injector {
   @NotNull BindingHolder binding(@NotNull Element element);
 
   /**
+   * Gets the stored binding for the given element or calls the given factory to obtain a binding holder. The binding
+   * can be stored in the parent injector chain as well.
+   *
+   * @param element the element of the binding to get.
+   * @param factory the factory to call if no binding is available.
+   * @return the stored binding for the given element target.
+   * @throws NullPointerException if the given element or factory is null.
+   * @throws AerogelException     if no binding is present and no runtime binding can be created.
+   * @since 2.0
+   */
+  @API(status = API.Status.EXPERIMENTAL, since = "2.0")
+  @UnknownNullability BindingHolder bindingOr(@NotNull Element element, @NotNull BindingConstructor factory);
+
+  /**
    * Get the stored binding for the given {@code element}. The binding can be stored in the parent injector chain as
    * well.
    *
@@ -195,6 +221,6 @@ public interface Injector {
    *
    * @return all bindings of this and all parent injectors.
    */
-  @UnmodifiableView
+  @Unmodifiable
   @NotNull Collection<BindingHolder> allBindings();
 }
