@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '11', '17', '20-ea' ]
+        java: [ '8', '11', '17', '20-ea' ]
     name: ${{ matrix.java }}
 
     steps:
@@ -28,5 +28,9 @@ jobs:
           check-latest: true
           cache: 'gradle'
 
-      - name: Run build lifecycle
-        run: ./gradlew build test
+      - name: Run build and tests
+        run: ./gradlew clean build test -x checkstyleMain -x checkstyleTest --stacktrace --no-daemon
+
+      - name: Run code checks
+        if: ${{ matrix.java != 8 }}
+        run: ./gradlew checkstyleMain checkstyleTest spotlessCheck  --stacktrace --no-daemon
