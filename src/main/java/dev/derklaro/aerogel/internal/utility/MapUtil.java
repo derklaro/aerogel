@@ -37,7 +37,7 @@ import org.jetbrains.annotations.Unmodifiable;
  * A small utility to provide pre-configured map instances.
  *
  * @author Pasqual K.
- * @since 1.0
+ * @since 2.0
  */
 public final class MapUtil {
 
