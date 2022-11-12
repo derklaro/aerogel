@@ -32,6 +32,7 @@ import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjector;
 import dev.derklaro.aerogel.SpecifiedInjector;
 import dev.derklaro.aerogel.internal.binding.ConstructingBindingHolder;
+import dev.derklaro.aerogel.internal.utility.InjectorUtil;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
@@ -67,6 +68,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
   public DefaultSpecifiedInjector(@NotNull Injector parent) {
     this.parent = Objects.requireNonNull(parent, "parent");
     this.specificBindings = new ConcurrentHashMap<>();
+    this.specificBindings.put(InjectorUtil.INJECTOR_ELEMENT, InjectorUtil.INJECTOR_BINDING_CONSTRUCTOR.construct(this));
   }
 
   /**
@@ -244,7 +246,6 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
     }
 
     // get from the parent injector
-    // @todo: this might be dangerous as we register a binding to the parent which is associated with this injector...
     BindingHolder parentHolder = this.parent.bindingOr(element, $ -> ConstructingBindingHolder.create(this, element));
     return (T) parentHolder.get();
   }

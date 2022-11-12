@@ -32,8 +32,8 @@ import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjector;
 import dev.derklaro.aerogel.SpecifiedInjector;
 import dev.derklaro.aerogel.internal.binding.ConstructingBindingHolder;
-import dev.derklaro.aerogel.internal.binding.ImmediateBindingHolder;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
+import dev.derklaro.aerogel.internal.utility.InjectorUtil;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,16 +54,12 @@ import org.jetbrains.annotations.UnmodifiableView;
  */
 public final class DefaultInjector implements Injector {
 
-  /**
-   * Represents the injector element without any annotations or a name which makes it special
-   */
-  private static final Element INJECTOR_ELEMENT = Element.forType(Injector.class);
-
   private final Injector parent;
   private final Map<Element, BindingHolder> bindings;
   private final Map<Class<?>, MemberInjector> cachedMemberInjectors;
+
   // represents the binding for this injector
-  private final ImmediateBindingHolder injectorBinding;
+  private final BindingHolder injectorBinding;
 
   /**
    * Constructs a new injector using the given {@code parent} injector as its parent.
@@ -74,7 +70,7 @@ public final class DefaultInjector implements Injector {
     this.parent = parent;
     this.bindings = new ConcurrentHashMap<>();
     this.cachedMemberInjectors = new ConcurrentHashMap<>();
-    this.injectorBinding = new ImmediateBindingHolder(INJECTOR_ELEMENT, this, this, INJECTOR_ELEMENT);
+    this.injectorBinding = InjectorUtil.INJECTOR_BINDING_CONSTRUCTOR.construct(this);
   }
 
   /**
@@ -223,7 +219,7 @@ public final class DefaultInjector implements Injector {
     }
 
     // check if the element is of the type Injector - return the current injector for it
-    if (INJECTOR_ELEMENT.equals(element)) {
+    if (InjectorUtil.INJECTOR_ELEMENT.equals(element)) {
       return this.injectorBinding;
     }
 
@@ -251,7 +247,7 @@ public final class DefaultInjector implements Injector {
     BindingHolder bindingHolder = this.bindings.get(element);
     // check if we need a parent injector lookup - skip the parent lookup if the element is the current injector element
     // in this case we always want to inject this injector, not the parent
-    if (bindingHolder == null && this.parent != null && !INJECTOR_ELEMENT.equals(element)) {
+    if (bindingHolder == null && this.parent != null && !InjectorUtil.INJECTOR_ELEMENT.equals(element)) {
       // check if one of the parents has a cached bindingHolder
       Injector injector = this.parent;
       do {

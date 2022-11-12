@@ -30,6 +30,20 @@ import org.junit.jupiter.api.Test;
 public class SpecifiedInjectorTest {
 
   @Test
+  void requestingInjectorFromSpecifiedReturnsSpecifiedInjector() {
+    Injector injector = Injector.newInjector();
+    SpecifiedInjector specified = injector.newSpecifiedInjector();
+
+    // validate the injector return value from the parent
+    Injector parentInstance = injector.instance(Injector.class);
+    Assertions.assertSame(injector, parentInstance);
+
+    // validate the injector return from the specified injector
+    Injector specifiedInstance = specified.instance(Injector.class);
+    Assertions.assertSame(specified, specifiedInstance);
+  }
+
+  @Test
   void specifiedInjectorOnlyKnowsRegisteredBindings() {
     Injector injector = Injector.newInjector();
     SpecifiedInjector specified = injector.newSpecifiedInjector();

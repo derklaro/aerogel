@@ -35,7 +35,14 @@ import org.jetbrains.annotations.UnknownNullability;
  * runtime which aren't specifically requested.
  *
  * <p>Note that a specific injector might register bindings to the parent injector when runtime binding construction is
- * needed. If this behaviour is not requested, try using a child injector instead.
+ * needed. This is due to the fact that construction bindings are bound to an injector, but in order to assure that the
+ * constructing holder knows all elements from the current injector, and the parent injector is aware of the
+ * construction and can re-use the binding, this behaviour is required. This behaviour is for example useful if multiple
+ * injectors with the same type are required, but all injectors should share the same instances. For example: when
+ * writing a plugin system, each plugin should be able to get their description injected (specifically bound), but
+ * should be able to access the constructed instances from other plugins (requested through the specified injector,
+ * registered in the parent).
+ * <br><strong>If this behaviour is not requested, try using a child injector instead.</strong>
  *
  * @author Pasqual K.
  * @since 2.0
