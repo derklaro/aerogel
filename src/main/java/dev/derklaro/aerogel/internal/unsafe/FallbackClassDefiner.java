@@ -24,8 +24,8 @@
 
 package dev.derklaro.aerogel.internal.unsafe;
 
+import dev.derklaro.aerogel.internal.utility.MapUtil;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -42,7 +42,7 @@ final class FallbackClassDefiner implements ClassDefiner {
   /**
    * The cached defining class loaders for each class loader of the parent classes to define the class in.
    */
-  private final Map<ClassLoader, DefiningClassLoader> cache = new ConcurrentHashMap<>();
+  private final Map<ClassLoader, DefiningClassLoader> cache = MapUtil.newConcurrentMap();
 
   /**
    * {@inheritDoc}

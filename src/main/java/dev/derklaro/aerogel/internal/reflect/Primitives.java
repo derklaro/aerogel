@@ -25,9 +25,9 @@
 package dev.derklaro.aerogel.internal.reflect;
 
 import dev.derklaro.aerogel.AerogelException;
+import dev.derklaro.aerogel.internal.utility.MapUtil;
 import dev.derklaro.aerogel.internal.utility.Preconditions;
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,34 +43,21 @@ public final class Primitives {
   /**
    * Holds all primitive to its wrapper class associations. For example {@code int} is associated with {@code Integer}.
    */
-  private static final Map<String, Class<?>> PRIMITIVE_TO_WRAPPER = new HashMap<>(9);
-  /**
-   * Holds the default values for every primitive data type except for void as defined <a
-   * href="https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html">here</a>.
-   */
-  private static final Map<String, Object> PRIMITIVE_DEFAULT_VALUES = new HashMap<>(8);
+  private static final Map<String, Class<?>> PRIMITIVE_TO_WRAPPER = MapUtil.staticMap(9, map -> {
+    map.put(mask(void.class), Void.class);
+    map.put(mask(byte.class), Byte.class);
+    map.put(mask(long.class), Long.class);
+    map.put(mask(short.class), Short.class);
+    map.put(mask(int.class), Integer.class);
+    map.put(mask(float.class), Float.class);
+    map.put(mask(double.class), Double.class);
+    map.put(mask(char.class), Character.class);
+    map.put(mask(boolean.class), Boolean.class);
+  });
 
-  static {
-    // primitive type -> wrapper type
-    PRIMITIVE_TO_WRAPPER.put(mask(void.class), Void.class);
-    PRIMITIVE_TO_WRAPPER.put(mask(byte.class), Byte.class);
-    PRIMITIVE_TO_WRAPPER.put(mask(long.class), Long.class);
-    PRIMITIVE_TO_WRAPPER.put(mask(short.class), Short.class);
-    PRIMITIVE_TO_WRAPPER.put(mask(int.class), Integer.class);
-    PRIMITIVE_TO_WRAPPER.put(mask(float.class), Float.class);
-    PRIMITIVE_TO_WRAPPER.put(mask(double.class), Double.class);
-    PRIMITIVE_TO_WRAPPER.put(mask(char.class), Character.class);
-    PRIMITIVE_TO_WRAPPER.put(mask(boolean.class), Boolean.class);
-    // primitive type -> default value
-    PRIMITIVE_DEFAULT_VALUES.put(mask(int.class), 0);
-    PRIMITIVE_DEFAULT_VALUES.put(mask(char.class), '\0');
-    PRIMITIVE_DEFAULT_VALUES.put(mask(boolean.class), false);
-    PRIMITIVE_DEFAULT_VALUES.put(mask(byte.class), (byte) 0);
-    PRIMITIVE_DEFAULT_VALUES.put(mask(long.class), (long) 0);
-    PRIMITIVE_DEFAULT_VALUES.put(mask(short.class), (short) 0);
-    PRIMITIVE_DEFAULT_VALUES.put(mask(float.class), (float) 0);
-    PRIMITIVE_DEFAULT_VALUES.put(mask(double.class), (double) 0);
-  }
+  // valueOf for other primitive types are cached, double & float will always produce a new instance
+  private static final Float FLOAT_DEFAULT = 0F;
+  private static final Double DOUBLE_DEFAULT = 0D;
 
   private Primitives() {
     throw new UnsupportedOperationException();
@@ -135,6 +122,25 @@ public final class Primitives {
   @SuppressWarnings("unchecked")
   public static <T> @NotNull T defaultValue(@NotNull Class<T> type) {
     Preconditions.checkArgument(type.isPrimitive(), "type " + type + " is not primitive");
-    return (T) PRIMITIVE_DEFAULT_VALUES.get(mask(type));
+    if (type == boolean.class) {
+      return (T) Boolean.FALSE;
+    } else if (type == char.class) {
+      return (T) Character.valueOf('\0');
+    } else if (type == byte.class) {
+      return (T) Byte.valueOf((byte) 0);
+    } else if (type == short.class) {
+      return (T) Short.valueOf((short) 0);
+    } else if (type == int.class) {
+      return (T) Integer.valueOf(0);
+    } else if (type == long.class) {
+      return (T) Long.valueOf(0L);
+    } else if (type == float.class) {
+      return (T) FLOAT_DEFAULT;
+    } else if (type == double.class) {
+      return (T) DOUBLE_DEFAULT;
+    } else {
+      // cannot reach
+      throw new AssertionError();
+    }
   }
 }

@@ -35,6 +35,7 @@ import dev.derklaro.aerogel.auto.Factory;
 import dev.derklaro.aerogel.auto.Provides;
 import dev.derklaro.aerogel.auto.internal.holder.FactoryAutoAnnotationEntry;
 import dev.derklaro.aerogel.auto.internal.holder.ProvidesAutoAnnotationEntry;
+import dev.derklaro.aerogel.internal.utility.MapUtil;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +43,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 
@@ -54,7 +54,7 @@ import org.jetbrains.annotations.UnmodifiableView;
  */
 public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegistry {
 
-  private final Map<String, AutoAnnotationEntry> entries = new ConcurrentHashMap<>();
+  private final Map<String, AutoAnnotationEntry> entries = MapUtil.newConcurrentMap();
 
   /**
    * Constructs a new factory which by default supports the {@link Factory} and {@link Provides} annotation.

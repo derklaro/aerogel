@@ -33,13 +33,13 @@ import dev.derklaro.aerogel.MemberInjector;
 import dev.derklaro.aerogel.SpecifiedInjector;
 import dev.derklaro.aerogel.internal.binding.ConstructingBindingHolder;
 import dev.derklaro.aerogel.internal.utility.InjectorUtil;
+import dev.derklaro.aerogel.internal.utility.MapUtil;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -67,7 +67,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    */
   public DefaultSpecifiedInjector(@NotNull Injector parent) {
     this.parent = Objects.requireNonNull(parent, "parent");
-    this.specificBindings = new ConcurrentHashMap<>();
+    this.specificBindings = MapUtil.newConcurrentMap();
     this.specificBindings.put(InjectorUtil.INJECTOR_ELEMENT, InjectorUtil.INJECTOR_BINDING_CONSTRUCTOR.construct(this));
   }
 

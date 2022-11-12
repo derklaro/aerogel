@@ -35,7 +35,7 @@ import static org.objectweb.asm.Opcodes.LSTORE;
 
 import dev.derklaro.aerogel.internal.asm.primitive.DefaultPrimitiveEmitter;
 import dev.derklaro.aerogel.internal.asm.primitive.PrimitiveEmitter;
-import java.util.HashMap;
+import dev.derklaro.aerogel.internal.utility.MapUtil;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.MethodVisitor;
@@ -52,18 +52,16 @@ public final class AsmPrimitives {
   /**
    * A mapping of the primitive types to an emitter which can push the type to the operator stack.
    */
-  public static final Map<Type, PrimitiveEmitter> EMITTER = new HashMap<>(8);
-
-  static {
-    EMITTER.put(Type.BOOLEAN_TYPE, new DefaultPrimitiveEmitter(Boolean.class, boolean.class, ILOAD, ISTORE));
-    EMITTER.put(Type.CHAR_TYPE, new DefaultPrimitiveEmitter(Character.class, char.class, ILOAD, ISTORE));
-    EMITTER.put(Type.BYTE_TYPE, new DefaultPrimitiveEmitter(Byte.class, byte.class, ILOAD, ISTORE));
-    EMITTER.put(Type.SHORT_TYPE, new DefaultPrimitiveEmitter(Short.class, short.class, ILOAD, ISTORE));
-    EMITTER.put(Type.INT_TYPE, new DefaultPrimitiveEmitter(Integer.class, int.class, ILOAD, ISTORE));
-    EMITTER.put(Type.FLOAT_TYPE, new DefaultPrimitiveEmitter(Float.class, float.class, FLOAD, FSTORE));
-    EMITTER.put(Type.LONG_TYPE, new DefaultPrimitiveEmitter(Long.class, long.class, LLOAD, LSTORE));
-    EMITTER.put(Type.DOUBLE_TYPE, new DefaultPrimitiveEmitter(Double.class, double.class, DLOAD, DSTORE));
-  }
+  public static final Map<Type, PrimitiveEmitter> EMITTER = MapUtil.staticMap(8, map -> {
+    map.put(Type.BOOLEAN_TYPE, new DefaultPrimitiveEmitter(Boolean.class, boolean.class, ILOAD, ISTORE));
+    map.put(Type.CHAR_TYPE, new DefaultPrimitiveEmitter(Character.class, char.class, ILOAD, ISTORE));
+    map.put(Type.BYTE_TYPE, new DefaultPrimitiveEmitter(Byte.class, byte.class, ILOAD, ISTORE));
+    map.put(Type.SHORT_TYPE, new DefaultPrimitiveEmitter(Short.class, short.class, ILOAD, ISTORE));
+    map.put(Type.INT_TYPE, new DefaultPrimitiveEmitter(Integer.class, int.class, ILOAD, ISTORE));
+    map.put(Type.FLOAT_TYPE, new DefaultPrimitiveEmitter(Float.class, float.class, FLOAD, FSTORE));
+    map.put(Type.LONG_TYPE, new DefaultPrimitiveEmitter(Long.class, long.class, LLOAD, LSTORE));
+    map.put(Type.DOUBLE_TYPE, new DefaultPrimitiveEmitter(Double.class, double.class, DLOAD, DSTORE));
+  });
 
   private AsmPrimitives() {
     throw new UnsupportedOperationException();

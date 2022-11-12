@@ -24,8 +24,8 @@
 
 package dev.derklaro.aerogel.auto.internal.utility;
 
+import dev.derklaro.aerogel.internal.utility.MapUtil;
 import java.lang.reflect.Array;
-import java.util.HashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,18 +37,16 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class ClassLoadingUtil {
 
-  private static final Map<String, Class<?>> PRIMITIVE_CLASSES = new HashMap<>(8);
-
-  static {
-    PRIMITIVE_CLASSES.put("int", int.class);
-    PRIMITIVE_CLASSES.put("char", char.class);
-    PRIMITIVE_CLASSES.put("byte", byte.class);
-    PRIMITIVE_CLASSES.put("long", long.class);
-    PRIMITIVE_CLASSES.put("short", short.class);
-    PRIMITIVE_CLASSES.put("float", float.class);
-    PRIMITIVE_CLASSES.put("double", double.class);
-    PRIMITIVE_CLASSES.put("boolean", boolean.class);
-  }
+  private static final Map<String, Class<?>> PRIMITIVE_CLASSES = MapUtil.staticMap(8, map -> {
+    map.put("int", int.class);
+    map.put("char", char.class);
+    map.put("byte", byte.class);
+    map.put("long", long.class);
+    map.put("short", short.class);
+    map.put("float", float.class);
+    map.put("double", double.class);
+    map.put("boolean", boolean.class);
+  });
 
   private ClassLoadingUtil() {
     throw new UnsupportedOperationException();
