@@ -35,11 +35,11 @@ import com.squareup.javapoet.ParameterSpec;
 import dev.derklaro.aerogel.AerogelException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
-import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Map;
 import javax.lang.model.element.Modifier;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
 import lombok.NonNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -59,7 +59,7 @@ public class FactoryProcessingTest {
       .visitMethod(methodBuilder("helloWorld").addAnnotation(Factory.class).addModifiers(PUBLIC))
       .build();
 
-    Compilation compilation = CompilationUtils.javacWithProcessor().compile(toCompile);
+    Compilation compilation = CompilationUtil.javacWithProcessor().compile(toCompile);
     assertThat(compilation).succeeded();
     assertThat(compilation).hadWarningCount(1);
     assertThat(compilation).hadWarningContaining("Factory method helloWorld must be static");
@@ -71,7 +71,7 @@ public class FactoryProcessingTest {
       .visitMethod(methodBuilder("helloWorld").addAnnotation(Factory.class).addModifiers(PUBLIC, STATIC))
       .build();
 
-    Compilation compilation = CompilationUtils.javacWithProcessor().compile(toCompile);
+    Compilation compilation = CompilationUtil.javacWithProcessor().compile(toCompile);
     assertThat(compilation).succeeded();
     assertThat(compilation).hadWarningCount(1);
     assertThat(compilation)
@@ -95,10 +95,13 @@ public class FactoryProcessingTest {
         .addModifiers(PUBLIC, STATIC))
       .build("testing");
 
-    Compilation compilation = CompilationUtils.javacWithProcessor().compile(toCompile);
+    Compilation compilation = CompilationUtil.javacWithProcessor().compile(toCompile);
     assertThat(compilation).succeededWithoutWarnings();
+    assertThat(compilation).generatedFile(StandardLocation.CLASS_OUTPUT, "auto-config.aero");
 
-    try (InputStream in = Files.newInputStream(CompilationUtils.outputFileOfProcessor(compilation))) {
+    //noinspection OptionalGetWithoutIsPresent
+    JavaFileObject file = compilation.generatedFile(StandardLocation.CLASS_OUTPUT, "auto-config.aero").get();
+    try (InputStream in = file.openInputStream()) {
       // the main class was only there during compile time - we expect the exception, but we then know that emitting
       // of the factory method works as expected
       Exception thrown = Assertions.assertThrows(

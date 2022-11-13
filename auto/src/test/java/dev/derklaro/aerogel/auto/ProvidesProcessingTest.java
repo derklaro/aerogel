@@ -33,8 +33,8 @@ import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.TypeSpec;
 import dev.derklaro.aerogel.AerogelException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -47,7 +47,7 @@ public class ProvidesProcessingTest {
         .addAnnotation(AnnotationSpec.builder(Provides.class).addMember("value", "{}").build()))
       .build();
 
-    Compilation compilation = CompilationUtils.javacWithProcessor().compile(toCompile);
+    Compilation compilation = CompilationUtil.javacWithProcessor().compile(toCompile);
     assertThat(compilation).succeeded();
     assertThat(compilation).hadWarningCount(1);
     assertThat(compilation).hadWarningContaining("Providing class Main provides nothing");
@@ -60,7 +60,7 @@ public class ProvidesProcessingTest {
         .addAnnotation(AnnotationSpec.builder(Provides.class).addMember("value", "{}").build()))
       .build();
 
-    Compilation compilation = CompilationUtils.javacWithProcessor().compile(toCompile);
+    Compilation compilation = CompilationUtil.javacWithProcessor().compile(toCompile);
     assertThat(compilation).succeeded();
     assertThat(compilation).hadWarningCount(1);
     assertThat(compilation).hadWarningContaining("Binding class Main must not be abstract");
@@ -75,10 +75,15 @@ public class ProvidesProcessingTest {
           .build()))
       .build("testing");
 
-    Compilation compilation = CompilationUtils.javacWithProcessor().compile(toCompile);
+    Compilation compilation = CompilationUtil.javacWithProcessor()
+      .withOptions("-AaerogelAutoFileName=testing.aero")
+      .compile(toCompile);
     assertThat(compilation).succeededWithoutWarnings();
+    assertThat(compilation).generatedFile(StandardLocation.CLASS_OUTPUT, "testing.aero");
 
-    try (InputStream in = Files.newInputStream(CompilationUtils.outputFileOfProcessor(compilation))) {
+    //noinspection OptionalGetWithoutIsPresent
+    JavaFileObject file = compilation.generatedFile(StandardLocation.CLASS_OUTPUT, "testing.aero").get();
+    try (InputStream in = file.openInputStream()) {
       // the main class was only there during compile time - we expect the exception, but we then know that emitting
       // of the provides annotation was successful
       AerogelException thrown = Assertions.assertThrows(

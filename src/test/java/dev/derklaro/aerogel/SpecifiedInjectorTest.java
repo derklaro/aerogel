@@ -30,6 +30,22 @@ import org.junit.jupiter.api.Test;
 public class SpecifiedInjectorTest {
 
   @Test
+  void testNonSpecifiedParentLookup() {
+    Injector parent = Injector.newInjector();
+    SpecifiedInjector specified1 = parent.newSpecifiedInjector();
+    SpecifiedInjector specified2 = specified1.newSpecifiedInjector();
+
+    // assert the parent status
+    Assertions.assertNull(parent.parent());
+    Assertions.assertSame(parent, specified1.parent());
+    Assertions.assertSame(specified1, specified2.parent());
+
+    // get the non-specified parent from the chain
+    Assertions.assertSame(parent, specified1.firstNonSpecifiedParent());
+    Assertions.assertSame(parent, specified2.firstNonSpecifiedParent());
+  }
+
+  @Test
   void requestingInjectorFromSpecifiedReturnsSpecifiedInjector() {
     Injector injector = Injector.newInjector();
     SpecifiedInjector specified = injector.newSpecifiedInjector();

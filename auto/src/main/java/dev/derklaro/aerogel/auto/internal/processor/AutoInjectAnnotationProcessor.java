@@ -34,15 +34,12 @@ import dev.derklaro.aerogel.auto.internal.holder.FactoryAutoAnnotationEntry;
 import dev.derklaro.aerogel.auto.internal.holder.ProvidesAutoAnnotationEntry;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.file.FileSystemNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.OpenOption;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
@@ -55,6 +52,8 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
+import javax.tools.FileObject;
+import javax.tools.JavaFileManager;
 import javax.tools.StandardLocation;
 import org.jetbrains.annotations.NotNull;
 
@@ -67,60 +66,17 @@ import org.jetbrains.annotations.NotNull;
  */
 public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
 
-  // represents the open options used to emit the data of a successful processing round
-  private static final OpenOption[] OO = new OpenOption[]{
-    StandardOpenOption.APPEND,
-    StandardOpenOption.CREATE,
-    StandardOpenOption.WRITE};
   // the supported annotations of this processor
-  private static final Set<String> SUPPORTED_ANNOTATIONS = new HashSet<>(2);
+  private static final Set<String> SUPPORTED_ANNOTATIONS = Stream.of(Factory.class, Provides.class)
+    .map(Class::getCanonicalName)
+    .collect(Collectors.toSet());
 
-  static {
-    SUPPORTED_ANNOTATIONS.add(Factory.class.getCanonicalName());
-    SUPPORTED_ANNOTATIONS.add(Provides.class.getCanonicalName());
-  }
+  // output file config
+  private static final String OPTION_OUTPUT_FILE_NAME = "aerogelAutoFileName";
+  private static final JavaFileManager.Location OUTPUT_FILE_LOCATION = StandardLocation.CLASS_OUTPUT;
 
   // all the entries this processor has found so far
   private final Set<AutoAnnotationEntry> foundEntries = new HashSet<>();
-  // the uri of the file we want
-  private Path targetFile;
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public synchronized void init(ProcessingEnvironment processingEnv) {
-    // super to initialize the used 'processingEnv' field
-    super.init(processingEnv);
-    // open the target file object we want to write to
-    try {
-      // a little hacky to do it this way, but we can't access it in another good way (at least if found none)
-      this.targetFile = Paths.get(processingEnv.getFiler().createResource(
-        StandardLocation.CLASS_OUTPUT,
-        "",
-        "auto-factories.txt"
-      ).toUri());
-      // create a new file at the location if the file was not already created
-      if (Files.notExists(this.targetFile)) {
-        Files.createFile(this.targetFile);
-      }
-    } catch (FileSystemNotFoundException exception) {
-      // comes from the tests - ignore that
-      if (exception.getMessage().equals("Provider \"mem\" not installed")) {
-        // initialize a fake file
-        try {
-          this.targetFile = Files.createTempFile("auto-factories", null);
-          return; // do not re-throw the exception
-        } catch (IOException ex) {
-          throw AerogelException.forMessagedException("Unable to create target auto-factories.tmp file", ex);
-        }
-      }
-      // hm... notify the user about that
-      throw exception;
-    } catch (IOException exception) {
-      throw AerogelException.forMessagedException("Exception opening target class to write entries", exception);
-    }
-  }
 
   /**
    * {@inheritDoc}
@@ -129,6 +85,14 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
   public SourceVersion getSupportedSourceVersion() {
     // allows access to newer language level features than 6 & does not emit a warning during the compile process
     return SourceVersion.latestSupported();
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public Set<String> getSupportedOptions() {
+    return new HashSet<>(Collections.singleton(OPTION_OUTPUT_FILE_NAME));
   }
 
   /**
@@ -149,15 +113,21 @@ public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
       // ensure that there is data we need to emit
       if (!this.foundEntries.isEmpty()) {
         // the round is over - dump the current result and clear the cache
-        try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(this.targetFile, OO))) {
-          // emit every entry to the data output
-          for (AutoAnnotationEntry entry : this.foundEntries) {
-            entry.emit(out);
+        try {
+          // get the output file name & create the final file
+          String fileName = this.processingEnv.getOptions().getOrDefault(OPTION_OUTPUT_FILE_NAME, "auto-config.aero");
+          FileObject file = this.processingEnv.getFiler().createResource(OUTPUT_FILE_LOCATION, "", fileName);
+
+          // write the factory data
+          try (DataOutputStream out = new DataOutputStream(file.openOutputStream())) {
+            for (AutoAnnotationEntry entry : this.foundEntries) {
+              entry.emit(out);
+            }
+            // not necessary normal, just to be sure
+            this.foundEntries.clear();
           }
-          // ready for the next round
-          this.foundEntries.clear();
         } catch (IOException exception) {
-          throw AerogelException.forMessagedException("Exception opening output file " + this.targetFile, exception);
+          throw AerogelException.forMessagedException("Exception writing data to output file", exception);
         }
       }
       // never claim annotation so that other processors can visit them as well

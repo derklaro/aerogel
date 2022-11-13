@@ -24,22 +24,16 @@
 
 package dev.derklaro.aerogel.auto;
 
-import com.google.testing.compile.Compilation;
 import com.google.testing.compile.Compiler;
 import dev.derklaro.aerogel.auto.internal.processor.AutoInjectAnnotationProcessor;
-import java.lang.reflect.Field;
-import java.nio.file.Path;
 
-final class CompilationUtils {
+final class CompilationUtil {
+
+  private CompilationUtil() {
+    throw new UnsupportedOperationException();
+  }
 
   public static Compiler javacWithProcessor() {
     return Compiler.javac().withProcessors(new AutoInjectAnnotationProcessor());
-  }
-
-  public static Path outputFileOfProcessor(Compilation compilation) throws Exception {
-    Field field = AutoInjectAnnotationProcessor.class.getDeclaredField("targetFile");
-    field.setAccessible(true);
-
-    return (Path) field.get(compilation.compiler().processors().get(0));
   }
 }
