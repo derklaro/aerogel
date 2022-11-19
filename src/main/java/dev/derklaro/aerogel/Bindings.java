@@ -158,7 +158,7 @@ public interface Bindings {
     return injector -> {
       // check if the return type is a singleton
       boolean singleton = JakartaBridge.isSingleton(factoryMethod.getReturnType())
-        || JakartaBridge.isSingleton(factoryMethod.getDeclaringClass());
+        || JakartaBridge.isSingleton(factoryMethod);
       // create a new factory binding
       return new FactoryBindingHolder(
         Element.forType(factoryMethod.getGenericReturnType()),
