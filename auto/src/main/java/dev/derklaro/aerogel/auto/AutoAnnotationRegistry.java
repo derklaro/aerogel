@@ -47,7 +47,7 @@ public interface AutoAnnotationRegistry {
    *
    * @return a new default implementation instance.
    */
-  static @NotNull AutoAnnotationRegistry newInstance() {
+  static @NotNull AutoAnnotationRegistry newRegistry() {
     return new DefaultAutoAnnotationRegistry();
   }
 

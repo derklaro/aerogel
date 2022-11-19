@@ -106,7 +106,7 @@ public class FactoryProcessingTest {
       // of the factory method works as expected
       Exception thrown = Assertions.assertThrows(
         AerogelException.class,
-        () -> AutoAnnotationRegistry.newInstance().makeConstructors(in));
+        () -> AutoAnnotationRegistry.newRegistry().makeConstructors(in));
       // Ensures that:
       //   - the classes were found correctly
       //   - the parameters are in the correct order

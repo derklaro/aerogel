@@ -88,7 +88,7 @@ public class ProvidesProcessingTest {
       // of the provides annotation was successful
       AerogelException thrown = Assertions.assertThrows(
         AerogelException.class,
-        () -> AutoAnnotationRegistry.newInstance().makeConstructors(in));
+        () -> AutoAnnotationRegistry.newRegistry().makeConstructors(in));
 
       // check that the error came because the class is missing
       ClassNotFoundException cause = Assertions.assertInstanceOf(ClassNotFoundException.class, thrown.getCause());
