@@ -47,7 +47,11 @@ import dev.derklaro.aerogel.internal.utility.Preconditions;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.ClassVisitor;
@@ -56,12 +60,18 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 
 /**
- * An util for generating runtime proxies for interfaces instead of using reflection.
+ * A util for generating runtime proxies for interfaces instead of using reflection.
  *
  * @author Pasqual K.
  * @since 1.0
  */
 public final class InjectionTimeProxy {
+
+  // methods that we handle specifically
+  private static final Collection<String> IGNORED_METHODS = Arrays.asList(
+    "toString()Ljava/lang/String;",
+    "equals(Ljava/lang/Object;)Z",
+    "hashCode()I");
 
   private static final String PROXY_NAME_FORMAT = "%s$Proxy_%d";
   // stuff for the InjectionTimeProxied class
@@ -170,18 +180,8 @@ public final class InjectionTimeProxy {
     visitMethod(cw, TO_STRING, proxyName, Object.class, interType);
     visitMethod(cw, HASH_CODE, proxyName, Object.class, interType);
 
-    // visit each non-final method of the class and delegate it to the reference downstream when available
-    Class<?> clazz = interfaceClass;
-    do {
-      for (Method method : clazz.getDeclaredMethods()) {
-        // skip every static method - we can't override them
-        if (Modifier.isStatic(method.getModifiers())) {
-          continue;
-        }
-        // visit & implement the method
-        visitMethod(cw, method, proxyName, clazz, interType);
-      }
-    } while ((clazz = clazz.getSuperclass()) != null);
+    // visit the method & methods of the super interfaces of the class
+    visitAllMethods(cw, interfaceClass, proxyName, interType, new HashSet<>());
 
     // finish the class write & define
     cw.visitEnd();
@@ -195,6 +195,66 @@ public final class InjectionTimeProxy {
       return (T) ctx.newInstance();
     } catch (ReflectiveOperationException exception) {
       throw AerogelException.forException(exception);
+    }
+  }
+
+  /**
+   * Visits the methods of the given interface class, and recursively those of the super interfaces as well.
+   *
+   * @param cw             the class write of the current class.
+   * @param interfaceClass the interface class to visit the methods and super interfaces of.
+   * @param proxyName      the name of the proxy class we are creating.
+   * @param interType      the internal type of the interface class for which the proxy gets created.
+   * @param seenMethods    the signatures of all methods which were already implemented.
+   * @since 2.0
+   */
+  private static void visitAllMethods(
+    @NotNull ClassVisitor cw,
+    @NotNull Class<?> interfaceClass,
+    @NotNull String proxyName,
+    @NotNull Type interType,
+    @NotNull Set<String> seenMethods
+  ) {
+    // visit the methods of the interface
+    visitMethods(cw, interfaceClass, proxyName, interType, seenMethods);
+
+    // visit each non-final method of the class and delegate it to the reference downstream when available
+    Class<?>[] implementingInterfaces = interfaceClass.getInterfaces();
+    for (Class<?> clazz : implementingInterfaces) {
+      // visit the methods of the given class as well
+      visitAllMethods(cw, clazz, proxyName, interType, seenMethods);
+    }
+  }
+
+  /**
+   * Visits all methods of the given class and implements them using the given class writer. Methods which were already
+   * implemented or are ignored will be skipped.
+   *
+   * @param cw          the class write of the current class.
+   * @param clazz       the class to visit the methods of.
+   * @param proxyName   the name of the proxy class we are creating.
+   * @param interType   the internal type of the interface class for which the proxy gets created.
+   * @param seenMethods the signatures of all methods which were already implemented.
+   * @since 2.0
+   */
+  private static void visitMethods(
+    @NotNull ClassVisitor cw,
+    @NotNull Class<?> clazz,
+    @NotNull String proxyName,
+    @NotNull Type interType,
+    @NotNull Set<String> seenMethods
+  ) {
+    for (Method method : clazz.getDeclaredMethods()) {
+      // skip every static method - we can't override them
+      if (Modifier.isStatic(method.getModifiers())) {
+        continue;
+      }
+
+      // visit & implement the method if not already seen
+      String signature = String.format("%s%s", method.getName(), Type.getMethodDescriptor(method));
+      if (!IGNORED_METHODS.contains(signature) && seenMethods.add(signature)) {
+        visitMethod(cw, method, proxyName, clazz, interType);
+      }
     }
   }
 
