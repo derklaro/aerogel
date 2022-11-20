@@ -186,10 +186,11 @@ public final class DefaultInjectionContext implements InjectionContext {
     if (current != null) {
       // if the current known element is proxied assign it to the delegate handler
       if (current instanceof InjectionTimeProxy.InjectionTimeProxied) {
-        if (doInjectMembers) {
-          this.injectMembers(element, result); // inject before making the proxy available
-        }
+        // mark the proxy as available, in case it's needed during member injection
         ((InjectionTimeProxy.InjectionTimeProxied) current).setDelegate(result);
+        if (doInjectMembers) {
+          this.injectMembers(element, result);
+        }
       }
       // do not let an existing value reset the current injecting value...
       return;
