@@ -57,6 +57,7 @@ allprojects {
     "implementation"(rootProject.libs.asm)
 
     // testing
+    "testImplementation"(rootProject.libs.geantyref)
     "testImplementation"(rootProject.libs.bundles.junit)
     "testImplementation"(rootProject.libs.jakartaInjectTck)
   }

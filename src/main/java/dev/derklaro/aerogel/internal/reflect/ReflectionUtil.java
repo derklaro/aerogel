@@ -102,20 +102,20 @@ public final class ReflectionUtil {
    * @throws AerogelException if the type is a type variable or wildcard type.
    */
   public static @NotNull Class<?> rawType(@NotNull Type type) {
-    Type superType = genericSuperType(type);
-    // check if the type is a normal class
-    if (superType instanceof Class<?>) {
-      return (Class<?>) superType;
-    } else if (superType instanceof GenericArrayType) {
+    if (type instanceof Class<?>) {
+      // the given type is a normal class
+      return (Class<?>) type;
+    } else if (type instanceof GenericArrayType) {
       // unbox the component type, create an array of that type and use it's class
-      Class<?> genericType = rawType(((GenericArrayType) superType).getGenericComponentType());
+      Class<?> genericType = rawType(((GenericArrayType) type).getGenericComponentType());
       return Array.newInstance(genericType, 0).getClass();
-    } else if (superType instanceof ParameterizedType) {
+    } else if (type instanceof ParameterizedType) {
       // the raw type is always of type class - the internet is not sure why exactly this is a type
-      return (Class<?>) ((ParameterizedType) superType).getRawType();
+      return rawType(((ParameterizedType) type).getRawType());
     }
+
     // every other type implementation can not be exactly found - ignored them
-    throw AerogelException.forMessage("Unsupported type " + superType + " to unbox");
+    throw AerogelException.forMessage("Unsupported type " + type + " to unbox");
   }
 
   /**
