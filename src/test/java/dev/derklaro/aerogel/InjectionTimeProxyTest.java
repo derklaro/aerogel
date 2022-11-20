@@ -31,10 +31,19 @@ import org.junit.jupiter.api.Test;
 public class InjectionTimeProxyTest {
 
   @Test
+  @SuppressWarnings("ResultOfMethodCallIgnored")
   void testInjectionTimeProxyCreate() {
-    // create a proxy and set the delegate
+    // make a proxy and check if the method throws an exception as no delegate exists
     B proxy = InjectionTimeProxy.makeProxy(B.class);
-    Assertions.assertInstanceOf(InjectionTimeProxy.InjectionTimeProxied.class, proxy).setDelegate(new ABImpl());
+    Assertions.assertThrows(AerogelException.class, proxy::hashCode);
+
+    // validate that the delegate is not yet present
+    InjectionTimeProxy.InjectionTimeProxied proxied = (InjectionTimeProxy.InjectionTimeProxied) proxy;
+    Assertions.assertFalse(proxied.isDelegatePresent());
+
+    // set the delegate and validate again
+    proxied.setDelegate(new ABImpl());
+    Assertions.assertTrue(proxied.isDelegatePresent());
 
     String hello = Assertions.assertDoesNotThrow(proxy::a);
     Assertions.assertEquals("Hello", hello);

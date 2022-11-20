@@ -88,7 +88,13 @@ public abstract class AbstractBindingHolder implements BindingHolder {
   @Override
   public @Nullable Object get() {
     try {
-      return this.get(InjectionContext.builder().injector(this.injector).build());
+      // build the context & get the element
+      InjectionContext context = InjectionContext.builder().injector(this.injector).build();
+      Object constructedValue = this.get(context);
+
+      // ensure the construction finished successfully and return the value
+      context.ensureComplete();
+      return constructedValue;
     } catch (Throwable throwable) {
       throw AerogelException.forMessagedException("Unable to get bound type of " + this, throwable);
     }

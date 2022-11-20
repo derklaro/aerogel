@@ -112,6 +112,14 @@ public interface InjectionContext {
   void constructDone(@NotNull Element element, @Nullable Object result, boolean doInjectMembers);
 
   /**
+   * Ensures that the construction of the current element has fully finished throwing an exception if not.
+   *
+   * @throws AerogelException if the construction is not yet done.
+   * @since 2.0
+   */
+  void ensureComplete();
+
+  /**
    * A builder for an {@link InjectionContext}.
    *
    * @author Pasqual K.

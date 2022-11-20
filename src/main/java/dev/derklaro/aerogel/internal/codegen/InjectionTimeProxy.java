@@ -35,6 +35,7 @@ import static org.objectweb.asm.Opcodes.ICONST_1;
 import static org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
+import static org.objectweb.asm.Opcodes.IRETURN;
 import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_8;
@@ -75,6 +76,7 @@ public final class InjectionTimeProxy {
 
   private static final String PROXY_NAME_FORMAT = "%s$Proxy_%d";
   // stuff for the InjectionTimeProxied class
+  private static final String IS_DELEGATE_PRESENT_DESC = AsmUtils.methodDesc(boolean.class);
   private static final String SET_DELEGATE_DESC = AsmUtils.methodDesc(void.class, Object.class);
   private static final String INJECTION_TIME_NAME = Type.getInternalName(InjectionTimeProxied.class);
   // stuff for the Preconditions class
@@ -154,6 +156,17 @@ public final class InjectionTimeProxy {
     mv.visitFieldInsn(PUTFIELD, proxyName, "knowsDelegate", Type.BOOLEAN_TYPE.getDescriptor());
     // finish the method
     mv.visitInsn(RETURN);
+    mv.visitMaxs(0, 0);
+    mv.visitEnd();
+
+    // visit the isDelegatePresent method
+    mv = cw.visitMethod(ACC_PUBLIC, "isDelegatePresent", IS_DELEGATE_PRESENT_DESC, null, null);
+    mv.visitCode();
+    // get the boolean field value
+    mv.visitVarInsn(ALOAD, 0);
+    mv.visitFieldInsn(GETFIELD, proxyName, "knowsDelegate", Type.BOOLEAN_TYPE.getDescriptor());
+    mv.visitInsn(IRETURN);
+    // finish the method
     mv.visitMaxs(0, 0);
     mv.visitEnd();
 
@@ -318,7 +331,6 @@ public final class InjectionTimeProxy {
    * @author Pasqual K.
    * @since 1.0
    */
-  @FunctionalInterface
   public interface InjectionTimeProxied {
 
     /**
@@ -327,5 +339,13 @@ public final class InjectionTimeProxy {
      * @param delegate the delegate instance to use for the current proxy.
      */
     void setDelegate(@Nullable Object delegate);
+
+    /**
+     * Checks if the delegate value is set.
+     *
+     * @return true if the delegate for this proxy is set, false otherwise.
+     * @since 2.0
+     */
+    boolean isDelegatePresent();
   }
 }
