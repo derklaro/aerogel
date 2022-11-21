@@ -36,6 +36,7 @@ import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.internal.asm.AsmPrimitives;
 import dev.derklaro.aerogel.internal.asm.AsmUtils;
 import java.lang.reflect.Method;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -46,6 +47,7 @@ import org.objectweb.asm.MethodVisitor;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
 public final class FactoryMethodInstanceMaker {
 
   private static final String PROXY_CLASS_NAME_FORMAT = "%s$Invoker_%s_%d";

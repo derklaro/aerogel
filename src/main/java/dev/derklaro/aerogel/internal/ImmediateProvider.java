@@ -25,6 +25,7 @@
 package dev.derklaro.aerogel.internal;
 
 import dev.derklaro.aerogel.Provider;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -34,6 +35,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
 public final class ImmediateProvider<T> implements Provider<T> {
 
   private final T provided;

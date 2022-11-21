@@ -26,6 +26,7 @@ package dev.derklaro.aerogel;
 
 import java.lang.annotation.Annotation;
 import java.util.function.Predicate;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -44,6 +45,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.STABLE, since = "1.0")
 public interface AnnotationPredicate<A extends Annotation> extends Predicate<A> {
 
   /**

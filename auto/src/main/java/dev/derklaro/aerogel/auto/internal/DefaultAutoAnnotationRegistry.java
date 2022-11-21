@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 
@@ -52,6 +53,7 @@ import org.jetbrains.annotations.UnmodifiableView;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.auto")
 public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegistry {
 
   private final Map<String, AutoAnnotationEntry> entries = MapUtil.newConcurrentMap();

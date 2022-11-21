@@ -25,6 +25,7 @@
 package dev.derklaro.aerogel.internal.utility;
 
 import dev.derklaro.aerogel.AerogelException;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -33,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
 public final class Preconditions {
 
   private Preconditions() {

@@ -27,6 +27,7 @@ package dev.derklaro.aerogel.internal.unsafe;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.util.Objects;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -35,6 +36,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 2.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
 public final class UnsafeMemberAccess {
 
   // marker object to retrieve the override boolean field

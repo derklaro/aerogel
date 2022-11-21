@@ -28,6 +28,7 @@ import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.Inject;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import java.lang.reflect.Constructor;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -36,6 +37,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
 public final class InjectionClassLookup {
 
   private InjectionClassLookup() {

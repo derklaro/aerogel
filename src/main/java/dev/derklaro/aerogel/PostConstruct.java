@@ -29,6 +29,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.apiguardian.api.API;
 
 /**
  * The post construct annotation can be placed on an instance method (non-static) which needs to be executed after the
@@ -65,6 +66,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
+@API(status = API.Status.STABLE, since = "2.0")
 public @interface PostConstruct {
 
 }

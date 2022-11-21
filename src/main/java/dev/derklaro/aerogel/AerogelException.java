@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel;
 
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.STABLE, since = "1.0")
 public final class AerogelException extends RuntimeException {
 
   private final boolean allowStackTrace;

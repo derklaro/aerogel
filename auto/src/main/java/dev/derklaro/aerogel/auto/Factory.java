@@ -31,6 +31,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.apiguardian.api.API;
 
 /**
  * Binds the annotated method as a factory method for the return type of the method. Arguments supplied to the factory
@@ -45,6 +46,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
+@API(status = API.Status.STABLE, since = "1.0")
 public @interface Factory {
 
 }

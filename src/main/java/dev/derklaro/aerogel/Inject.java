@@ -29,6 +29,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.apiguardian.api.API;
 
 /**
  * Represents the main injection marker during the runtime for {@link Injector}s. This annotation can be added to the
@@ -57,6 +58,7 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.FIELD})
+@API(status = API.Status.STABLE, since = "1.0")
 public @interface Inject {
 
   /**

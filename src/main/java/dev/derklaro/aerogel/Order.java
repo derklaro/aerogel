@@ -29,6 +29,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.apiguardian.api.API;
 
 /**
  * The order annotation can be used to configure the order in which method injection happens. If the annotation is not
@@ -43,6 +44,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
+@API(status = API.Status.STABLE, since = "2.0")
 public @interface Order {
 
   /**

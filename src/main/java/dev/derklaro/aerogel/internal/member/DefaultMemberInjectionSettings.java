@@ -25,6 +25,7 @@
 package dev.derklaro.aerogel.internal.member;
 
 import dev.derklaro.aerogel.MemberInjectionSettings;
+import org.apiguardian.api.API;
 
 /**
  * A default implementation of {@link MemberInjectionSettings}.
@@ -32,6 +33,7 @@ import dev.derklaro.aerogel.MemberInjectionSettings;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
 final class DefaultMemberInjectionSettings implements MemberInjectionSettings {
 
   private final boolean injectPrivateMethods;

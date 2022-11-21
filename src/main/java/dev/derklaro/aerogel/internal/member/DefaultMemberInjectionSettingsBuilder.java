@@ -25,6 +25,7 @@
 package dev.derklaro.aerogel.internal.member;
 
 import dev.derklaro.aerogel.MemberInjectionSettings;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -33,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
 public final class DefaultMemberInjectionSettingsBuilder implements MemberInjectionSettings.Builder {
 
   private boolean injectPrivateMethods = true;

@@ -61,7 +61,7 @@ public class FactoryProcessingTest {
 
     Compilation compilation = CompilationUtil.javacWithProcessor().compile(toCompile);
     assertThat(compilation).succeeded();
-    assertThat(compilation).hadWarningCount(1);
+    assertThat(compilation).hadWarningCount(5);
     assertThat(compilation).hadWarningContaining("Factory method helloWorld must be static");
   }
 
@@ -73,7 +73,7 @@ public class FactoryProcessingTest {
 
     Compilation compilation = CompilationUtil.javacWithProcessor().compile(toCompile);
     assertThat(compilation).succeeded();
-    assertThat(compilation).hadWarningCount(1);
+    assertThat(compilation).hadWarningCount(5);
     assertThat(compilation)
       .hadWarningContaining("Factory method helloWorld returns void but an actual type is expected");
   }
@@ -96,7 +96,7 @@ public class FactoryProcessingTest {
       .build("testing");
 
     Compilation compilation = CompilationUtil.javacWithProcessor().compile(toCompile);
-    assertThat(compilation).succeededWithoutWarnings();
+    assertThat(compilation).hadWarningCount(4);
     assertThat(compilation).generatedFile(StandardLocation.CLASS_OUTPUT, "auto-config.aero");
 
     //noinspection OptionalGetWithoutIsPresent

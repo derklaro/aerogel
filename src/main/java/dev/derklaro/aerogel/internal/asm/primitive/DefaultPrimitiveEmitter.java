@@ -25,6 +25,7 @@
 package dev.derklaro.aerogel.internal.asm.primitive;
 
 import dev.derklaro.aerogel.internal.asm.AsmUtils;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -36,7 +37,8 @@ import org.objectweb.asm.Type;
  * @author Pasqual K.
  * @since 1.0
  */
-public class DefaultPrimitiveEmitter implements PrimitiveEmitter {
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal.asm")
+public final class DefaultPrimitiveEmitter implements PrimitiveEmitter {
 
   private final String wrapperClass;
   private final String boxingDescriptor;

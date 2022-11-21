@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel.internal.utility;
 
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual K.
  * @since 2.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
 public final class NullMask {
 
   /**

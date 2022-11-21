@@ -28,6 +28,7 @@ import dev.derklaro.aerogel.AerogelException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import sun.misc.Unsafe;
 
@@ -39,6 +40,7 @@ import sun.misc.Unsafe;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal.unsafe")
 final class UnsafeClassDefiner implements ClassDefiner {
 
   private static final MethodHandle DEFINE_HANDLE;

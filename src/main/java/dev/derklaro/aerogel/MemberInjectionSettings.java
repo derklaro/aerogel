@@ -25,6 +25,7 @@
 package dev.derklaro.aerogel;
 
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjectionSettingsBuilder;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.STABLE, since = "1.0")
 public interface MemberInjectionSettings {
 
   /**

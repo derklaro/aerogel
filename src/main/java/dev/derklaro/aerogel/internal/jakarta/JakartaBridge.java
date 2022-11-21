@@ -32,6 +32,7 @@ import dev.derklaro.aerogel.Singleton;
 import jakarta.inject.Named;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
 public final class JakartaBridge {
 
   private JakartaBridge() {

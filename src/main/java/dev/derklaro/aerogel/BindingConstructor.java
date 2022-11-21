@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel;
 
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -36,6 +37,7 @@ import org.jetbrains.annotations.NotNull;
  * @since 1.0
  */
 @FunctionalInterface
+@API(status = API.Status.STABLE, since = "1.0")
 public interface BindingConstructor {
 
   /**

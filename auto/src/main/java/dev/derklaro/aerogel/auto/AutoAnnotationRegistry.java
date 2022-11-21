@@ -31,6 +31,7 @@ import dev.derklaro.aerogel.auto.internal.DefaultAutoAnnotationRegistry;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 
@@ -40,6 +41,7 @@ import org.jetbrains.annotations.UnmodifiableView;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.STABLE, since = "1.0")
 public interface AutoAnnotationRegistry {
 
   /**

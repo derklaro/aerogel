@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel.internal.asm.primitive;
 
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.MethodVisitor;
 
@@ -33,6 +34,7 @@ import org.objectweb.asm.MethodVisitor;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal.asm")
 public interface PrimitiveEmitter {
 
   /**

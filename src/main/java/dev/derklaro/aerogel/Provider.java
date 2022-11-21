@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
@@ -72,6 +73,7 @@ import org.jetbrains.annotations.UnknownNullability;
  * @since 1.0
  */
 @FunctionalInterface
+@API(status = API.Status.STABLE, since = "1.0")
 public interface Provider<T> extends Supplier<T> {
 
   /**

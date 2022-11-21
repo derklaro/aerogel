@@ -27,6 +27,7 @@ package dev.derklaro.aerogel.auto.internal.utility;
 import dev.derklaro.aerogel.internal.utility.MapUtil;
 import java.lang.reflect.Array;
 import java.util.Map;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -35,6 +36,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.auto.internal")
 public final class ClassLoadingUtil {
 
   private static final Map<String, Class<?>> PRIMITIVE_CLASSES = MapUtil.staticMap(8, map -> {

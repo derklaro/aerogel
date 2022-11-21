@@ -29,6 +29,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Set;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -38,6 +39,7 @@ import org.jetbrains.annotations.Unmodifiable;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.STABLE, since = "1.0")
 public interface AutoAnnotationEntry {
 
   /**

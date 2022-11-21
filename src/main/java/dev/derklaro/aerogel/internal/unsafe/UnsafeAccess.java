@@ -27,6 +27,7 @@ package dev.derklaro.aerogel.internal.unsafe;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
+import org.apiguardian.api.API;
 import sun.misc.Unsafe;
 
 /**
@@ -35,6 +36,7 @@ import sun.misc.Unsafe;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal.unsafe")
 final class UnsafeAccess {
 
   /**

@@ -24,12 +24,15 @@
 
 package dev.derklaro.aerogel.internal.member;
 
+import org.apiguardian.api.API;
+
 /**
  * A collection of all member types which are static and injectable.
  *
  * @author Pasqual K.
  * @since 2.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal.member")
 enum MemberType {
 
   /**

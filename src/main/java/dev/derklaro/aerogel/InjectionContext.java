@@ -26,6 +26,7 @@ package dev.derklaro.aerogel;
 
 import dev.derklaro.aerogel.internal.context.DefaultInjectionContextBuilder;
 import java.util.Map;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +39,7 @@ import org.jetbrains.annotations.Unmodifiable;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.STABLE, since = "1.0")
 public interface InjectionContext {
 
   /**

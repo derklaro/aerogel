@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel.internal.codegen;
 
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -32,6 +33,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual K.
  * @since 2.0
  */
+@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal")
 public final class InstanceCreateResult {
 
   private final Object result;

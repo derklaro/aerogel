@@ -26,6 +26,7 @@ package dev.derklaro.aerogel.internal.unsafe;
 
 import dev.derklaro.aerogel.internal.utility.MapUtil;
 import java.util.Map;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -37,6 +38,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal.unsafe")
 final class FallbackClassDefiner implements ClassDefiner {
 
   /**

@@ -26,6 +26,7 @@ package dev.derklaro.aerogel.internal.utility;
 
 import dev.derklaro.aerogel.internal.codegen.InstanceCreateResult;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,6 +37,7 @@ import org.jetbrains.annotations.Nullable;
  * @since 2.0
  */
 @SuppressWarnings("unused") // called from generated source code
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
 public final class ReferenceUtil {
 
   private ReferenceUtil() {

@@ -25,6 +25,7 @@
 package dev.derklaro.aerogel.internal.unsafe;
 
 import dev.derklaro.aerogel.AerogelException;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -34,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
  * @since 1.0
  */
 @FunctionalInterface
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
 public interface ClassDefiner {
 
   /**

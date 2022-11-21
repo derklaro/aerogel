@@ -28,6 +28,7 @@ import dev.derklaro.aerogel.BindingConstructor;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.internal.binding.ImmediateBindingHolder;
+import org.apiguardian.api.API;
 
 /**
  * A utility class which makes it easier to work with injector bindings.
@@ -35,6 +36,7 @@ import dev.derklaro.aerogel.internal.binding.ImmediateBindingHolder;
  * @author Pasqual K.
  * @since 2.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
 public final class InjectorUtil {
 
   /**

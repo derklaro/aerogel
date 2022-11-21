@@ -36,6 +36,7 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -44,6 +45,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 1.0.1
  */
+@API(status = API.Status.INTERNAL, since = "1.0.1", consumers = "dev.derklaro.aerogel.auto.internal")
 public final class TypeUtil {
 
   /**

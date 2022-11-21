@@ -30,6 +30,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import org.apiguardian.api.API;
 
 /**
  * Identifies qualifier annotations. These annotations are used for annotation matching in an {@link Injector}. See
@@ -78,6 +79,7 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.ANNOTATION_TYPE)
+@API(status = API.Status.STABLE, since = "1.0")
 public @interface Qualifier {
 
 }

@@ -49,7 +49,7 @@ public class ProvidesProcessingTest {
 
     Compilation compilation = CompilationUtil.javacWithProcessor().compile(toCompile);
     assertThat(compilation).succeeded();
-    assertThat(compilation).hadWarningCount(1);
+    assertThat(compilation).hadWarningCount(5);
     assertThat(compilation).hadWarningContaining("Providing class Main provides nothing");
   }
 
@@ -62,7 +62,7 @@ public class ProvidesProcessingTest {
 
     Compilation compilation = CompilationUtil.javacWithProcessor().compile(toCompile);
     assertThat(compilation).succeeded();
-    assertThat(compilation).hadWarningCount(1);
+    assertThat(compilation).hadWarningCount(5);
     assertThat(compilation).hadWarningContaining("Binding class Main must not be abstract");
   }
 
@@ -78,7 +78,7 @@ public class ProvidesProcessingTest {
     Compilation compilation = CompilationUtil.javacWithProcessor()
       .withOptions("-AaerogelAutoFileName=testing.aero")
       .compile(toCompile);
-    assertThat(compilation).succeededWithoutWarnings();
+    assertThat(compilation).hadWarningCount(7);
     assertThat(compilation).generatedFile(StandardLocation.CLASS_OUTPUT, "testing.aero");
 
     //noinspection OptionalGetWithoutIsPresent

@@ -37,6 +37,7 @@ import dev.derklaro.aerogel.internal.asm.primitive.DefaultPrimitiveEmitter;
 import dev.derklaro.aerogel.internal.asm.primitive.PrimitiveEmitter;
 import dev.derklaro.aerogel.internal.utility.MapUtil;
 import java.util.Map;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
@@ -47,6 +48,7 @@ import org.objectweb.asm.Type;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
 public final class AsmPrimitives {
 
   /**
