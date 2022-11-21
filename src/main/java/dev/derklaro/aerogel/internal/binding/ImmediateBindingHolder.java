@@ -27,6 +27,7 @@ package dev.derklaro.aerogel.internal.binding;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,8 +35,10 @@ import org.jetbrains.annotations.Nullable;
  * A binding holder which always returns the same instance of an object.
  *
  * @author Pasqual K.
+ * @see dev.derklaro.aerogel.Bindings#fixed(Element, Object)
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
 public final class ImmediateBindingHolder extends AbstractBindingHolder {
 
   private final Object result;
@@ -66,11 +69,7 @@ public final class ImmediateBindingHolder extends AbstractBindingHolder {
   @SuppressWarnings("unchecked")
   public <T> @Nullable T get(@NotNull InjectionContext context) {
     // just notify that this is done
-    for (int i = 0; i < this.targetType.length; i++) {
-      context.constructDone(this.targetType[i], this.result, i == 0 && !this.didMemberInjection);
-    }
-    context.constructDone(this.bindingType, this.result, false);
-    // mark that we did member injection
+    this.callConstructDone(context, this.result, !this.didMemberInjection);
     this.didMemberInjection = true;
     // return
     return (T) this.result;

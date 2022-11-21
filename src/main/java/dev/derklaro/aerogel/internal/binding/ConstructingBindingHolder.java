@@ -26,29 +26,26 @@ package dev.derklaro.aerogel.internal.binding;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.ProvidedBy;
 import dev.derklaro.aerogel.internal.codegen.ClassInstanceMaker;
-import dev.derklaro.aerogel.internal.codegen.InstanceCreateResult;
-import dev.derklaro.aerogel.internal.codegen.InstanceMaker;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.InjectionClassLookup;
 import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
 import java.lang.reflect.Constructor;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * A binding holder which uses class construction based on a class constructor.
  *
  * @author Pasqual K.
+ * @see dev.derklaro.aerogel.Bindings#constructing(Element)
  * @since 1.0
  */
-public final class ConstructingBindingHolder extends AbstractBindingHolder {
-
-  private final InstanceMaker constructor;
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
+public final class ConstructingBindingHolder extends InstanceMakerBindingHolder {
 
   /**
    * Creates a new constructing binding instance.
@@ -66,8 +63,11 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     boolean shouldBeSingleton,
     @NotNull Element... targetType
   ) {
-    super(targetType, bindingType, injector);
-    this.constructor = ClassInstanceMaker.forConstructor(bindingType, injectionPoint, shouldBeSingleton);
+    super(
+      targetType,
+      bindingType,
+      injector,
+      ClassInstanceMaker.forConstructor(bindingType, injectionPoint, shouldBeSingleton));
   }
 
   /**
@@ -119,22 +119,5 @@ public final class ConstructingBindingHolder extends AbstractBindingHolder {
     Constructor<?> injectionPoint = InjectionClassLookup.findInjectableConstructor(type);
     // create the holder
     return new ConstructingBindingHolder(bound, injector, injectionPoint, singleton, element);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public <T> @Nullable T get(@NotNull InjectionContext context) {
-    // construct the value
-    InstanceCreateResult result = this.constructor.getInstance(context);
-    T constructedValue = result.constructedValue();
-    // push the construction done notice to the context
-    for (int i = 0, typeLength = this.targetType.length; i < typeLength; i++) {
-      context.constructDone(this.targetType[i], constructedValue, i == 0 && result.doMemberInjection());
-    }
-    context.constructDone(this.bindingType, constructedValue, false);
-    // return
-    return constructedValue;
   }
 }

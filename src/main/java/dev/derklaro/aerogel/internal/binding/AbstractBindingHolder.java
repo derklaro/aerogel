@@ -30,6 +30,7 @@ import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import java.util.Objects;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual K.
  * @since 1.0
  */
+@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
 public abstract class AbstractBindingHolder implements BindingHolder {
 
   protected final Injector injector;
@@ -98,5 +100,17 @@ public abstract class AbstractBindingHolder implements BindingHolder {
     } catch (Throwable throwable) {
       throw AerogelException.forMessagedException("Unable to get bound type of " + this, throwable);
     }
+  }
+
+  protected void callConstructDone(
+    @NotNull InjectionContext context,
+    @Nullable Object constructed,
+    boolean injectMembers
+  ) {
+    // call the construct done method for all target types, inject members only once (on the first element)
+    for (int i = 0, typeLength = this.targetType.length; i < typeLength; i++) {
+      context.constructDone(this.targetType[i], constructed, i == 0 && injectMembers);
+    }
+    context.constructDone(this.bindingType, constructed, false);
   }
 }

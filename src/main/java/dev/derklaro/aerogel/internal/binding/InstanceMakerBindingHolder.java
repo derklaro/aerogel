@@ -25,38 +25,53 @@
 package dev.derklaro.aerogel.internal.binding;
 
 import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.internal.codegen.FactoryMethodInstanceMaker;
-import java.lang.reflect.Method;
+import dev.derklaro.aerogel.internal.codegen.InstanceCreateResult;
+import dev.derklaro.aerogel.internal.codegen.InstanceMaker;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * A binding which gets instances from a factory method which constructs it.
+ * A specialized abstract binding holder which is based on a backing instance factory.
  *
  * @author Pasqual K.
- * @see dev.derklaro.aerogel.Bindings#factory(Method)
- * @since 1.0
+ * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
-public final class FactoryBindingHolder extends InstanceMakerBindingHolder {
+@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.binding")
+abstract class InstanceMakerBindingHolder extends AbstractBindingHolder {
+
+  protected final InstanceMaker instanceMaker;
 
   /**
-   * Constructs a new factory binding holder.
+   * Constructs a new binding holder which holds an instance factory of any kind.
    *
-   * @param binding           the type to which the given type is bound.
-   * @param injector          the injector to which this binding was bound.
-   * @param factoryMethod     the factory method to use to construct the instances.
-   * @param shouldBeSingleton if the result of the factory call should be a singleton object.
-   * @param type              the type of the binding.
+   * @param type          the type of the binding.
+   * @param binding       the type to which the given type is bound.
+   * @param injector      the injector to which this binding was bound.
+   * @param instanceMaker the instance factory to use.
    */
-  public FactoryBindingHolder(
+  public InstanceMakerBindingHolder(
+    @NotNull Element[] type,
     @NotNull Element binding,
     @NotNull Injector injector,
-    @NotNull Method factoryMethod,
-    boolean shouldBeSingleton,
-    @NotNull Element... type
+    @NotNull InstanceMaker instanceMaker
   ) {
-    super(type, binding, injector, FactoryMethodInstanceMaker.forMethod(binding, factoryMethod, shouldBeSingleton));
+    super(type, binding, injector);
+    this.instanceMaker = instanceMaker;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public <T> @Nullable T get(@NotNull InjectionContext context) {
+    // construct the value
+    InstanceCreateResult result = this.instanceMaker.getInstance(context);
+    T constructedValue = result.constructedValue();
+    // push the construction done notice to the context
+    this.callConstructDone(context, constructedValue, result.doMemberInjection());
+    return constructedValue;
   }
 }
