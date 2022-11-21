@@ -77,6 +77,26 @@ final class ElementStack {
   }
 
   /**
+   * Removes the given element from the underlying stack.
+   *
+   * @param element the element to remove.
+   * @since 2.0
+   */
+  public void take(@NotNull Element element) {
+    this.stack.remove(element);
+  }
+
+  /**
+   * Get if the underlying stack has no elements.
+   *
+   * @return true if the stack is empty, false otherwise.
+   * @since 2.0
+   */
+  public boolean empty() {
+    return this.stack.isEmpty();
+  }
+
+  /**
    * Searches through the whole stack for the first element which matches the given {@code filter}.
    *
    * @param filter the filter applied to each element in the stack.

@@ -40,8 +40,8 @@ public class CircularDependencyTest {
     Assertions.assertNotNull(mainClass.api1.main());
     Assertions.assertNotNull(mainClass.randomHolder);
 
-    Assertions.assertSame(mainClass.api1, mainClass.api2);
-    Assertions.assertSame(mainClass, mainClass.api1.main());
+    Assertions.assertNotSame(mainClass.api1, mainClass.api2);
+    Assertions.assertNotSame(mainClass, mainClass.api1.main());
   }
 
   @Test

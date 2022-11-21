@@ -34,7 +34,6 @@ import dev.derklaro.aerogel.internal.utility.NullMask;
 import dev.derklaro.aerogel.internal.utility.Preconditions;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
@@ -60,7 +59,7 @@ public final class DefaultInjectionContext implements InjectionContext {
   private static final Element INJECTION_CONTEXT_ELEMENT = Element.forType(InjectionContext.class);
 
   private final Injector injector;
-  private final ElementStack elementStack;
+  private final ElementStack trackingStack;
   private final Map<Element, Object> knownTypes;
   private final Map<Element, Object> overriddenTypes;
 
@@ -77,7 +76,7 @@ public final class DefaultInjectionContext implements InjectionContext {
    */
   public DefaultInjectionContext(@NotNull Injector injector, @NotNull Map<Element, Object> overriddenTypes) {
     this.injector = injector;
-    this.elementStack = new ElementStack();
+    this.trackingStack = new ElementStack();
 
     this.knownTypes = new HashMap<>();
     this.overriddenTypes = new HashMap<>(overriddenTypes);
@@ -142,9 +141,9 @@ public final class DefaultInjectionContext implements InjectionContext {
     // construction - we need to try to tackle that)
     if (this.currentElement == null) {
       this.currentElement = element;
-    } else if (this.elementStack.has(element)) {
+    } else if (this.trackingStack.has(element)) {
       // check for an element in the stack which is proxyable if we already travelled over this element
-      Element proxyable = this.elementStack.filter(stackElement -> {
+      Element proxyable = this.trackingStack.filter(stackElement -> {
         // check if the component type is a class - only then we can check for a proxyable type
         if (stackElement.componentType() instanceof Class<?>) {
           // only interfaces can be proxied - every other proxy may be unsafe because of required constructor arguments
@@ -157,7 +156,7 @@ public final class DefaultInjectionContext implements InjectionContext {
         throw AerogelException.forMessageWithoutStack(String.format(
           "Unable to construct element %s because there is no type on the path which can be proxied: %s",
           element,
-          this.elementStack.dumpWalkingStack(element)));
+          this.trackingStack.dumpWalkingStack(element)));
       }
       // check if a type is already known - no proxy needed
       if (!this.knownTypes.containsKey(proxyable)) {
@@ -166,7 +165,7 @@ public final class DefaultInjectionContext implements InjectionContext {
       }
     }
     // push the element we want to construct to the stack
-    this.elementStack.push(element);
+    this.trackingStack.push(element);
     try {
       // no cached instance yet - fall back to a binding of the injector
       return this.injector.binding(element).get(this);
@@ -192,51 +191,26 @@ public final class DefaultInjectionContext implements InjectionContext {
         if (doInjectMembers) {
           this.injectMembers(element, result);
         }
-
-        // remove the element from the stack if we're done
-        if (this.currentElement == null) {
-          this.knownTypes.remove(element);
-        }
       }
-
-      // do not let an existing value reset the current injecting value
-      return;
     } else {
       // do not store proxies as they should be stored after creation and never get injected or used by anyone else
       Preconditions.checkArgument(
         !(result instanceof InjectionTimeProxy.InjectionTimeProxied),
         "Unable to store a proxy handler instance");
-      // store to the known types as there is no reference yet if we are currently still constructing
-      if (this.currentElement != null) {
-        this.knownTypes.put(element, result);
-      }
+
       // check if we should run the member injection
       if (doInjectMembers) {
         this.injectMembers(element, result); // inject after storing to prevent infinite loops
       }
     }
 
-    // dry the stack if we constructed the element we were working on
-    if (this.currentElement == null || this.currentElement.equals(element)) {
-      // remove all elements expect incomplete proxies
-      Iterator<Object> elementIterator = this.knownTypes.values().iterator();
-      while (elementIterator.hasNext()) {
-        // remove the element if it not a proxy or the proxy is complete
-        Object next = elementIterator.next();
-        if (!(next instanceof InjectionTimeProxy.InjectionTimeProxied)) {
-          elementIterator.remove();
-          continue;
-        }
+    // remove the constructed element from the tracking stack
+    this.trackingStack.take(element);
 
-        // check if the proxy is complete
-        InjectionTimeProxy.InjectionTimeProxied proxy = (InjectionTimeProxy.InjectionTimeProxied) next;
-        if (proxy.isDelegatePresent()) {
-          elementIterator.remove();
-        }
-      }
-
-      // reset the element so that the next element will be pushed as the current one when calling findInstance
-      this.elementStack.dry();
+    // the stack is empty, as all injection steps were done successfully and there are no pending injection proxies
+    if (this.trackingStack.empty() && !this.hasIncompleteProxy()) {
+      this.knownTypes.clear();
+      this.trackingStack.dry();
       this.currentElement = null;
     }
   }
@@ -246,12 +220,25 @@ public final class DefaultInjectionContext implements InjectionContext {
    */
   @Override
   public void ensureComplete() {
+    Preconditions.checkArgument(!this.hasIncompleteProxy(), "Proxy without delegate is still present");
+  }
+
+  /**
+   * Gets if this stack has created an injection proxy which has no delegate available yet.
+   *
+   * @return true if there are incomplete proxies, false otherwise.
+   * @since 2.0
+   */
+  private boolean hasIncompleteProxy() {
     for (Object value : this.knownTypes.values()) {
       if (value instanceof InjectionTimeProxy.InjectionTimeProxied) {
         InjectionTimeProxy.InjectionTimeProxied proxied = (InjectionTimeProxy.InjectionTimeProxied) value;
-        Preconditions.checkArgument(proxied.isDelegatePresent(), "Proxy without delegate is still present");
+        if (!proxied.isDelegatePresent()) {
+          return true;
+        }
       }
     }
+    return false;
   }
 
   /**
