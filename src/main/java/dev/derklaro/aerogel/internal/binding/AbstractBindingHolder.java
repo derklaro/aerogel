@@ -29,7 +29,11 @@ import dev.derklaro.aerogel.BindingHolder;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.internal.context.holder.InjectionContextHolder;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Set;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,6 +50,7 @@ public abstract class AbstractBindingHolder implements BindingHolder {
   protected final Injector injector;
   protected final Element[] targetType;
   protected final Element bindingType;
+  protected final Element[] constructedElements;
 
   /**
    * Constructs a new abstract binding holder.
@@ -58,6 +63,11 @@ public abstract class AbstractBindingHolder implements BindingHolder {
     this.targetType = Objects.requireNonNull(type, "Target type is required to construct");
     this.bindingType = Objects.requireNonNull(binding, "Binding type is required to construct");
     this.injector = Objects.requireNonNull(injector, "The parent injector is required to construct");
+
+    // collect the elements which are constructed by this binding
+    Set<Element> constructedElements = new LinkedHashSet<>(Arrays.asList(type));
+    constructedElements.add(binding);
+    this.constructedElements = constructedElements.toArray(new Element[0]);
   }
 
   /**
@@ -90,27 +100,46 @@ public abstract class AbstractBindingHolder implements BindingHolder {
   @Override
   public @Nullable Object get() {
     try {
-      // build the context & get the element
-      InjectionContext context = InjectionContext.builder().injector(this.injector).build();
+      // enter the current context & get the element
+      InjectionContext context = InjectionContextHolder.enter(this.injector);
       Object constructedValue = this.get(context);
 
-      // ensure the construction finished successfully and return the value
-      context.ensureComplete();
+      // leave the context & ensure we're done when if we released the context
+      if (InjectionContextHolder.leave()) {
+        context.ensureComplete();
+      }
+
+      // return the value
       return constructedValue;
     } catch (Throwable throwable) {
+      // force leave the current injection context and re-throw the exception
+      InjectionContextHolder.forceLeave();
       throw AerogelException.forMessagedException("Unable to get bound type of " + this, throwable);
     }
   }
 
+  /**
+   * Calls the construct done method on the given context for all bindings types of this binding.
+   *
+   * @param context       the context to call the construct done indication to.
+   * @param constructed   the value that was constructed.
+   * @param injectMembers if member injection should be done for the constructed value.
+   * @since 2.0
+   */
   protected void callConstructDone(
     @NotNull InjectionContext context,
     @Nullable Object constructed,
     boolean injectMembers
   ) {
-    // call the construct done method for all target types, inject members only once (on the first element)
-    for (int i = 0, typeLength = this.targetType.length; i < typeLength; i++) {
-      context.constructDone(this.targetType[i], constructed, i == 0 && injectMembers);
+    // push the constructed value to the context, check if member injection should be done
+    boolean doMemberInjection = false;
+    for (Element constructedElement : this.constructedElements) {
+      doMemberInjection |= context.storeValue(constructedElement, constructed);
     }
-    context.constructDone(this.bindingType, constructed, false);
+
+    // call the post construct on the given context, do member injection if needed
+    for (int i = 0, typeLength = this.constructedElements.length; i < typeLength; i++) {
+      context.postConstruct(this.constructedElements[i], constructed, i == 0 && injectMembers && doMemberInjection);
+    }
   }
 }

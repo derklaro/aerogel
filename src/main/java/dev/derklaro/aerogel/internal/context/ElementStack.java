@@ -25,9 +25,9 @@
 package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.Element;
-import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.function.Predicate;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -50,7 +50,7 @@ final class ElementStack {
   /**
    * The current stack holder we are working on.
    */
-  private final Deque<Element> stack = new ArrayDeque<>();
+  private final Deque<Element> stack = new LinkedList<>();
 
   /**
    * Removes all entries from the current stack.

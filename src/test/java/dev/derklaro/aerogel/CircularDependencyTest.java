@@ -24,7 +24,9 @@
 
 package dev.derklaro.aerogel;
 
-import java.util.UUID;
+import static dev.derklaro.aerogel.assertion.InjectAssert.assertNotSameProxySafe;
+import static dev.derklaro.aerogel.assertion.InjectAssert.assertSameProxySafe;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -33,80 +35,151 @@ public class CircularDependencyTest {
   @Test
   void testCircularDependencyManagement() {
     Injector injector = Injector.newInjector();
-    ApplicationMainClass mainClass = injector.instance(ApplicationMainClass.class);
+    MainEntryPoint entryPoint = Assertions.assertDoesNotThrow(() -> injector.instance(MainEntryPoint.class));
 
-    Assertions.assertNotNull(mainClass);
-    Assertions.assertNotNull(mainClass.api1);
-    Assertions.assertNotNull(mainClass.api1.main());
-    Assertions.assertNotNull(mainClass.randomHolder);
+    // singletons
+    assertSameProxySafe(entryPoint.apiClassA, entryPoint.someProvider.apiClassA);
+    assertSameProxySafe(entryPoint.apiClassA, entryPoint.someProvider.apiClassB.apiA());
+    assertSameProxySafe(entryPoint.someProvider.otherProvider, entryPoint.someProvider.apiClassB.otherProvider());
+    assertSameProxySafe(entryPoint.someProvider.otherProvider, entryPoint.apiClassA.someProvider().otherProvider);
 
-    Assertions.assertNotSame(mainClass.api1, mainClass.api2);
-    Assertions.assertNotSame(mainClass, mainClass.api1.main());
+    // not singleton
+    assertNotSameProxySafe(entryPoint.someProvider, entryPoint.apiClassA.someProvider());
+    assertNotSameProxySafe(entryPoint.someProvider.apiClassB, entryPoint.apiClassA.apiB());
+
+    OtherProvider other = entryPoint.someProvider.otherProvider;
+    assertSameProxySafe(other.apiB(), entryPoint.apiClassA.apiB());
+    assertNotSameProxySafe(other.someProvider(), entryPoint.someProvider);
+
+    // re-check singletons
+    Assertions.assertSame(entryPoint, injector.instance(MainEntryPoint.class));
+    Assertions.assertSame(entryPoint.apiClassA, injector.instance(ApiClassA.class));
+    Assertions.assertSame(entryPoint.someProvider.otherProvider, injector.instance(OtherProvider.class));
   }
 
-  @Test
-  void testProviderCircularDependencyManagement() {
-    Injector injector = Injector.newInjector();
-    ApplicationProviderMainClass mainClass = injector.instance(ApplicationProviderMainClass.class);
+  @ProvidedBy(ApiClassAImpl.class)
+  public interface ApiClassA {
 
-    Assertions.assertNotNull(mainClass);
-    Assertions.assertNotNull(mainClass.apiProvider);
-    Assertions.assertNotNull(mainClass.randomHolder);
+    ApiClassB apiB();
 
-    Assertions.assertNotSame(mainClass.apiProvider.get(), mainClass.apiProvider.get());
+    SomeProvider someProvider();
   }
 
-  @ProvidedBy(ApplicationApiImpl.class)
-  private interface ApplicationApi {
+  @ProvidedBy(ApiClassBImpl.class)
+  public interface ApiClassB {
 
-    default ApplicationMainClass main() {
-      return null;
+    ApiClassA apiA();
+
+    OtherProvider otherProvider();
+  }
+
+  @ProvidedBy(SomeOtherProvider.class)
+  public interface OtherProvider {
+
+    ApiClassB apiB();
+
+    SomeProvider someProvider();
+  }
+
+  @Singleton
+  public static final class MainEntryPoint {
+
+    private final ApiClassA apiClassA;
+    private final SomeProvider someProvider;
+
+    private SomeProvider memberProvidedProvider;
+
+    @Inject
+    public MainEntryPoint(ApiClassA apiClassA, SomeProvider someProvider) {
+      this.apiClassA = apiClassA;
+      this.someProvider = someProvider;
+    }
+
+    @Inject
+    public void memberInjection(SomeProvider provider) {
+      this.memberProvidedProvider = provider;
     }
   }
 
-  private static class ApplicationMainClass {
+  public static final class SomeProvider {
 
-    public final ApplicationApi api1;
-    public final ApplicationApi api2;
-    public final RandomHolder randomHolder;
+    private final ApiClassA apiClassA;
+    private final ApiClassB apiClassB;
+    private final OtherProvider otherProvider;
 
     @Inject
-    public ApplicationMainClass(ApplicationApi api1, ApplicationApi api2, RandomHolder randomHolder) {
-      this.api1 = api1;
-      this.api2 = api2;
-      this.randomHolder = randomHolder;
+    public SomeProvider(ApiClassA apiClassA, ApiClassB apiClassB, OtherProvider otherProvider) {
+      this.apiClassA = apiClassA;
+      this.apiClassB = apiClassB;
+      this.otherProvider = otherProvider;
     }
   }
 
-  private static class ApplicationProviderMainClass {
+  @Singleton
+  public static final class SomeOtherProvider implements OtherProvider {
 
-    public final RandomHolder randomHolder;
-    public final Provider<ApplicationApi> apiProvider;
-
-    @Inject
-    public ApplicationProviderMainClass(Provider<ApplicationApi> apiProvider, RandomHolder randomHolder) {
-      this.randomHolder = randomHolder;
-      this.apiProvider = apiProvider;
-    }
-  }
-
-  private static final class RandomHolder {
-
-    public final UUID uuid = UUID.randomUUID();
-  }
-
-  private static class ApplicationApiImpl implements ApplicationApi {
-
-    public final ApplicationMainClass applicationMainClass;
+    private final ApiClassB apiClassB;
+    private final SomeProvider provider;
 
     @Inject
-    public ApplicationApiImpl(ApplicationMainClass applicationMainClass) {
-      this.applicationMainClass = applicationMainClass;
+    public SomeOtherProvider(ApiClassB apiClassB, SomeProvider provider) {
+      this.apiClassB = apiClassB;
+      this.provider = provider;
     }
 
     @Override
-    public ApplicationMainClass main() {
-      return this.applicationMainClass;
+    public ApiClassB apiB() {
+      return this.apiClassB;
+    }
+
+    @Override
+    public SomeProvider someProvider() {
+      return this.provider;
+    }
+  }
+
+  @Singleton
+  public static final class ApiClassAImpl implements ApiClassA {
+
+    private final ApiClassB apiClassB;
+    private final SomeProvider someProvider;
+
+    @Inject
+    public ApiClassAImpl(ApiClassB apiClassB, SomeProvider someProvider) {
+      this.apiClassB = apiClassB;
+      this.someProvider = someProvider;
+    }
+
+    @Override
+    public ApiClassB apiB() {
+      return this.apiClassB;
+    }
+
+    @Override
+    public SomeProvider someProvider() {
+      return this.someProvider;
+    }
+  }
+
+  public static final class ApiClassBImpl implements ApiClassB {
+
+    private final ApiClassA apiClassA;
+    private final OtherProvider otherProvider;
+
+    @Inject
+    public ApiClassBImpl(ApiClassA apiClassA, OtherProvider otherProvider) {
+      this.apiClassA = apiClassA;
+      this.otherProvider = otherProvider;
+    }
+
+    @Override
+    public ApiClassA apiA() {
+      return this.apiClassA;
+    }
+
+    @Override
+    public OtherProvider otherProvider() {
+      return this.otherProvider;
     }
   }
 }

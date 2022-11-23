@@ -38,14 +38,27 @@ inline fun <reified T> InjectionContext.findInstance(): T? = this.findInstance(e
 
 /**
  * Used to indicate that the construction of [result] typed [T] was done successfully. The resulting instance may be
- * null in case null was bound to it. [injectMembers] is used to determine if all members in [result] should be injected.
+ * null in case null was bound to it.
  *
- * @see InjectionContext.constructDone
+ * @see InjectionContext.storeValue
  * @author Pasqual K.
- * @since 1.0
+ * @since 2.0
  */
-inline fun <reified T> InjectionContext.constructDone(result: Any?, injectMembers: Boolean = true) {
-  this.constructDone(element<T>(), result, injectMembers)
+inline fun <reified T> InjectionContext.storeValue(result: Any?) {
+  this.storeValue(element<T>(), result)
+}
+
+/**
+ * Used to indicate that the construction of [result] typed [T] was done successfully. The resulting instance may be
+ * null in case null was bound to it. [doMemberInjection] is used to check if members should be injected into the given
+ * result object.
+ *
+ * @see InjectionContext.postConstruct
+ * @author Pasqual K.
+ * @since 2.0
+ */
+inline fun <reified T> InjectionContext.postConstruct(result: Any?, doMemberInjection: Boolean = true) {
+  this.postConstruct(element<T>(), result, doMemberInjection)
 }
 
 /**

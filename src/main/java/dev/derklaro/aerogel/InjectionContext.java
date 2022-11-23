@@ -105,13 +105,25 @@ public interface InjectionContext {
    * Used to indicate from a {@link BindingHolder} that the construction of the associated element with {@code element}
    * was successfully done.
    *
-   * @param element         the element type of the constructed instance.
-   * @param result          the resulting constructed instance, may be null.
-   * @param doInjectMembers if the members (method, fields) of the constructed object should get injected.
+   * @param element the element type of the constructed instance.
+   * @param result  the resulting constructed instance, may be null.
+   * @return true if member injection could be done for the element, false otherwise.
+   * @throws NullPointerException if {@code element} is null.
+   * @since 2.0
+   */
+  boolean storeValue(@NotNull Element element, @Nullable Object result);
+
+  /**
+   * Executes the post construct tasks on the given constructed value, optionally executing member injection.
+   *
+   * @param element           the element type of the constructed instance.
+   * @param result            the resulting constructed instance, may be null.
+   * @param doMemberInjection if member injection should be done on the given object.
    * @throws NullPointerException if {@code element} is null.
    * @throws AerogelException     if the member injection of the resulting {@code result} failed.
+   * @since 2.0
    */
-  void constructDone(@NotNull Element element, @Nullable Object result, boolean doInjectMembers);
+  void postConstruct(@NotNull Element element, @Nullable Object result, boolean doMemberInjection);
 
   /**
    * Ensures that the construction of the current element has fully finished throwing an exception if not.
