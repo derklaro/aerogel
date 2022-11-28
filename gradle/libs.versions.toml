@@ -2,7 +2,7 @@
 
 # plugins
 spotless = "6.11.0"
-kotlinJvm = "1.7.21"
+kotlinJvm = "1.7.22"
 kotlinDokka = "1.7.20"
 nexusPublish = "1.1.0"
 
