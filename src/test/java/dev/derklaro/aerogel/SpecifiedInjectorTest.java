@@ -102,6 +102,20 @@ public class SpecifiedInjectorTest {
     Assertions.assertEquals("Testing", instance2.def);
   }
 
+  @Test
+  void testConstructedBindingsAreRemovedFromTheParentInjector() {
+    Injector parent = Injector.newInjector();
+    SpecifiedInjector specified = parent.newSpecifiedInjector();
+
+    // get an instance of the testing class
+    Assertions.assertDoesNotThrow(() -> specified.instance(EmptyTestingClass.class));
+    Assertions.assertNotNull(parent.fastBinding(Element.forType(EmptyTestingClass.class)));
+
+    // remove the bindings created by the specified injector
+    Assertions.assertTrue(specified.removeConstructedBindings());
+    Assertions.assertNull(parent.fastBinding(Element.forType(EmptyTestingClass.class)));
+  }
+
   private static final class TestingClass {
 
     private final int abc;
@@ -112,5 +126,9 @@ public class SpecifiedInjectorTest {
       this.abc = abc;
       this.def = def;
     }
+  }
+
+  private static final class EmptyTestingClass {
+
   }
 }

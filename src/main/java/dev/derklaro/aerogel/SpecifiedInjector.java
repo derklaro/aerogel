@@ -25,6 +25,7 @@
 package dev.derklaro.aerogel;
 
 import java.lang.reflect.Type;
+import java.util.function.Predicate;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnknownNullability;
@@ -132,4 +133,22 @@ public interface SpecifiedInjector extends Injector {
    * @throws NullPointerException if the given constructor iterable is null.
    */
   @NotNull SpecifiedInjector installSpecified(@NotNull Iterable<BindingConstructor> constructors);
+
+  /**
+   * Removes the specifically installed bindings from this injector which are passing the given filter.
+   *
+   * @param filter the predicate to filter out the bindings to remove.
+   * @return true if a binding was removed as a result of this call, false otherwise.
+   * @throws NullPointerException if the given filter is null.
+   */
+  @Override
+  boolean removeBindings(@NotNull Predicate<BindingHolder> filter);
+
+  /**
+   * Removes all bindings from the parent injector that were constructed when no specified value was given to this
+   * injector.
+   *
+   * @return true if any bindings were unregistered from the parent injector, false otherwise.
+   */
+  boolean removeConstructedBindings();
 }

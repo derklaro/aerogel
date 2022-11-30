@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -125,9 +126,14 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    */
   @Override
   public @NotNull BindingHolder binding(@NotNull Element element) {
-    // get from the local injector or from the parent
+    // get from the local injector if given
     BindingHolder known = this.specificBindings.get(element);
-    return known != null ? known : this.parent.binding(element);
+    if (known != null) {
+      return known;
+    }
+
+    // get or construct the binding from the parent
+    return this.parent.bindingOr(element, $ -> ConstructingBindingHolder.create(this, element));
   }
 
   /**
@@ -273,5 +279,21 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
     // install all bindings
     constructors.forEach(this::installSpecified);
     return this;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean removeBindings(@NotNull Predicate<BindingHolder> filter) {
+    return this.specificBindings.values().removeIf(filter);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean removeConstructedBindings() {
+    return this.parent.removeBindings(binding -> binding.injector() == DefaultSpecifiedInjector.this);
   }
 }

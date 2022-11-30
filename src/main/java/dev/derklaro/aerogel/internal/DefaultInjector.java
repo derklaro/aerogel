@@ -41,6 +41,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -303,5 +304,13 @@ public final class DefaultInjector implements Injector {
     }
     // the return value should be unmodifiable
     return Collections.unmodifiableCollection(bindings);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean removeBindings(@NotNull Predicate<BindingHolder> filter) {
+    return this.bindings.values().removeIf(filter);
   }
 }

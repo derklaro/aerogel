@@ -27,6 +27,7 @@ package dev.derklaro.aerogel;
 import dev.derklaro.aerogel.internal.DefaultInjector;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.function.Predicate;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -224,4 +225,15 @@ public interface Injector {
    */
   @Unmodifiable
   @NotNull Collection<BindingHolder> allBindings();
+
+  /**
+   * Removes all bindings which are directly registered in this injector and are passing the given filter predicate.
+   *
+   * @param filter the predicate to filter out the bindings to remove.
+   * @return true if a binding was removed as a result of this call, false otherwise.
+   * @throws NullPointerException if the given filter is null.
+   * @since 2.0
+   */
+  @API(status = API.Status.EXPERIMENTAL, since = "2.0")
+  boolean removeBindings(@NotNull Predicate<BindingHolder> filter);
 }
