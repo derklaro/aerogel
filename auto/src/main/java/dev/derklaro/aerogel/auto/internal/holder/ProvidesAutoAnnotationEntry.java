@@ -54,6 +54,8 @@ import org.jetbrains.annotations.NotNull;
 @API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.auto.internal")
 public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
 
+  private static final int CURRENT_DATA_VERSION = 1;
+
   private final String bindingName;
   private final Set<String> bindings;
 
@@ -83,6 +85,7 @@ public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
   @Override
   public void emit(@NotNull DataOutputStream out) throws IOException {
     out.writeUTF("provides"); // the processor which is responsible for the binding construction
+    out.writeShort(CURRENT_DATA_VERSION); // the data version of the content
     out.writeUTF(this.bindingName); // the class all provided classes should get bound to
     out.writeInt(this.bindings.size()); // the size of the bindings array
     // emit all bindings to the stream
@@ -97,6 +100,9 @@ public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
   @Override
   public @NotNull Set<BindingConstructor> makeBinding(@NotNull DataInputStream in) throws IOException {
     try {
+      // the data version used to write the data
+      short dataVersion = in.readShort();
+
       // the class to which all provided classes should get bound
       Element type = Element.forType(loadClass(in.readUTF()));
 

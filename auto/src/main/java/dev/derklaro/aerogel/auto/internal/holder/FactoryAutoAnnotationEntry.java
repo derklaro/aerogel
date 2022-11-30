@@ -60,6 +60,8 @@ import org.jetbrains.annotations.NotNull;
 @API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.auto.internal")
 public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
 
+  private static final int CURRENT_DATA_VERSION = 1;
+
   private final String methodName;
   private final String enclosingClass;
   private final List<String> methodArguments;
@@ -118,6 +120,7 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
   @Override
   public void emit(@NotNull DataOutputStream out) throws IOException {
     out.writeUTF("factory"); // the processor which is responsible for the binding construction
+    out.writeShort(CURRENT_DATA_VERSION); // the data version of the content
     out.writeUTF(this.methodName); // the method - the top most thing we need to know
     out.writeUTF(this.enclosingClass); // the class in which the method is located
     out.writeInt(this.methodArguments.size()); // the size of the following argument array
@@ -132,6 +135,7 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
    */
   @Override
   public @NotNull Set<BindingConstructor> makeBinding(@NotNull DataInputStream in) throws IOException {
+    short dataVersion = in.readShort(); // the data version used to write the data
     String methodName = in.readUTF(); // the name of the factory method
     String enclosingClass = in.readUTF(); // the class which declares the method
     // read the method argument types as an array from the stream
