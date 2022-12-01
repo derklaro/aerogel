@@ -202,7 +202,14 @@ public final class DefaultInjectionContext implements InjectionContext {
     // store the result if given, and check if we already encountered the value
     // if we did, there is no need to do member injection on the resulting object again
     if (result != null) {
-      return this.constructedValues.add(result);
+      try {
+        return this.constructedValues.add(result);
+      } catch (AerogelException ignored) {
+        // we can ignore this exception - it might be caused because the result class tries to call hashCode on a proxy
+        // which has no delegate yet available (for example a record might do that). We can skip the check and just
+        // assume that member injection was not done yet and should be done again.
+        return true;
+      }
     }
 
     // if the given result is null there is no need to do member injection
