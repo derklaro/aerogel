@@ -48,7 +48,6 @@ import org.jetbrains.annotations.Nullable;
 public abstract class AbstractBindingHolder implements BindingHolder {
 
   protected final Injector injector;
-  protected final Element[] targetType;
   protected final Element bindingType;
   protected final Element[] constructedElements;
 
@@ -60,7 +59,6 @@ public abstract class AbstractBindingHolder implements BindingHolder {
    * @param injector the injector to which this binding was bound.
    */
   public AbstractBindingHolder(@NotNull Element[] type, @NotNull Element binding, @NotNull Injector injector) {
-    this.targetType = Objects.requireNonNull(type, "Target type is required to construct");
     this.bindingType = Objects.requireNonNull(binding, "Binding type is required to construct");
     this.injector = Objects.requireNonNull(injector, "The parent injector is required to construct");
 
@@ -83,7 +81,7 @@ public abstract class AbstractBindingHolder implements BindingHolder {
    */
   @Override
   public @NotNull Element[] types() {
-    return this.targetType;
+    return this.constructedElements;
   }
 
   /**
