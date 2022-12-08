@@ -9,7 +9,7 @@ nexusPublish = "1.1.0"
 # dependencies
 asm = "9.4"
 apiGuardian = "1.1.2"
-annotations = "23.0.0"
+annotations = "23.1.0"
 jakartaInject = "2.0.1"
 
 # testing
