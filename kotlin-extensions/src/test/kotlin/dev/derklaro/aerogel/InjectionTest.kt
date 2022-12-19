@@ -24,8 +24,10 @@
 
 package dev.derklaro.aerogel
 
+import dev.derklaro.aerogel.binding.BindingBuilder
 import dev.derklaro.aerogel.kotlin.element
 import dev.derklaro.aerogel.kotlin.instance
+import dev.derklaro.aerogel.util.Qualifiers
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -34,7 +36,11 @@ class InjectionTest {
   @Test
   fun `constructor injection`() {
     val injector = Injector.newInjector()
-    injector.install(Bindings.fixed(element<String>().requireName("Hello World"), "1234"))
+    injector.install(
+      BindingBuilder.create()
+        .bind(element<String>().requireAnnotation(Qualifiers.named("Hello World")))
+        .toInstance("1234")
+    )
 
     val depends = injector.instance<DependingOnTest>()
     Assertions.assertNotNull(depends)
@@ -44,8 +50,17 @@ class InjectionTest {
   @Test
   fun `constructor and member injection`() {
     val injector = Injector.newInjector()
-    injector.install(Bindings.fixed(element<String>().requireName("Hello World"), "1234"))
-    injector.install(Bindings.fixed(element<String>().requireName("Hello there"), "12345"))
+    injector
+      .install(
+        BindingBuilder.create()
+          .bind(element<String>().requireAnnotation(Qualifiers.named("Hello World")))
+          .toInstance("1234")
+      )
+      .install(
+        BindingBuilder.create()
+          .bind(element<String>().requireAnnotation(Qualifiers.named("Hello there")))
+          .toInstance("12345")
+      )
 
     val two = injector.instance<TestClass2>()
     Assertions.assertNotNull(two)
@@ -58,8 +73,17 @@ class InjectionTest {
   @Test
   fun `exception on val member injection request`() {
     val injector = Injector.newInjector()
-    injector.install(Bindings.fixed(element<String>().requireName("Hello World"), "1234"))
-    injector.install(Bindings.fixed(element<String>().requireName("Hello there"), "12345"))
+    injector
+      .install(
+        BindingBuilder.create()
+          .bind(element<String>().requireAnnotation(Qualifiers.named("Hello World")))
+          .toInstance("1234")
+      )
+      .install(
+        BindingBuilder.create()
+          .bind(element<String>().requireAnnotation(Qualifiers.named("Hello there")))
+          .toInstance("12345")
+      )
 
     Assertions.assertThrows(AerogelException::class.java) {
       injector.instance<TestClass3>()

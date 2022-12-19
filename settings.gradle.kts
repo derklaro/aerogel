@@ -33,7 +33,7 @@ pluginManagement {
 }
 
 rootProject.name = "aerogel"
-include("auto", /*"kotlin-extensions"*/)
+include("auto", "kotlin-extensions")
 
 // prefixes each subproject with 'aerogel-'
 rootProject.children.forEach {

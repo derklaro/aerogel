@@ -180,7 +180,7 @@ public final class DefaultInjectionContext implements InjectionContext {
 
     // read the current type from the map
     ProxyMapping proxy = this.createdProxies.get(element);
-    if (proxy != null) {
+    if (proxy != null && !proxy.isDelegatePresent()) {
       // mark the proxy as available, in case it's needed during member injection
       proxy.setDelegate(result);
     }

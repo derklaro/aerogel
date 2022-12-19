@@ -24,27 +24,31 @@
 
 package dev.derklaro.aerogel.kotlin
 
-import dev.derklaro.aerogel.AerogelException
-import dev.derklaro.aerogel.binding.BindingConstructor
-import dev.derklaro.aerogel.Bindings
+import dev.derklaro.aerogel.binding.BindingBuilder
 
 /**
- * Creates a new constructing binding holder for the given generic type [T].
+ * Binds the given type as one type that is handled by the final call to one of building methods. This methods will
+ * not check for any scope annotations on the given type, use {@link #bindFully(Type)} for that instead.
  *
- * @throws NullPointerException     if {@code element} is null.
- * @throws AerogelException if the class more or less than one injectable constructors or is not instantiable.
- * @see Bindings.constructing
+ * @see BindingBuilder.bind
  * @author Pasqual K.
- * @since 1.0
+ * @since 2.0
  */
-inline fun <reified T> constructing(): BindingConstructor = Bindings.constructing(element<T>())
+inline fun <reified T> BindingBuilder.bind() = bind(T::class.java)
 
 /**
- * Creates a new binding constructor for the generic type [T] which always return the given [value].
+ * Binds the given type as one type that is handled by the final call to one of building methods. This method will
+ * apply all scopes present on the given type to this builder as well.
  *
- * @throws AerogelException if {@code element} is not assignable to {@code value}.
- * @see Bindings.fixed
+ * <p>Note that while this method accepts a generic type, you can only pass one of:
+ * <ol>
+ *   <li>Classes
+ *   <li>Generic Array Types (where the component type matches this list as well)
+ *   <li>Parameterized Types (where the raw type matches this list as well)
+ * </ol>
+ *
+ * @see BindingBuilder.bindFully
  * @author Pasqual K.
- * @since 1.0
+ * @since 2.0
  */
-inline fun <reified T> fixed(value: Any): BindingConstructor = Bindings.fixed(element<T>(), value)
+inline fun <reified T> BindingBuilder.bindFully() = bindFully(T::class.java)
