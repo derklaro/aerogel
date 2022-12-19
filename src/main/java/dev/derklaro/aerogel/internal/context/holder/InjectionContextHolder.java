@@ -82,6 +82,8 @@ public final class InjectionContextHolder {
   /**
    * Leaves the current context (releases it by one) and removes the context from the thread if no other locations have
    * claimed the context.
+   *
+   * @return true if this call removed the last claim (and the context for the current thread), false otherwise.
    */
   public static boolean leave() {
     // check if the context is present and release it by one. If there are no more claims the

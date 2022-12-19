@@ -257,6 +257,7 @@ public interface BindingBuilder {
    * can be re-used with the previously added values without accidentally leaking changes into the created binding
    * constructor.
    *
+   * @param type     the component type of the given provider. This type will be fully bound in this builder.
    * @param provider the provider to call each time an injector requests an instance from the binding.
    * @return a binding constructor targeting all elements and scopes, returning the call result of the given provider.
    * @throws NullPointerException if the given provider is null.

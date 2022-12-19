@@ -102,7 +102,8 @@ public interface Element {
    * give a value in the overridden values map for all methods which are not optional (defaulted) in the given
    * annotation type. Overridden values for defaulted values can be passed as well, but are optional.
    *
-   * @param annotationType the annotation types to add.
+   * @param annotationType         the annotation types to add.
+   * @param overriddenMethodValues the overridden method return values for the given annotation type.
    * @return the same instance as used to call the method, for chaining.
    * @throws NullPointerException if the given annotation type or overridden value map is null.
    * @throws AerogelException     if the given annotation has a non-defaulted method which has no overridden value.
