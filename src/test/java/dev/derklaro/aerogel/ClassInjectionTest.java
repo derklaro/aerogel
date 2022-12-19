@@ -24,6 +24,8 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.binding.BindingBuilder;
+import dev.derklaro.aerogel.util.Qualifiers;
 import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -33,7 +35,7 @@ public class ClassInjectionTest {
   @Test
   void testClassInject() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.fixed(Element.forType(String.class), "test"));
+    injector.install(BindingBuilder.create().toInstance("test"));
 
     InjectableClass injectableClass = injector.instance(InjectableClass.class);
 
@@ -44,8 +46,10 @@ public class ClassInjectionTest {
   @Test
   void testNamedClassInject() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.fixed(Element.forType(String.class), "test"));
-    injector.install(Bindings.fixed(Element.forType(String.class).requireName("testing"), "test1234"));
+    injector.install(BindingBuilder.create().toInstance("test"));
+    injector.install(BindingBuilder.create()
+      .bind(Element.forType(String.class).requireAnnotation(Qualifiers.named("testing")))
+      .toInstance("test1234"));
 
     InjectableNamedClass injectableClass = injector.instance(InjectableNamedClass.class);
 

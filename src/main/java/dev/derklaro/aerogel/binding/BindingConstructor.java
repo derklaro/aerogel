@@ -22,50 +22,32 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.codegen;
+package dev.derklaro.aerogel.binding;
 
+import dev.derklaro.aerogel.AerogelException;
+import dev.derklaro.aerogel.Injector;
 import org.apiguardian.api.API;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * Represents the result of an instance construction from an {@link InstanceMaker}.
+ * Represents a not yet constructed binding which can be bound to any constructor either by invoking
+ * {@link #construct(Injector)} directly using the {@link Injector} to which the binding should get bound or by using
+ * {@link Injector#install(BindingConstructor)} or {@link Injector#install(Iterable)}.
  *
  * @author Pasqual K.
- * @since 2.0
+ * @since 1.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal")
-public final class InstanceCreateResult {
-
-  private final Object result;
-  private final boolean doMemberInjection;
+@FunctionalInterface
+@API(status = API.Status.STABLE, since = "1.0")
+public interface BindingConstructor {
 
   /**
-   * Constructs a new instance create result.
+   * Constructs this binding and installs it to the injector. The construction can result in an {@link AerogelException}
+   * but should not result in any other exception.
    *
-   * @param result            the created instance, might be null.
-   * @param doMemberInjection true if member injection is required, false otherwise.
+   * @param injector the injector which is currently installing the binding.
+   * @return the constructed binding holder based on the given {@code injector}.
+   * @throws AerogelException if the construction failed.
    */
-  public InstanceCreateResult(@Nullable Object result, boolean doMemberInjection) {
-    this.result = result;
-    this.doMemberInjection = doMemberInjection;
-  }
-
-  /**
-   * Get the result of the instance create process, might be null.
-   *
-   * @return the created instance.
-   */
-  @SuppressWarnings("unchecked")
-  public @Nullable <T> T constructedValue() {
-    return (T) this.result;
-  }
-
-  /**
-   * Get if member injection should be executed on the constructed value.
-   *
-   * @return true if member injection is required, false otherwise.
-   */
-  public boolean doMemberInjection() {
-    return this.doMemberInjection;
-  }
+  @NotNull BindingHolder construct(@NotNull Injector injector) throws AerogelException;
 }

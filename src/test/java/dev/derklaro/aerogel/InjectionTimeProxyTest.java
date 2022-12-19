@@ -24,7 +24,8 @@
 
 package dev.derklaro.aerogel;
 
-import dev.derklaro.aerogel.internal.codegen.InjectionTimeProxy;
+import dev.derklaro.aerogel.internal.proxy.InjectionTimeProxy;
+import dev.derklaro.aerogel.internal.proxy.ProxyMapping;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -33,17 +34,18 @@ public class InjectionTimeProxyTest {
   @Test
   @SuppressWarnings("ResultOfMethodCallIgnored")
   void testInjectionTimeProxyCreate() {
+    ProxyMapping mapping = InjectionTimeProxy.makeProxy(B.class);
+
     // make a proxy and check if the method throws an exception as no delegate exists
-    B proxy = InjectionTimeProxy.makeProxy(B.class);
+    B proxy = (B) mapping.proxy();
     Assertions.assertThrows(AerogelException.class, proxy::hashCode);
 
     // validate that the delegate is not yet present
-    InjectionTimeProxy.InjectionTimeProxied proxied = (InjectionTimeProxy.InjectionTimeProxied) proxy;
-    Assertions.assertFalse(proxied.isDelegatePresent());
+    Assertions.assertFalse(mapping.isDelegatePresent());
 
     // set the delegate and validate again
-    proxied.setDelegate(new ABImpl());
-    Assertions.assertTrue(proxied.isDelegatePresent());
+    mapping.setDelegate(new ABImpl());
+    Assertions.assertTrue(mapping.isDelegatePresent());
 
     String hello = Assertions.assertDoesNotThrow(proxy::a);
     Assertions.assertEquals("Hello", hello);

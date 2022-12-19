@@ -25,7 +25,7 @@
 package dev.derklaro.aerogel.kotlin
 
 import dev.derklaro.aerogel.AerogelException
-import dev.derklaro.aerogel.BindingHolder
+import dev.derklaro.aerogel.binding.BindingHolder
 import dev.derklaro.aerogel.Injector
 import dev.derklaro.aerogel.MemberInjector
 

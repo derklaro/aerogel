@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.binding.BindingBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +33,7 @@ public class ChildInjectorTest {
   @Test
   void testChildInjectorConstruction() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.constructing(Element.forType(StringHolder.class)));
+    injector.install(BindingBuilder.create().toConstructing(StringHolder.class));
 
     StringHolder value = injector.instance(StringHolder.class);
     Assertions.assertNotNull(value);
@@ -60,7 +61,7 @@ public class ChildInjectorTest {
     Assertions.assertSame(injector, injector.instance(Injector.class));
     Assertions.assertSame(childInjector, childInjector.instance(Injector.class));
 
-    injector.install(Bindings.fixed(Element.forType(String.class), "Hello World!"));
+    injector.install(BindingBuilder.create().toInstance("Hello World!"));
 
     Assertions.assertEquals(1, injector.allBindings().size());
     Assertions.assertEquals(1, childInjector.allBindings().size());
@@ -71,7 +72,7 @@ public class ChildInjectorTest {
     Assertions.assertEquals("Hello World!", injector.instance(String.class));
     Assertions.assertEquals("Hello World!", childInjector.instance(String.class));
 
-    childInjector.install(Bindings.fixed(Element.forType(int.class), 1234));
+    childInjector.install(BindingBuilder.create().bind(int.class).toInstance(1234));
 
     Assertions.assertThrows(AerogelException.class, () -> injector.instance(int.class));
     Assertions.assertEquals(1234, childInjector.instance(int.class));

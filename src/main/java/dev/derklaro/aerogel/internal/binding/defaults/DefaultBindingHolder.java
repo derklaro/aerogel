@@ -22,56 +22,66 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.binding;
+package dev.derklaro.aerogel.internal.binding.defaults;
 
+import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.internal.codegen.InstanceCreateResult;
-import dev.derklaro.aerogel.internal.codegen.InstanceMaker;
+import dev.derklaro.aerogel.binding.BindingHolder;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * A specialized abstract binding holder which is based on a backing instance factory.
+ * The default implementation of a binding holder.
  *
  * @author Pasqual K.
  * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.binding")
-abstract class InstanceMakerBindingHolder extends AbstractBindingHolder {
+@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.*")
+final class DefaultBindingHolder implements BindingHolder {
 
-  protected final InstanceMaker instanceMaker;
+  private final Injector injector;
+  private final Element[] types;
+  private final ContextualProvider<Object> provider;
 
   /**
-   * Constructs a new binding holder which holds an instance factory of any kind.
+   * Constructs a new default binding holder instance.
    *
-   * @param type          the type of the binding.
-   * @param binding       the type to which the given type is bound.
-   * @param injector      the injector to which this binding was bound.
-   * @param instanceMaker the instance factory to use.
+   * @param injector the injector associated with the binding.
+   * @param types    the types handled by this holder.
+   * @param provider the provider to use to obtain the underlying value.
    */
-  public InstanceMakerBindingHolder(
-    @NotNull Element[] type,
-    @NotNull Element binding,
+  public DefaultBindingHolder(
     @NotNull Injector injector,
-    @NotNull InstanceMaker instanceMaker
+    @NotNull Element[] types,
+    @NotNull ContextualProvider<Object> provider
   ) {
-    super(type, binding, injector);
-    this.instanceMaker = instanceMaker;
+    this.injector = injector;
+    this.types = types;
+    this.provider = provider;
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public <T> @Nullable T get(@NotNull InjectionContext context) {
-    // construct the value
-    InstanceCreateResult result = this.instanceMaker.getInstance(context);
-    T constructedValue = result.constructedValue();
-    // push the construction done notice to the context
-    this.callConstructDone(context, constructedValue, result.doMemberInjection());
-    return constructedValue;
+  public @NotNull Injector injector() {
+    return this.injector;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull Element[] types() {
+    return this.types;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull ContextualProvider<Object> provider() {
+    return this.provider;
   }
 }

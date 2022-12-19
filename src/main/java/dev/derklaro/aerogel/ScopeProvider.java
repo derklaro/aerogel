@@ -28,25 +28,29 @@ import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Represents a not yet constructed binding which can be bound to any constructor either by invoking
- * {@link #construct(Injector)} directly using the {@link Injector} to which the binding should get bound or by using
- * {@link Injector#install(BindingConstructor)} or {@link Injector#install(Iterable)}. See {@link Bindings} for some
- * pre-defined ways to bind a value.
+ * A provider which handles a scope annotation. Each scope provider is applied one by one to a created context provider
+ * allowing the provider to wrap the result of an underlying scope or provider.
+ *
+ * <p>For example a singleton scope provider would return a contextual provider which calls the downstream provider
+ * given to the apply method if no value was provided before or return the value which was already provided.
  *
  * @author Pasqual K.
- * @since 1.0
+ * @since 2.0
  */
 @FunctionalInterface
-@API(status = API.Status.STABLE, since = "1.0")
-public interface BindingConstructor {
+@API(status = API.Status.STABLE, since = "2.0")
+public interface ScopeProvider {
 
   /**
-   * Constructs this binding and installs it to the injector. The construction can result in an {@link AerogelException}
-   * but should not result in any other exception.
+   * Applies the scope that is represented by this provider to the given downstream contextual provider. The method can
+   * decide to either wrap the given provider or return the same provider in case no scoping must be applied. This
+   * method should never return a scope which isn't interacting with the given downstream provider.
    *
-   * @param injector the injector which is currently installing the binding.
-   * @return the constructed binding holder based on the given {@code injector}.
-   * @throws AerogelException if the construction failed.
+   * @param trackedElements the elements which are tracked by the given downstream provider.
+   * @param downstream      the last constructed provider, might either be the root or a scoped provider.
+   * @return a wrapped provider which applies the current scope, or the same provider if no scoping is required.
    */
-  @NotNull BindingHolder construct(@NotNull Injector injector) throws AerogelException;
+  @NotNull ContextualProvider<Object> applyScope(
+    @NotNull Element[] trackedElements,
+    @NotNull ContextualProvider<Object> downstream);
 }

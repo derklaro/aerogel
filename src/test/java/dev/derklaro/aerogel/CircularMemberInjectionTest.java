@@ -24,6 +24,8 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.binding.BindingBuilder;
+import dev.derklaro.aerogel.util.Qualifiers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +34,9 @@ public class CircularMemberInjectionTest {
   @Test
   void testCircularMemberInjection() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.fixed(Element.forType(String.class).requireName("test"), "Hello World"));
+    injector.install(BindingBuilder.create()
+      .bind(Element.forType(String.class).requireAnnotation(Qualifiers.named("test")))
+      .toInstance("Hello World"));
 
     SomeClass instance = Assertions.assertDoesNotThrow(() -> injector.instance(SomeClass.class));
     Assertions.assertNotNull(instance);

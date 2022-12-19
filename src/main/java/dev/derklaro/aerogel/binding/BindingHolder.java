@@ -22,48 +22,41 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.asm.primitive;
+package dev.derklaro.aerogel.binding;
 
+import dev.derklaro.aerogel.ContextualProvider;
+import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.Injector;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
-import org.objectweb.asm.MethodVisitor;
 
 /**
- * An emitter to store, load, box and unbox primitive types.
+ * Represents a binding for a type.
  *
  * @author Pasqual K.
  * @since 1.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal.asm")
-public interface PrimitiveEmitter {
+@API(status = API.Status.STABLE, since = "1.0")
+public interface BindingHolder {
 
   /**
-   * Boxes the current top of the operand stack.
+   * Get the injector for which this binding was constructed.
    *
-   * @param mv the method visitor which requested the boxing.
+   * @return the injector for which this binding was constructed.
    */
-  void box(@NotNull MethodVisitor mv);
+  @NotNull Injector injector();
 
   /**
-   * Unboxes the current top of the operand stack.
+   * Get all elements which are represented by this binding holder and can be injected from it.
    *
-   * @param mv the method visitor which requested the unboxing.
+   * @return all elements which are represented by this binding.
    */
-  void unbox(@NotNull MethodVisitor mv);
+  @NotNull Element[] types();
 
   /**
-   * Stores the current value to the operand stack at the given index using the appropriate opcode.
+   * Get the provider which is able to construct an instance representing all types to which this binding is bound.
    *
-   * @param mv         the method visitor which requested the storing.
-   * @param stackIndex the index to store the value on the operand stack at.
+   * @return the provider which is able to construct an instance for the bound types.
    */
-  void storeToStack(@NotNull MethodVisitor mv, int stackIndex);
-
-  /**
-   * Loads the value to the operand stack at the given index using the appropriate opcode.
-   *
-   * @param mv         the method visitor which requested the loading.
-   * @param stackIndex the index to load the value on the operand stack from.
-   */
-  void loadFromStack(@NotNull MethodVisitor mv, int stackIndex);
+  @NotNull ContextualProvider<Object> provider();
 }

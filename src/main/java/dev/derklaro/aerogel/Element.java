@@ -28,10 +28,11 @@ import dev.derklaro.aerogel.internal.DefaultElement;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 import org.apiguardian.api.API;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 
 /**
@@ -40,27 +41,21 @@ import org.jetbrains.annotations.UnmodifiableView;
  * @author Pasqual K.
  * @since 1.0
  */
-@API(status = API.Status.STABLE, since = "1.0")
+@API(status = API.Status.STABLE, since = "2.0")
 public interface Element {
 
   /**
-   * Creates a new element for the given {@code type}.
+   * Creates a new element for the given type, with no other requirements specified initially.
    *
    * @param type the type of the element.
-   * @return a new element for the given {@code type}.
-   * @throws NullPointerException if {@code type} is null.
+   * @return a new element for the given type.
+   * @throws NullPointerException if the given type is null.
    */
+  @Contract(pure = true)
   static @NotNull Element forType(@NotNull Type type) {
     Objects.requireNonNull(type, "type");
     return new DefaultElement(type);
   }
-
-  /**
-   * Get the name of this element.
-   *
-   * @return the name of this element or {@code null} if this element is not named.
-   */
-  @Nullable String requiredName();
 
   /**
    * Get the type of this element.
@@ -75,15 +70,7 @@ public interface Element {
    * @return all required annotations of this element.
    */
   @UnmodifiableView
-  @NotNull Collection<AnnotationPredicate<?>> requiredAnnotations();
-
-  /**
-   * Sets the required name of this element.
-   *
-   * @param name the new required name of this element or {@code null} if no name should be required.
-   * @return the same instance as used to call the method, for chaining.
-   */
-  @NotNull Element requireName(@Nullable String name);
+  @NotNull Collection<AnnotationPredicate> requiredAnnotations();
 
   /**
    * Adds the given annotations as required annotations.
@@ -95,22 +82,36 @@ public interface Element {
   @NotNull Element requireAnnotation(@NotNull Annotation annotation);
 
   /**
-   * Adds the given annotation types as required annotations.
+   * Constructs a proxy for the given annotation type and requires it. This method only works when all values of the
+   * given annotation type are optional (defaulted). With this in mind, the annotation added to the annotated element is
+   * required to have all values set to the default as well.
+   * <p>
+   * If a value of the annotation should have a different type, use {@link #requireAnnotation(Class, Map)} instead.
    *
-   * @param annotationType the annotation types to add.
+   * @param annotationType the type of annotation to require.
    * @return the same instance as used to call the method, for chaining.
    * @throws NullPointerException if the given annotation type is null.
+   * @throws AerogelException     if the given annotation has a non-defaulted method.
+   * @since 2.0
    */
+  @API(status = API.Status.STABLE, since = "2.0")
   @NotNull Element requireAnnotation(@NotNull Class<? extends Annotation> annotationType);
 
   /**
-   * Adds the given annotation predicates as a requirement for this element.
+   * Constructs a proxy for the given annotation type and requires it. The construction process requires the caller to
+   * give a value in the overridden values map for all methods which are not optional (defaulted) in the given
+   * annotation type. Overridden values for defaulted values can be passed as well, but are optional.
    *
-   * @param predicate the predicate to add.
+   * @param annotationType the annotation types to add.
    * @return the same instance as used to call the method, for chaining.
-   * @throws NullPointerException if the given predicate is null.
+   * @throws NullPointerException if the given annotation type or overridden value map is null.
+   * @throws AerogelException     if the given annotation has a non-defaulted method which has no overridden value.
+   * @since 2.0
    */
-  @NotNull Element requireAnnotation(@NotNull AnnotationPredicate<?> predicate);
+  @API(status = API.Status.STABLE, since = "2.0")
+  @NotNull Element requireAnnotation(
+    @NotNull Class<? extends Annotation> annotationType,
+    @NotNull Map<String, Object> overriddenMethodValues);
 
   /**
    * Get if this element has special requirements.

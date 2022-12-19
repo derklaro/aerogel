@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.binding.BindingHolder;
 import dev.derklaro.aerogel.internal.ImmediateProvider;
 import java.util.Optional;
 import java.util.function.BiFunction;

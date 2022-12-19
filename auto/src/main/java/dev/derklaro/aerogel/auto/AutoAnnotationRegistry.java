@@ -25,9 +25,9 @@
 package dev.derklaro.aerogel.auto;
 
 import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.BindingConstructor;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.auto.internal.DefaultAutoAnnotationRegistry;
+import dev.derklaro.aerogel.binding.BindingConstructor;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Set;

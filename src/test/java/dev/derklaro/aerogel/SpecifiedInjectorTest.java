@@ -24,6 +24,8 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.binding.BindingBuilder;
+import dev.derklaro.aerogel.util.Qualifiers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -65,15 +67,15 @@ public class SpecifiedInjectorTest {
     SpecifiedInjector specified = injector.newSpecifiedInjector();
 
     // register the same binding only to the parent
-    Element element = Element.forType(int.class).requireName("testing");
-    injector.install(Bindings.fixed(element, 123));
+    Element element = Element.forType(int.class).requireAnnotation(Qualifiers.named("testing"));
+    injector.install(BindingBuilder.create().bind(element).toInstance(123));
 
     // both should return the same
     Assertions.assertEquals(Integer.valueOf(123), injector.instance(element));
     Assertions.assertEquals(Integer.valueOf(123), specified.instance(element));
 
     // install to the specific injector as well
-    specified.installSpecified(Bindings.fixed(element, 1234));
+    specified.installSpecified(BindingBuilder.create().bind(element).toInstance(1234));
     Assertions.assertEquals(Integer.valueOf(123), injector.instance(element));
     Assertions.assertEquals(Integer.valueOf(1234), specified.instance(element));
   }
@@ -84,12 +86,16 @@ public class SpecifiedInjectorTest {
     SpecifiedInjector specified = injector.newSpecifiedInjector();
 
     // only install the binding for def to the parent injector (the call order to "instance" matters here)
-    injector.install(Bindings.fixed(Element.forType(String.class).requireName("def"), "Testing"));
+    injector.install(BindingBuilder.create()
+      .bind(Element.forType(String.class).requireAnnotation(Qualifiers.named("def")))
+      .toInstance("Testing"));
     Assertions.assertThrows(AerogelException.class, () -> specified.instance(TestingClass.class));
     Assertions.assertThrows(AerogelException.class, () -> injector.instance(TestingClass.class));
 
     // install the binding for the int to the specific injector
-    specified.installSpecified(Bindings.fixed(Element.forType(int.class).requireName("abc"), 1234));
+    specified.installSpecified(BindingBuilder.create()
+      .bind(Element.forType(int.class).requireAnnotation(Qualifiers.named("abc")))
+      .toInstance(1234));
     TestingClass instance = Assertions.assertDoesNotThrow(() -> specified.instance(TestingClass.class));
 
     // validate the class instance

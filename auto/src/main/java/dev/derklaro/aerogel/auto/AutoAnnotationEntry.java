@@ -24,7 +24,7 @@
 
 package dev.derklaro.aerogel.auto;
 
-import dev.derklaro.aerogel.BindingConstructor;
+import dev.derklaro.aerogel.binding.BindingConstructor;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;

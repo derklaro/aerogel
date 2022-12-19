@@ -52,40 +52,6 @@ public final class ReflectionUtil {
   }
 
   /**
-   * Ensures that the given {@code type} is instantiable.
-   *
-   * @param type the type to check.
-   * @throws AerogelException if the type is not instantiable.
-   */
-  public static void ensureInstantiable(@NotNull Type type) {
-    // check if the type is a class
-    if (!(type instanceof Class<?>)) {
-      throw AerogelException.forMessage(type.getTypeName() + " is not instantiable");
-    }
-
-    Class<?> clazz = (Class<?>) type;
-    // check for abstract classes
-    if (clazz.isInterface() || Modifier.isAbstract(clazz.getModifiers())) {
-      throw AerogelException.forMessage(clazz + " is an interface or abstract and is not instantiable");
-    }
-
-    // check for primitive types
-    if (clazz.isPrimitive()) {
-      throw AerogelException.forMessage(clazz + " is primitive and is not instantiable");
-    }
-
-    // check for array
-    if (clazz.isArray()) {
-      throw AerogelException.forMessage(clazz + " is an array and is not instantiable");
-    }
-
-    // check for non-static inner classes
-    if (clazz.getEnclosingClass() != null && !Modifier.isStatic(clazz.getModifiers())) {
-      throw AerogelException.forMessage(clazz + " is a non-static inner class and is not instantiable");
-    }
-  }
-
-  /**
    * Gets the generic super type of the given {@link ParameterizedType}.
    *
    * @param type the type to get the generic super type of.

@@ -26,6 +26,8 @@ package dev.derklaro.aerogel.internal;
 
 import dev.derklaro.aerogel.AnnotationPredicate;
 import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.internal.annotation.AnnotationFactory;
+import dev.derklaro.aerogel.internal.annotation.DefaultAnnotationPredicate;
 import dev.derklaro.aerogel.internal.utility.ToStringHelper;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
@@ -33,10 +35,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnmodifiableView;
 
 /**
@@ -49,9 +51,7 @@ import org.jetbrains.annotations.UnmodifiableView;
 public final class DefaultElement implements Element {
 
   private final Type componentType;
-  private final List<AnnotationPredicate<?>> annotationPredicates;
-
-  private String requiredName;
+  private final List<AnnotationPredicate> annotationPredicates;
 
   /**
    * Constructs a new default element type instance.
@@ -67,14 +67,6 @@ public final class DefaultElement implements Element {
    * {@inheritDoc}
    */
   @Override
-  public @Nullable String requiredName() {
-    return this.requiredName;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public @NotNull Type componentType() {
     return this.componentType;
   }
@@ -84,17 +76,8 @@ public final class DefaultElement implements Element {
    */
   @Override
   @UnmodifiableView
-  public @NotNull Collection<AnnotationPredicate<?>> requiredAnnotations() {
+  public @NotNull Collection<AnnotationPredicate> requiredAnnotations() {
     return Collections.unmodifiableCollection(this.annotationPredicates);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull Element requireName(@Nullable String name) {
-    this.requiredName = name;
-    return this;
   }
 
   /**
@@ -103,7 +86,7 @@ public final class DefaultElement implements Element {
   @Override
   public @NotNull Element requireAnnotation(@NotNull Annotation annotation) {
     Objects.requireNonNull(annotation, "annotation");
-    this.annotationPredicates.add(AnnotationPredicateFactory.construct(annotation));
+    this.annotationPredicates.add(DefaultAnnotationPredicate.forAnnotation(annotation));
     // for chaining
     return this;
   }
@@ -113,21 +96,23 @@ public final class DefaultElement implements Element {
    */
   @Override
   public @NotNull Element requireAnnotation(@NotNull Class<? extends Annotation> annotationType) {
-    Objects.requireNonNull(annotationType, "type");
-    this.annotationPredicates.add(AnnotationPredicateFactory.construct(annotationType));
-    // for chaining
-    return this;
+    return this.requireAnnotation(annotationType, Collections.emptyMap());
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Element requireAnnotation(@NotNull AnnotationPredicate<?> predicate) {
-    Objects.requireNonNull(predicate, "predicate");
-    this.annotationPredicates.add(predicate);
-    // for chaining
-    return this;
+  public @NotNull Element requireAnnotation(
+    @NotNull Class<? extends Annotation> annotationType,
+    @NotNull Map<String, Object> overriddenMethodValues
+  ) {
+    Objects.requireNonNull(annotationType, "annotationType");
+    Objects.requireNonNull(overriddenMethodValues, "overriddenMethodValues");
+
+    // construct and require the annotation
+    Annotation proxied = AnnotationFactory.generateAnnotation(annotationType, overriddenMethodValues);
+    return this.requireAnnotation(proxied);
   }
 
   /**
@@ -135,7 +120,7 @@ public final class DefaultElement implements Element {
    */
   @Override
   public boolean hasSpecialRequirements() {
-    return this.requiredName != null || !this.annotationPredicates.isEmpty();
+    return !this.annotationPredicates.isEmpty();
   }
 
   /**
@@ -145,7 +130,6 @@ public final class DefaultElement implements Element {
   public @NotNull String toString() {
     return ToStringHelper.create(this)
       .putField("componentType", this.componentType)
-      .putField("requiredName", this.requiredName)
       .putCollection("requiredAnnotations", this.annotationPredicates)
       .toString();
   }
@@ -155,7 +139,7 @@ public final class DefaultElement implements Element {
    */
   @Override
   public int hashCode() {
-    return Objects.hash(this.requiredName, this.componentType, this.annotationPredicates);
+    return Objects.hash(this.componentType, this.annotationPredicates);
   }
 
   /**
@@ -169,11 +153,13 @@ public final class DefaultElement implements Element {
     if (!(o instanceof DefaultElement)) {
       return false;
     }
-    DefaultElement that = (DefaultElement) o;
+
     // compare the common fields - type & name
-    if (!this.componentType.equals(that.componentType) || !Objects.equals(this.requiredName, that.requiredName)) {
+    DefaultElement that = (DefaultElement) o;
+    if (!this.componentType.equals(that.componentType)) {
       return false;
     }
+
     // compare the annotation strategies
     // save an iterator if they are either both empty
     if (this.annotationPredicates.isEmpty() && that.annotationPredicates.isEmpty()) {

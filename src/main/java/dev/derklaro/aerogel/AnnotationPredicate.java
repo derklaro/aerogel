@@ -41,12 +41,11 @@ import org.jetbrains.annotations.NotNull;
  * <p>Every {@link Element} holds annotation comparer which can be accessed through {@link Element#requiredAnnotations()}
  * and added via {@link Element#requireAnnotation(Annotation)} and {@link Element#requireAnnotation(Class)}.</p>
  *
- * @param <A> the type of the annotation to compare.
  * @author Pasqual K.
  * @since 1.0
  */
-@API(status = API.Status.STABLE, since = "1.0")
-public interface AnnotationPredicate<A extends Annotation> extends Predicate<A> {
+@API(status = API.Status.STABLE, since = "2.0")
+public interface AnnotationPredicate extends Predicate<Object> {
 
   /**
    * Checks if comparer holds the same annotation instance as provided to this method.
@@ -55,12 +54,12 @@ public interface AnnotationPredicate<A extends Annotation> extends Predicate<A> 
    * @return if the annotation in this provider and the annotation provided do equal.
    */
   @Override
-  boolean test(@NotNull A annotation);
+  boolean test(@NotNull Object annotation);
 
   /**
    * Get the type of annotation this predicate is handling.
    *
    * @return the type of annotation this predicate is handling.
    */
-  @NotNull Class<A> annotationType();
+  @NotNull Class<? extends Annotation> annotationType();
 }

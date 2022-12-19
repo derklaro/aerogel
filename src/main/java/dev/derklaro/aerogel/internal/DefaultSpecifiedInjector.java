@@ -25,15 +25,16 @@
 package dev.derklaro.aerogel.internal;
 
 import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.BindingConstructor;
-import dev.derklaro.aerogel.BindingHolder;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjector;
+import dev.derklaro.aerogel.ScopeProvider;
 import dev.derklaro.aerogel.SpecifiedInjector;
-import dev.derklaro.aerogel.internal.binding.ConstructingBindingHolder;
+import dev.derklaro.aerogel.binding.BindingConstructor;
+import dev.derklaro.aerogel.binding.BindingHolder;
 import dev.derklaro.aerogel.internal.utility.InjectorUtil;
 import dev.derklaro.aerogel.internal.utility.MapUtil;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +42,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -133,14 +135,17 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
     }
 
     // get or construct the binding from the parent
-    return this.parent.bindingOr(element, $ -> ConstructingBindingHolder.create(this, element));
+    return this.parent.bindingOr(element, InjectorUtil.createJITBindingFactory(this, element));
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public @UnknownNullability BindingHolder bindingOr(@NotNull Element element, @NotNull BindingConstructor factory) {
+  public @UnknownNullability BindingHolder bindingOr(
+    @NotNull Element element,
+    @NotNull Supplier<BindingHolder> factory
+  ) {
     // get from the local injector or from the parent
     BindingHolder known = this.specificBindings.get(element);
     return known != null ? known : this.parent.bindingOr(element, factory);
@@ -189,6 +194,42 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
     } while ((target = target.parent()) != null);
     // the return value should be unmodifiable
     return Collections.unmodifiableCollection(bindings);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull Injector registerScope(
+    @NotNull Class<? extends Annotation> scopeAnno,
+    @NotNull ScopeProvider provider
+  ) {
+    this.parent.registerScope(scopeAnno, provider);
+    return this;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @Nullable ScopeProvider scope(@NotNull Class<? extends Annotation> scopeAnnotation) {
+    return this.parent.scope(scopeAnnotation);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @Nullable ScopeProvider fastScope(@NotNull Class<? extends Annotation> scopeAnnotation) {
+    return this.parent.fastScope(scopeAnnotation);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @Unmodifiable @NotNull Collection<ScopeProvider> scopes() {
+    return this.parent.scopes();
   }
 
   /**
@@ -245,15 +286,8 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
   @Override
   @SuppressWarnings("unchecked")
   public <T> @UnknownNullability T instance(@NotNull Element element) {
-    // check if we have a known binding
-    BindingHolder registered = this.specificBindings.get(element);
-    if (registered != null) {
-      return (T) registered.get();
-    }
-
-    // get from the parent injector
-    BindingHolder parentHolder = this.parent.bindingOr(element, $ -> ConstructingBindingHolder.create(this, element));
-    return (T) parentHolder.get();
+    BindingHolder binding = this.binding(element);
+    return (T) binding.provider().get();
   }
 
   /**

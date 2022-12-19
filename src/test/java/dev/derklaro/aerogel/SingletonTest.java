@@ -24,6 +24,8 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.binding.BindingBuilder;
+import dev.derklaro.aerogel.util.Qualifiers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -48,10 +50,10 @@ public class SingletonTest {
   }
 
   @Test
-  void testConstructingSingleton() throws NoSuchMethodException {
+  void testConstructingSingleton() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.constructing(Element.forType(StringHolder.class)));
-    injector.install(Bindings.factory(SingletonTest.class.getDeclaredMethod("intValue")));
+    injector.install(BindingBuilder.create().toConstructing(StringHolder.class));
+    injector.install(BindingBuilder.create().toFactory(SingletonTest.class, "intValue"));
 
     StringHolder value = injector.instance(StringHolder.class);
     Assertions.assertNotNull(value);
@@ -67,15 +69,17 @@ public class SingletonTest {
   }
 
   @Test
-  void testFactoryMethodSingleton() throws NoSuchMethodException {
+  void testFactoryMethodSingleton() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.factory(SingletonTest.class.getDeclaredMethod("intValue")));
-    injector.install(Bindings.factory(SingletonTest.class.getDeclaredMethod("factoryStringHolder")));
+    injector.install(BindingBuilder.create().toFactory(SingletonTest.class, "intValue"));
+    injector.install(BindingBuilder.create().toFactory(SingletonTest.class, "factoryStringHolder"));
 
-    StringHolder holderA = injector.instance(Element.forType(StringHolder.class).requireName("holder"));
+    Element element = Element.forType(StringHolder.class).requireAnnotation(Qualifiers.named("holder"));
+
+    StringHolder holderA = injector.instance(element);
     Assertions.assertNotNull(holderA);
 
-    StringHolder holderB = injector.instance(Element.forType(StringHolder.class).requireName("holder"));
+    StringHolder holderB = injector.instance(element);
     Assertions.assertNotNull(holderB);
 
     Assertions.assertSame(holderA, holderB);

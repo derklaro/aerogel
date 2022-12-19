@@ -27,11 +27,11 @@ package dev.derklaro.aerogel.auto.internal.holder;
 import static dev.derklaro.aerogel.auto.internal.utility.ClassLoadingUtil.loadClass;
 
 import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.BindingConstructor;
-import dev.derklaro.aerogel.Bindings;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.auto.AutoAnnotationEntry;
 import dev.derklaro.aerogel.auto.Provides;
+import dev.derklaro.aerogel.binding.BindingBuilder;
+import dev.derklaro.aerogel.binding.BindingConstructor;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -104,17 +104,24 @@ public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
       short dataVersion = in.readShort();
 
       // the class to which all provided classes should get bound
-      Element type = Element.forType(loadClass(in.readUTF()));
+      Class<?> boundClass = loadClass(in.readUTF());
 
-      // load the classes to which the binding provides
-      Element[] providedElements = new Element[in.readInt()];
-      for (int i = 0; i < providedElements.length; i++) {
+      // read the amount of elements the given type is bound to & begin the build process
+      int elements = in.readInt();
+      BindingBuilder builder = BindingBuilder.create();
+
+      // bind all provided classes
+      for (int i = 0; i < elements; i++) {
+        // load the surrounding class & build an element from it
         Class<?> providedClass = loadClass(in.readUTF());
-        providedElements[i] = ElementHelper.buildElement(providedClass);
+        Element element = ElementHelper.buildElement(providedClass, providedClass);
+
+        // apply the element to the builder
+        builder = builder.bindFully(element);
       }
 
-      // make a constructor for each provided class
-      BindingConstructor constructor = Bindings.constructing(type, providedElements);
+      // construct the binding targeting the given bound type
+      BindingConstructor constructor = builder.toConstructing(boundClass);
       return Collections.singleton(constructor);
     } catch (ClassNotFoundException exception) {
       throw AerogelException.forMessagedException("Unable to provide bindings constructors", exception);

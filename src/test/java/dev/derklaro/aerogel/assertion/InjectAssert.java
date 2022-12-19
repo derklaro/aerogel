@@ -24,7 +24,7 @@
 
 package dev.derklaro.aerogel.assertion;
 
-import dev.derklaro.aerogel.internal.codegen.InjectionTimeProxy;
+import dev.derklaro.aerogel.internal.proxy.InjectionTimeProxy;
 import org.junit.jupiter.api.Assertions;
 
 public class InjectAssert {
@@ -35,8 +35,7 @@ public class InjectAssert {
     Assertions.assertNotNull(right);
 
     // check if none of the given values is a proxy, we can shortcut to == then
-    if (!(left instanceof InjectionTimeProxy.InjectionTimeProxied)
-      && !(right instanceof InjectionTimeProxy.InjectionTimeProxied)) {
+    if (!InjectionTimeProxy.isProxy(left) && !InjectionTimeProxy.isProxy(right)) {
       Assertions.assertSame(left, right);
       return;
     }
@@ -56,8 +55,7 @@ public class InjectAssert {
     Assertions.assertNotNull(right);
 
     // check if none of the given values is a proxy, we can shortcut to == then
-    if (!(left instanceof InjectionTimeProxy.InjectionTimeProxied)
-      && !(right instanceof InjectionTimeProxy.InjectionTimeProxied)) {
+    if (!InjectionTimeProxy.isProxy(left) && !InjectionTimeProxy.isProxy(right)) {
       Assertions.assertNotSame(left, right);
       return;
     }

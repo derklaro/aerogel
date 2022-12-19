@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.binding.BindingBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +33,7 @@ public class BindingsTest {
   @Test
   void testFixedBinding() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.fixed(Element.forType(String.class), "Test"));
+    injector.install(BindingBuilder.create().bind(String.class).toInstance("Test"));
 
     String test = injector.instance(String.class);
     String test1 = injector.instance(String.class);
@@ -49,7 +50,7 @@ public class BindingsTest {
   @Test
   void testConstructingBinding() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.constructing(Element.forType(StringHolder.class)));
+    injector.install(BindingBuilder.create().toConstructing(StringHolder.class));
 
     StringHolder value = injector.instance(StringHolder.class);
     Assertions.assertNotNull(value);
@@ -64,13 +65,13 @@ public class BindingsTest {
   void testInvalidConstructingBinding() {
     Assertions.assertThrows(
       AerogelException.class,
-      () -> Injector.newInjector().install(Bindings.constructing(Element.forType(NotConstructable.class))));
+      () -> Injector.newInjector().install(BindingBuilder.create().toConstructing(NotConstructable.class)));
   }
 
   @Test
-  void testFactoryBinding() throws NoSuchMethodException {
+  void testFactoryBinding() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.factory(FactoryMethodHolder.class.getDeclaredMethod("constructStringHolder")));
+    injector.install(BindingBuilder.create().toFactory(FactoryMethodHolder.class, "constructStringHolder"));
 
     StringHolder holder = injector.instance(StringHolder.class);
     Assertions.assertNotNull(holder);
@@ -81,10 +82,12 @@ public class BindingsTest {
   void testInvalidFactoryBinding() {
     Assertions.assertThrows(
       AerogelException.class,
-      () -> Injector.newInjector().install(Bindings.factory(FactoryMethodHolder.class.getMethod("constructVoid"))));
+      () -> Injector.newInjector()
+        .install(BindingBuilder.create().toFactory(FactoryMethodHolder.class, "constructVoid")));
     Assertions.assertThrows(
       AerogelException.class,
-      () -> Injector.newInjector().install(Bindings.factory(FactoryMethodHolder.class.getMethod("instanceConstruct"))));
+      () -> Injector.newInjector()
+        .install(BindingBuilder.create().toFactory(FactoryMethodHolder.class, "instanceConstruct")));
   }
 
   private interface NotConstructable {

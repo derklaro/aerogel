@@ -34,7 +34,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedList;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
@@ -44,13 +44,8 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 1.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
+@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel")
 public final class ElementHelper {
-
-  /**
-   * An empty array of annotations used to collect all annotations in the {@code extractQualifierAnnotations} method.
-   */
-  private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
 
   private ElementHelper() {
     throw new UnsupportedOperationException();
@@ -63,22 +58,8 @@ public final class ElementHelper {
    * @param annotations the annotations of the field.
    * @return the constructed element for the given field.
    */
-  public static @NotNull Element buildElement(@NotNull Field field, @NotNull Annotation[] annotations) {
-    // extract the requested name
-    String name = JakartaBridge.nameOf(field);
-    // extract the needed type
-    Type type = JakartaBridge.isProvider(field.getType())
-      ? ReflectionUtil.genericSuperType(field.getGenericType())
-      : field.getGenericType();
-    // extract all annotations
-    Annotation[] qualifierAnnotations = extractQualifierAnnotations(annotations);
-
-    // create an element based on the information
-    Element element = Element.forType(type).requireName(name);
-    for (Annotation annotation : qualifierAnnotations) {
-      element = element.requireAnnotation(annotation);
-    }
-    return element;
+  public static @NotNull Element buildElement(@NotNull Field field, @NotNull Annotation[]... annotations) {
+    return buildElement(field.getGenericType(), field.getType(), annotations);
   }
 
   /**
@@ -88,61 +69,59 @@ public final class ElementHelper {
    * @param annotations the annotations of the parameter.
    * @return the constructed element for the given parameter.
    */
-  public static @NotNull Element buildElement(@NotNull Parameter parameter, @NotNull Annotation[] annotations) {
-    // extract the requested name
-    String name = JakartaBridge.nameOf(parameter);
-    // extract the needed type
-    Type type = JakartaBridge.isProvider(parameter.getType())
-      ? ReflectionUtil.genericSuperType(parameter.getParameterizedType())
-      : parameter.getParameterizedType();
-    // extract all annotations
-    Annotation[] qualifierAnnotations = extractQualifierAnnotations(annotations);
-
-    // create an element based on the information
-    Element element = Element.forType(type).requireName(name);
-    for (Annotation annotation : qualifierAnnotations) {
-      element = element.requireAnnotation(annotation);
-    }
-    return element;
+  public static @NotNull Element buildElement(@NotNull Parameter parameter, @NotNull Annotation[]... annotations) {
+    return buildElement(parameter.getParameterizedType(), parameter.getType(), annotations);
   }
 
   /**
    * Makes an element for the given {@code method} extracting all necessary information from it.
    *
-   * @param method the method to make the element for.
+   * @param method      the method to make the element for.
+   * @param annotations the annotations of the method.
    * @return the constructed element for the given method.
    */
-  public static @NotNull Element buildElement(@NotNull Method method) {
-    // extract the name of the method
-    String name = JakartaBridge.nameOf(method);
-    // extract the qualifier annotations
-    Annotation[] qualifierAnnotations = extractQualifierAnnotations(method.getDeclaredAnnotations());
-
-    // create an element based on the information
-    Element element = Element.forType(method.getGenericReturnType()).requireName(name);
-    for (Annotation annotation : qualifierAnnotations) {
-      element = element.requireAnnotation(annotation);
-    }
-    return element;
+  public static @NotNull Element buildElement(@NotNull Method method, @NotNull Annotation[]... annotations) {
+    return buildElement(method.getGenericReturnType(), method.getReturnType(), annotations);
   }
 
   /**
    * Makes an element for the given {@code clazz} extracting all necessary information from it.
    *
-   * @param clazz the class to build the element for.
+   * @param fullType the full generic type of the resulting element.
+   * @param rawType  the raw type of the to extract the annotations from.
    * @return the constructed element for the given class.
    */
-  public static @NotNull Element buildElement(@NotNull Class<?> clazz) {
-    // extract the name of the class
-    String name = JakartaBridge.nameOf(clazz);
-    // extract the qualifier annotations
-    Annotation[] qualifierAnnotations = extractQualifierAnnotations(clazz.getDeclaredAnnotations());
+  public static @NotNull Element buildElement(@NotNull Type fullType, @NotNull Class<?> rawType) {
+    return buildElement(fullType, rawType, rawType.getDeclaredAnnotations());
+  }
 
-    // create an element based on the information
-    Element element = Element.forType(clazz).requireName(name);
-    for (Annotation annotation : qualifierAnnotations) {
-      element = element.requireAnnotation(annotation);
+  /**
+   * Makes an element from the provided information.
+   *
+   * @param fullType    the full generic type of the resulting element.
+   * @param rawType     the raw type of the to extract the annotations from.
+   * @param annotations the annotations of the method.
+   * @return the constructed element for the given class.
+   */
+  private static @NotNull Element buildElement(
+    @NotNull Type fullType,
+    @NotNull Class<?> rawType,
+    @NotNull Annotation[]... annotations
+  ) {
+    // begin an element for the given type
+    Type type = JakartaBridge.isProvider(rawType) ? ReflectionUtil.genericSuperType(fullType) : fullType;
+    Element element = Element.forType(type);
+
+    // extract the qualifier annotations from the raw type & apply all qualifier annotations to the element
+    Collection<Annotation> qualifiers = new LinkedList<>();
+    for (Annotation[] annotation : annotations) {
+      // replace the default qualifier annotations of jakarta
+      JakartaBridge.translateQualifierAnnotations(annotation);
+      qualifiers.addAll(extractQualifierAnnotations(annotation));
     }
+
+    // require all annotations & finish the build
+    qualifiers.forEach(element::requireAnnotation);
     return element;
   }
 
@@ -152,15 +131,13 @@ public final class ElementHelper {
    * @param annotations the annotation array to filter the qualifier annotations from.
    * @return a new array only containing all qualifier annotations which are in the given annotation array.
    */
-  public static Annotation @NotNull [] extractQualifierAnnotations(Annotation @NotNull [] annotations) {
-    Collection<Annotation> qualifiedAnnotation = new HashSet<>();
-    // extract every @Qualifier annotation
+  public static Collection<Annotation> extractQualifierAnnotations(@NotNull Annotation[] annotations) {
+    Collection<Annotation> qualifiedAnnotations = new LinkedList<>();
     for (Annotation annotation : annotations) {
-      if (JakartaBridge.isQualifierAnnotation(annotation) && JakartaBridge.isNotNameAnnotation(annotation)) {
-        qualifiedAnnotation.add(annotation);
+      if (JakartaBridge.isQualifierAnnotation(annotation)) {
+        qualifiedAnnotations.add(annotation);
       }
     }
-    // return as an array
-    return qualifiedAnnotation.toArray(EMPTY_ANNOTATION_ARRAY);
+    return qualifiedAnnotations;
   }
 }

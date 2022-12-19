@@ -33,7 +33,7 @@ import dev.derklaro.aerogel.MemberInjector;
 import dev.derklaro.aerogel.Order;
 import dev.derklaro.aerogel.PostConstruct;
 import dev.derklaro.aerogel.Provider;
-import dev.derklaro.aerogel.internal.asm.AsmUtils;
+import dev.derklaro.aerogel.binding.BindingHolder;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
 import dev.derklaro.aerogel.internal.unsafe.UnsafeMemberAccess;
@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -152,7 +153,10 @@ public final class DefaultMemberInjector implements MemberInjector {
 
         // the signature is used to check if we already found a comparable method
         String visibility = ReflectionUtil.shortVisibilitySummary(method);
-        String signature = String.format("[%s]%s%s", visibility, method.getName(), AsmUtils.methodDesc(method));
+        String parameterDesc = Arrays.stream(method.getParameterTypes())
+          .map(Class::getName)
+          .collect(Collectors.joining(", ", "(", ")"));
+        String signature = String.format("[%s]%s%s", visibility, method.getName(), parameterDesc);
 
         // check if the method is an overridden one
         if (!injectable && !postConstructListener) {
@@ -619,9 +623,10 @@ public final class DefaultMemberInjector implements MemberInjector {
       Object fieldValue;
       // check if the field is a provider
       if (JakartaBridge.isProvider(injectable.field.getType())) {
-        Provider<?> provider = context == null
+        BindingHolder bindingHolder = context == null
           ? this.injector.binding(ElementHelper.buildElement(injectable.field, injectable.annotations))
           : context.injector().binding(ElementHelper.buildElement(injectable.field, injectable.annotations));
+        Provider<?> provider = bindingHolder.provider();
         // check if the provider is a jakarta provider
         if (JakartaBridge.needsProviderWrapping(injectable.field.getType())) {
           fieldValue = JakartaBridge.bridgeJakartaProvider(provider);
@@ -668,8 +673,8 @@ public final class DefaultMemberInjector implements MemberInjector {
         if (JakartaBridge.isProvider(injectable.parameters[i].getType())) {
           // we only need the binding, not the direct instance then
           Provider<?> provider = context == null
-            ? this.injector.binding(element)
-            : context.injector().binding(element);
+            ? this.injector.binding(element).provider()
+            : context.injector().binding(element).provider();
           // check if the provider is a jakarta provider
           if (JakartaBridge.needsProviderWrapping(injectable.parameters[i].getType())) {
             paramInstances[i] = JakartaBridge.bridgeJakartaProvider(provider);

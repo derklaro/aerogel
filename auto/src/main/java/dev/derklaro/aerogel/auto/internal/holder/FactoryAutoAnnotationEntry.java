@@ -27,15 +27,14 @@ package dev.derklaro.aerogel.auto.internal.holder;
 import static dev.derklaro.aerogel.auto.internal.utility.ClassLoadingUtil.loadClass;
 
 import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.BindingConstructor;
-import dev.derklaro.aerogel.Bindings;
 import dev.derklaro.aerogel.auto.AutoAnnotationEntry;
 import dev.derklaro.aerogel.auto.Factory;
 import dev.derklaro.aerogel.auto.internal.utility.TypeUtil;
+import dev.derklaro.aerogel.binding.BindingBuilder;
+import dev.derklaro.aerogel.binding.BindingConstructor;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -150,15 +149,15 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
       // load the declaring class
       Class<?> declaringClass = loadClass(enclosingClass);
       // load the type arguments as classes to a new array
-      Class<?>[] types = new Class<?>[typeArguments.length];
+      Class<?>[] params = new Class<?>[typeArguments.length];
       for (int i = 0; i < typeArguments.length; i++) {
         // register the argument
-        types[i] = loadClass(typeArguments[i]);
+        params[i] = loadClass(typeArguments[i]);
       }
 
       // get the factory method from the declaring class & create a constructing holder from that
-      Method factoryMethod = declaringClass.getDeclaredMethod(methodName, types);
-      return Collections.singleton(Bindings.factory(factoryMethod));
+      BindingConstructor constructor = BindingBuilder.create().toFactory(declaringClass, methodName, params);
+      return Collections.singleton(constructor);
     } catch (Exception exception) {
       throw AerogelException.forMessagedException(String.format(
         "Unable to construct factory binding on %s.%s(%s)",

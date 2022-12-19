@@ -32,18 +32,37 @@ import java.lang.annotation.Target;
 import org.apiguardian.api.API;
 
 /**
- * Annotate every class or factory method you only want one instance to be created of and then reused. The instance will
- * be saved in one {@link Injector} which means creating multiple, non-associated {@link Injector}s may still result in
- * duplicate construction or factory method calls.
+ * This annotation identifies an annotation which represents a scope. When an injector creates an instance of a class
+ * the resulting instance can be optionally scoped. When a later call to create an instance is done in the same scope,
+ * the injector is required to return the same instance again.
+ *
+ * <p>There are two scopes present by default:
+ * <ol>
+ *   <li>The default scope: in this scope an instance is created (for example to inject a parameter) and the injector
+ *   will forget about the instance instantly.
+ *   <li>Singleton (indicated by &#064;Singleton): the instance for the class will be created only once in the scope of
+ *   the current injector and children.
+ * </ol>
+ *
+ * <p>A scope annotation...
+ * <ol>
+ *   <li>must use a runtime retention in runtime.
+ *   <li>should have no attributes (as the injector will not use them, nor provide them to scope providers).
+ *   <li>must not be inherited and must be directly applied to the target element.
+ *   <li>can target a method (for factory) or class.
+ * </ol>
+ *
+ * <p>If the scope annotation is missing on an annotation, the injector will not detect the given annotation as a scope
+ * and ignore the added annotation.
  *
  * @author Pasqual K.
- * @since 1.0
+ * @see Singleton
+ * @since 2.0
  */
-@Scope
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
-@API(status = API.Status.STABLE, since = "1.0")
-public @interface Singleton {
+@Target(ElementType.ANNOTATION_TYPE)
+@API(status = API.Status.STABLE, since = "2.0")
+public @interface Scope {
 
 }

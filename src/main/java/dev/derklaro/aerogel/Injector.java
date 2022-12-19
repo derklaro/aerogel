@@ -24,10 +24,14 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.binding.BindingConstructor;
+import dev.derklaro.aerogel.binding.BindingHolder;
 import dev.derklaro.aerogel.internal.DefaultInjector;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -189,7 +193,7 @@ public interface Injector {
    * @since 2.0
    */
   @API(status = API.Status.EXPERIMENTAL, since = "2.0")
-  @UnknownNullability BindingHolder bindingOr(@NotNull Element element, @NotNull BindingConstructor factory);
+  @UnknownNullability BindingHolder bindingOr(@NotNull Element element, @NotNull Supplier<BindingHolder> factory);
 
   /**
    * Get the stored binding for the given {@code element}. The binding can be stored in the parent injector chain as
@@ -225,6 +229,55 @@ public interface Injector {
    */
   @Unmodifiable
   @NotNull Collection<BindingHolder> allBindings();
+
+  /**
+   * Registers the given annotation as a scope annotation to this injector. All child injectors will have the
+   * information about the given scope present, unless the scope was registered to them specifically (or anywhere
+   * downstream of this injector) as well.
+   *
+   * <p>This method does not validate that the given annotation is marked as &#064;Scope. If the scope annotation is
+   * missing on the given annotation, and the scope is applied somewhere, the injector will not be able to understand
+   * that the given annotation should get treated as a scope.
+   *
+   * @param scopeAnno the annotation to associate as a scope with the given scope provider.
+   * @param provider  the provider to apply when the scope is requested via the given annotation.
+   * @return the same injector as used to call the method, for chaining.
+   * @throws NullPointerException if the given scope annotation class or scope provider is null.
+   * @since 2.0
+   */
+  @API(status = API.Status.STABLE, since = "2.0")
+  @NotNull Injector registerScope(@NotNull Class<? extends Annotation> scopeAnno, @NotNull ScopeProvider provider);
+
+  /**
+   * Gets the registered scope provider associated with the given annotation from this or any parent injector. The first
+   * scope registration in the tree will be used.
+   *
+   * @param scopeAnnotation the scope annotation to find the provider of.
+   * @return the scope provider associated with the given annotation, null if not registered.
+   * @since 2.0
+   */
+  @API(status = API.Status.STABLE, since = "2.0")
+  @Nullable ScopeProvider scope(@NotNull Class<? extends Annotation> scopeAnnotation);
+
+  /**
+   * Get the registered scope from this provider. This method will not check any parent injector.
+   *
+   * @param scopeAnnotation the scope annotation to find the local provider of.
+   * @return the scope provider associated with the given annotation in this injector, null if not registered.
+   * @since 2.0
+   */
+  @API(status = API.Status.STABLE, since = "2.0")
+  @Nullable ScopeProvider fastScope(@NotNull Class<? extends Annotation> scopeAnnotation);
+
+  /**
+   * Get all registered scopes from the full injector tree, travelling up all injectors.
+   *
+   * @return the registered scopes in all injectors up the tree.
+   * @since 2.0
+   */
+  @Unmodifiable
+  @API(status = API.Status.STABLE, since = "2.0")
+  @NotNull Collection<ScopeProvider> scopes();
 
   /**
    * Removes all bindings which are directly registered in this injector and are passing the given filter predicate.

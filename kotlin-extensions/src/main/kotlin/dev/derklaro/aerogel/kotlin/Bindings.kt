@@ -25,7 +25,7 @@
 package dev.derklaro.aerogel.kotlin
 
 import dev.derklaro.aerogel.AerogelException
-import dev.derklaro.aerogel.BindingConstructor
+import dev.derklaro.aerogel.binding.BindingConstructor
 import dev.derklaro.aerogel.Bindings
 
 /**

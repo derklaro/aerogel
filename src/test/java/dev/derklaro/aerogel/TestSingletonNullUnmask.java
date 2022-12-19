@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.binding.BindingBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -34,9 +35,9 @@ public class TestSingletonNullUnmask {
   }
 
   @Test
-  void singletonWriteNullDoesReturnNull() throws NoSuchMethodException {
+  void singletonWriteNullDoesReturnNull() {
     Injector injector = Injector.newInjector();
-    injector.install(Bindings.factory(TestSingletonNullUnmask.class.getDeclaredMethod("stringFactory")));
+    injector.install(BindingBuilder.create().toFactory(TestSingletonNullUnmask.class, "stringFactory"));
 
     TestingClass value1 = injector.instance(TestingClass.class);
     Assertions.assertNull(value1);

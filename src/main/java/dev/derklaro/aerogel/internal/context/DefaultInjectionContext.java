@@ -29,7 +29,8 @@ import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjectionSettings;
-import dev.derklaro.aerogel.internal.codegen.InjectionTimeProxy;
+import dev.derklaro.aerogel.internal.proxy.InjectionTimeProxy;
+import dev.derklaro.aerogel.internal.proxy.ProxyMapping;
 import dev.derklaro.aerogel.internal.utility.NullMask;
 import dev.derklaro.aerogel.internal.utility.Preconditions;
 import java.util.Collections;
@@ -65,7 +66,7 @@ public final class DefaultInjectionContext implements InjectionContext {
   private final Injector injector;
   private final ElementStack trackingStack;
   private final Set<Object> constructedValues;
-  private final Map<Element, Object> createdProxies;
+  private final Map<Element, ProxyMapping> createdProxies;
   private final Map<Element, Object> overriddenTypes;
 
   /**
@@ -117,27 +118,17 @@ public final class DefaultInjectionContext implements InjectionContext {
    */
   @Override
   @SuppressWarnings("unchecked")
-  public <T> @Nullable T findConstructedValue(@NotNull Element element) {
-    Object val = this.createdProxies.get(element);
-    // we do not return dynamic created proxy types as they should not be used for construction or general use
-    return val == null || val instanceof InjectionTimeProxy.InjectionTimeProxied ? null : (T) val;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  @SuppressWarnings("unchecked")
   public <T> @Nullable T findInstance(@NotNull Element element) {
     Objects.requireNonNull(element, "element");
     // check if the type was overridden when creating the context
-    if (this.overriddenTypes.containsKey(element)) {
-      Object overriddenElement = this.overriddenTypes.get(element);
+    Object overriddenElement = this.overriddenTypes.get(element);
+    if (overriddenElement != null) {
       return (T) NullMask.unmask(overriddenElement);
     }
     // check if a type was already constructed during the invocation cycle
-    if (this.createdProxies.containsKey(element)) {
-      return (T) this.createdProxies.get(element);
+    ProxyMapping proxyMapping = this.createdProxies.get(element);
+    if (proxyMapping != null) {
+      return (T) proxyMapping.proxy();
     }
     // (1.3.0): return the current injection context if the context is requested without any special properties.
     if (INJECTION_CONTEXT_ELEMENT.equals(element)) {
@@ -174,7 +165,7 @@ public final class DefaultInjectionContext implements InjectionContext {
     this.trackingStack.push(element);
     try {
       // no cached instance yet - fall back to a binding of the injector
-      return this.injector.binding(element).get(this);
+      return (T) this.injector.binding(element).provider().get(this);
     } catch (Throwable throwable) {
       throw AerogelException.forMessagedException("Unable to construct " + element + ':', throwable);
     }
@@ -188,15 +179,10 @@ public final class DefaultInjectionContext implements InjectionContext {
     Objects.requireNonNull(element, "element");
 
     // read the current type from the map
-    Object proxy = this.createdProxies.get(element);
+    ProxyMapping proxy = this.createdProxies.get(element);
     if (proxy != null) {
       // mark the proxy as available, in case it's needed during member injection
-      ((InjectionTimeProxy.InjectionTimeProxied) proxy).setDelegate(result);
-    } else {
-      // do not store proxies as they should be stored after creation and never get injected or used by anyone else
-      Preconditions.checkArgument(
-        !(result instanceof InjectionTimeProxy.InjectionTimeProxied),
-        "Unable to store a proxy handler instance");
+      proxy.setDelegate(result);
     }
 
     // store the result if given, and check if we already encountered the value
@@ -242,6 +228,23 @@ public final class DefaultInjectionContext implements InjectionContext {
    * {@inheritDoc}
    */
   @Override
+  public void constructDone(@NotNull Element[] elements, @Nullable Object constructed, boolean allowMemberInject) {
+    // push the constructed value to the context, check if member injection should be done
+    boolean doMemberInjection = false;
+    for (Element constructedElement : elements) {
+      doMemberInjection |= this.storeValue(constructedElement, constructed);
+    }
+
+    // call the post construct on the given context, do member injection if needed
+    for (int i = 0, typeLength = elements.length; i < typeLength; i++) {
+      this.postConstruct(elements[i], constructed, i == 0 && allowMemberInject && doMemberInjection);
+    }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public void ensureComplete() {
     Preconditions.checkArgument(!this.hasIncompleteProxy(), "Proxy without delegate is still present");
   }
@@ -253,9 +256,8 @@ public final class DefaultInjectionContext implements InjectionContext {
    * @since 2.0
    */
   private boolean hasIncompleteProxy() {
-    for (Object value : this.createdProxies.values()) {
-      InjectionTimeProxy.InjectionTimeProxied proxied = (InjectionTimeProxy.InjectionTimeProxied) value;
-      if (!proxied.isDelegatePresent()) {
+    for (ProxyMapping mapping : this.createdProxies.values()) {
+      if (!mapping.isDelegatePresent()) {
         return true;
       }
     }

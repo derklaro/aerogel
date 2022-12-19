@@ -22,45 +22,36 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.unsafe;
+package dev.derklaro.aerogel.util;
 
+import dev.derklaro.aerogel.Name;
+import dev.derklaro.aerogel.internal.annotation.AnnotationFactory;
+import java.util.Collections;
+import java.util.Objects;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A holder class for the best class definer of the current jvm.
+ * A collection of default qualifiers.
  *
- * @author Pasqual K.
- * @since 1.0
+ * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
-public final class ClassDefiners {
+@API(status = API.Status.STABLE, since = "2.0")
+public final class Qualifiers {
 
-  /**
-   * The jvm static instance of the best definer for the current jvm implementation.
-   */
-  private static final ClassDefiner DEFINER;
-
-  static {
-    if (UnsafeClassDefiner.isAvailable()) {
-      DEFINER = new UnsafeClassDefiner();
-    } else if (LookupClassDefiner.isAvailable()) {
-      DEFINER = new LookupClassDefiner();
-    } else {
-      DEFINER = new FallbackClassDefiner();
-    }
-  }
-
-  private ClassDefiners() {
+  private Qualifiers() {
     throw new UnsupportedOperationException();
   }
 
   /**
-   * Get the jvm static instance of the best definer for the current jvm implementation.
+   * Constructs a new name annotation, for example to require a parameter binding to have the given name.
    *
-   * @return the jvm static instance of the best definer for the current jvm implementation.
+   * @param name the name which is required.
+   * @return a name annotation which has the value set to the given name.
+   * @throws NullPointerException if the given name is null.
    */
-  public static @NotNull ClassDefiner getDefiner() {
-    return DEFINER;
+  public static @NotNull Name named(@NotNull String name) {
+    Objects.requireNonNull(name, "name");
+    return AnnotationFactory.generateAnnotation(Name.class, Collections.singletonMap("value", name));
   }
 }

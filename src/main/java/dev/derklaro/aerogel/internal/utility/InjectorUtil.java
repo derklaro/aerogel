@@ -24,11 +24,17 @@
 
 package dev.derklaro.aerogel.internal.utility;
 
-import dev.derklaro.aerogel.BindingConstructor;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.internal.binding.ImmediateBindingHolder;
+import dev.derklaro.aerogel.ProvidedBy;
+import dev.derklaro.aerogel.binding.BindingBuilder;
+import dev.derklaro.aerogel.binding.BindingConstructor;
+import dev.derklaro.aerogel.binding.BindingHolder;
+import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
+import dev.derklaro.aerogel.util.Scopes;
+import java.util.function.Supplier;
 import org.apiguardian.api.API;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A utility class which makes it easier to work with injector bindings.
@@ -46,10 +52,38 @@ public final class InjectorUtil {
   /**
    * A binding constructor which creates a new binding holder for the injector calling the method.
    */
-  public static final BindingConstructor INJECTOR_BINDING_CONSTRUCTOR = injector -> new ImmediateBindingHolder(
-    INJECTOR_ELEMENT, injector, injector, INJECTOR_ELEMENT);
+  public static final BindingConstructor INJECTOR_BINDING_CONSTRUCTOR = BindingBuilder.create()
+    .bind(INJECTOR_ELEMENT)
+    .scoped(Scopes.SINGLETON)
+    .toLazyInstance(injector -> injector);
 
   private InjectorUtil() {
     throw new UnsupportedOperationException();
+  }
+
+  /**
+   * A factory to create a new just-in-time binding for the given element in the given injector.
+   *
+   * @param injector the injector to construct the binding for.
+   * @param element  the element to bind to.
+   * @return the created binding holder factory.
+   * @throws NullPointerException if the given injector or element is null.
+   */
+  public static @NotNull Supplier<BindingHolder> createJITBindingFactory(
+    @NotNull Injector injector,
+    @NotNull Element element
+  ) {
+    return () -> {
+      // resolve the raw type of the given element
+      Class<?> rawType = ReflectionUtil.rawType(element.componentType());
+
+      // check if @ProvidedBy is added to the type
+      ProvidedBy providedBy = rawType.getDeclaredAnnotation(ProvidedBy.class);
+      if (providedBy != null) {
+        return BindingBuilder.create().bindFully(element).toConstructing(providedBy.value()).construct(injector);
+      } else {
+        return BindingBuilder.create().bindFully(element).toConstructing(rawType).construct(injector);
+      }
+    };
   }
 }

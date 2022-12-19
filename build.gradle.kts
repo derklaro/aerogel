@@ -53,9 +53,6 @@ allprojects {
     "compileOnlyApi"(rootProject.libs.apiGuardian)
     "compileOnlyApi"(rootProject.libs.annotations)
 
-    // runtime dependencies
-    "implementation"(rootProject.libs.asm)
-
     // testing
     "testImplementation"(rootProject.libs.geantyref)
     "testImplementation"(rootProject.libs.bundles.junit)

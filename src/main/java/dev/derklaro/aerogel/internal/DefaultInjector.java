@@ -25,16 +25,19 @@
 package dev.derklaro.aerogel.internal;
 
 import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.BindingConstructor;
-import dev.derklaro.aerogel.BindingHolder;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjector;
+import dev.derklaro.aerogel.ScopeProvider;
+import dev.derklaro.aerogel.Singleton;
 import dev.derklaro.aerogel.SpecifiedInjector;
-import dev.derklaro.aerogel.internal.binding.ConstructingBindingHolder;
+import dev.derklaro.aerogel.binding.BindingConstructor;
+import dev.derklaro.aerogel.binding.BindingHolder;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
 import dev.derklaro.aerogel.internal.utility.InjectorUtil;
 import dev.derklaro.aerogel.internal.utility.MapUtil;
+import dev.derklaro.aerogel.util.Scopes;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,10 +45,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jetbrains.annotations.UnmodifiableView;
 
 /**
@@ -60,6 +65,7 @@ public final class DefaultInjector implements Injector {
   private final Injector parent;
   private final Map<Element, BindingHolder> bindings;
   private final Map<Class<?>, MemberInjector> cachedMemberInjectors;
+  private final Map<Class<? extends Annotation>, ScopeProvider> scopes;
 
   // represents the binding for this injector
   private final BindingHolder injectorBinding;
@@ -73,7 +79,12 @@ public final class DefaultInjector implements Injector {
     this.parent = parent;
     this.bindings = MapUtil.newConcurrentMap();
     this.cachedMemberInjectors = MapUtil.newConcurrentMap();
+    this.scopes = MapUtil.newConcurrentMap();
     this.injectorBinding = InjectorUtil.INJECTOR_BINDING_CONSTRUCTOR.construct(this);
+
+    // install the singleton scope
+    this.registerScope(Singleton.class, Scopes.SINGLETON);
+    this.registerScope(jakarta.inject.Singleton.class, Scopes.SINGLETON);
   }
 
   /**
@@ -122,7 +133,7 @@ public final class DefaultInjector implements Injector {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T instance(@NotNull Element element) {
-    return (T) this.binding(element).get();
+    return (T) this.binding(element).provider().get();
   }
 
   /**
@@ -199,7 +210,7 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @NotNull BindingHolder binding(@NotNull Element element) {
-    return this.bindingOr(element, injector -> ConstructingBindingHolder.create(injector, element));
+    return this.bindingOr(element, InjectorUtil.createJITBindingFactory(this, element));
   }
 
   /**
@@ -208,7 +219,7 @@ public final class DefaultInjector implements Injector {
   @Override
   public @UnknownNullability BindingHolder bindingOr(
     @NotNull Element element,
-    @NotNull BindingConstructor factory
+    @NotNull Supplier<BindingHolder> factory
   ) {
     Objects.requireNonNull(element, "element");
     Objects.requireNonNull(factory, "factory");
@@ -233,7 +244,7 @@ public final class DefaultInjector implements Injector {
     }
 
     // construct a binding and store it, use putIfAbsent to prevent issues when concurrently accessed
-    BindingHolder constructed = factory.construct(this);
+    BindingHolder constructed = factory.get();
     BindingHolder present = this.bindings.putIfAbsent(element, constructed);
 
     // return the constructed or old binding holder
@@ -304,6 +315,74 @@ public final class DefaultInjector implements Injector {
     }
     // the return value should be unmodifiable
     return Collections.unmodifiableCollection(bindings);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull Injector registerScope(
+    @NotNull Class<? extends Annotation> scopeAnno,
+    @NotNull ScopeProvider provider
+  ) {
+    Objects.requireNonNull(scopeAnno, "scopeAnnotation");
+    Objects.requireNonNull(provider, "provider");
+
+    // register the scope
+    this.scopes.put(scopeAnno, provider);
+    return this;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @Nullable ScopeProvider scope(@NotNull Class<? extends Annotation> scopeAnnotation) {
+    Objects.requireNonNull(scopeAnnotation, "scopeAnnotation");
+
+    // check if the scope is present locally, if not try to resolve the scope from the parent injector
+    ScopeProvider scope = this.scopes.get(scopeAnnotation);
+    if (scope == null && this.parent != null) {
+      Injector injector = this.parent;
+      do {
+        // check if the current injector has a scope present
+        scope = injector.fastScope(scopeAnnotation);
+        if (scope != null) {
+          break;
+        }
+      } while ((injector = injector.parent()) != null);
+    }
+
+    // return the resolved scope
+    return scope;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @Nullable ScopeProvider fastScope(@NotNull Class<? extends Annotation> scopeAnnotation) {
+    return this.scopes.get(scopeAnnotation);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @Unmodifiable
+  public @NotNull Collection<ScopeProvider> scopes() {
+    Collection<ScopeProvider> scopes = new HashSet<>(this.scopes.values());
+    // check if this injector has a parent
+    if (this.parent != null) {
+      // walk down the parent chain - add all of their scopes as well
+      Injector target = this.parent;
+      do {
+        scopes.addAll(target.scopes());
+      } while ((target = target.parent()) != null);
+    }
+
+    // the return value should be unmodifiable
+    return Collections.unmodifiableCollection(scopes);
   }
 
   /**

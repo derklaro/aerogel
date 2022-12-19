@@ -22,56 +22,60 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.binding;
+package dev.derklaro.aerogel.internal.proxy;
 
-import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.InjectionContext;
-import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.internal.utility.NullMask;
+import dev.derklaro.aerogel.internal.utility.Preconditions;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A binding holder which always returns the same instance of an object.
+ * Represents the mapping between a proxy, and it's delegating invocation handler which can accept a delegating value.
  *
  * @author Pasqual K.
- * @see dev.derklaro.aerogel.Bindings#fixed(Element, Object)
- * @since 1.0
+ * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
-public final class ImmediateBindingHolder extends AbstractBindingHolder {
+@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.*")
+public final class ProxyMapping implements DelegationHolder {
 
-  private final Object result;
-  private volatile boolean didMemberInjection;
+  private final Object proxy;
+  private final InjectionTimeProxy.DelegatingInvocationHandler invocationHandler;
 
   /**
-   * Constructs a new immediate binding holder instance.
+   * Constructs a new proxy mapping.
    *
-   * @param targetType  the type of the binding.
-   * @param bindingType the type to which the given type is bound.
-   * @param injector    the injector to which this binding was bound.
-   * @param result      the result which should always get returned.
+   * @param proxy   the constructed proxy instance.
+   * @param handler the delegating invocation handler associated with the proxy.
    */
-  public ImmediateBindingHolder(
-    @NotNull Element bindingType,
-    @NotNull Injector injector,
-    @Nullable Object result,
-    @NotNull Element... targetType
-  ) {
-    super(targetType, bindingType, injector);
-    this.result = result;
+  public ProxyMapping(@NotNull Object proxy, @NotNull InjectionTimeProxy.DelegatingInvocationHandler handler) {
+    this.proxy = proxy;
+    this.invocationHandler = handler;
+  }
+
+  /**
+   * Get the underlying proxy instance.
+   *
+   * @return the underlying proxy instance.
+   */
+  public @NotNull Object proxy() {
+    return this.proxy;
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  @SuppressWarnings("unchecked")
-  public <T> @Nullable T get(@NotNull InjectionContext context) {
-    // just notify that this is done
-    this.callConstructDone(context, this.result, !this.didMemberInjection);
-    this.didMemberInjection = true;
-    // return
-    return (T) this.result;
+  public void setDelegate(@Nullable Object delegate) {
+    Preconditions.checkArgument(this.invocationHandler.delegate == null, "delegate already set");
+    this.invocationHandler.delegate = NullMask.mask(delegate);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean isDelegatePresent() {
+    return this.invocationHandler.delegate != null;
   }
 }

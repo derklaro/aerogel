@@ -132,6 +132,15 @@ public final class UnsafeMemberAccess {
    */
   private static void makeAccessible(@NotNull AccessibleObject accessibleObject, boolean ensure) {
     Objects.requireNonNull(accessibleObject, "accessibleObject");
+
+    // check if the object is already accessible, no need to do anything
+    // we can ignore deprecation here as the method was deprecated because the name might be misleading,
+    // but in our cases it does exactly what we want
+    //noinspection deprecation
+    if (accessibleObject.isAccessible()) {
+      return;
+    }
+
     if (OVERRIDE_BOOLEAN_OFFSET != -1) {
       // we got the offset, force our way in
       UnsafeAccess.U.putByte(accessibleObject, OVERRIDE_BOOLEAN_OFFSET, (byte) 1);

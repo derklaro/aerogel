@@ -24,7 +24,9 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.binding.BindingHolder;
 import dev.derklaro.aerogel.internal.context.DefaultInjectionContextBuilder;
+import java.lang.reflect.Type;
 import java.util.Map;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
@@ -80,17 +82,6 @@ public interface InjectionContext {
   @NotNull Map<Element, Object> overriddenTypes();
 
   /**
-   * Gets an already constructed value of the current injection lifecycle. Proxies created during the injection time
-   * should never get returned by this method.
-   *
-   * @param element the element to find an already constructed value of.
-   * @param <T>     the expected type of element.
-   * @return the already constructed element or {@code null} if not yet constructed.
-   * @since 1.3.0
-   */
-  @Nullable <T> T findConstructedValue(@NotNull Element element);
-
-  /**
    * Tries to find or construct the given element in the known types or the associated injector.
    *
    * @param element the element to search.
@@ -126,6 +117,18 @@ public interface InjectionContext {
   void postConstruct(@NotNull Element element, @Nullable Object result, boolean doMemberInjection);
 
   /**
+   * Stores the values which were constructed in this context and optionally executes member injection afterwards.
+   *
+   * @param elements          the elements that were constructed.
+   * @param constructed       the resulting, constructed value.
+   * @param allowMemberInject if member injection is allowed.
+   * @throws NullPointerException if the given elements array or the constructed object is null.
+   * @throws AerogelException     if the member injection of the resulting {@code result} failed.
+   * @since 2.0
+   */
+  void constructDone(@NotNull Element[] elements, @Nullable Object constructed, boolean allowMemberInject);
+
+  /**
    * Ensures that the construction of the current element has fully finished throwing an exception if not.
    *
    * @throws AerogelException if the construction is not yet done.
@@ -149,6 +152,17 @@ public interface InjectionContext {
      * @throws NullPointerException if {@code injector} is null.
      */
     @NotNull Builder injector(@NotNull Injector injector);
+
+    /**
+     * Overrides the given {@code type} with the given {@code instance}.
+     *
+     * @param type     the type to override.
+     * @param instance the instance to use instead of constructing.
+     * @param <T>      the type of the overridden instance.
+     * @return the same instance of the builder as used to call the method, for chaining.
+     * @throws NullPointerException if {@code type} is null.
+     */
+    @NotNull <T> Builder override(@NotNull Type type, @Nullable T instance);
 
     /**
      * Overrides the given {@code element} with the given {@code instance}.

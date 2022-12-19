@@ -25,16 +25,15 @@
 package dev.derklaro.aerogel.internal.jakarta;
 
 import dev.derklaro.aerogel.Inject;
-import dev.derklaro.aerogel.Name;
 import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.Qualifier;
-import dev.derklaro.aerogel.Singleton;
+import dev.derklaro.aerogel.Scope;
+import dev.derklaro.aerogel.util.Qualifiers;
 import jakarta.inject.Named;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * A utility class to support all jakarta inject-api annotations.
@@ -57,16 +56,6 @@ public final class JakartaBridge {
    */
   public static boolean isInjectable(@NotNull AnnotatedElement element) {
     return element.isAnnotationPresent(Inject.class) || element.isAnnotationPresent(jakarta.inject.Inject.class);
-  }
-
-  /**
-   * Checks if the given {@code element} is annotated as {@code Singleton}.
-   *
-   * @param element the element to check.
-   * @return true if the element is annotated as {@code Singleton}.
-   */
-  public static boolean isSingleton(@NotNull AnnotatedElement element) {
-    return element.isAnnotationPresent(Singleton.class) || element.isAnnotationPresent(jakarta.inject.Singleton.class);
   }
 
   /**
@@ -93,31 +82,32 @@ public final class JakartaBridge {
   }
 
   /**
-   * Checks if the given annotation is not a {@code Name} annotation.
+   * Checks if the given {@code annotation} is a scope annotation.
    *
    * @param annotation the annotation to check.
-   * @return true if the annotation is not a naming annotation.
+   * @return true if the given annotation is a scope annotation.
    */
-  public static boolean isNotNameAnnotation(@NotNull Annotation annotation) {
+  public static boolean isScopeAnnotation(@NotNull Annotation annotation) {
     Class<? extends Annotation> type = annotation.annotationType();
-    return !type.equals(Name.class) && !type.equals(Named.class);
+    return type.isAnnotationPresent(Scope.class) || type.isAnnotationPresent(jakarta.inject.Scope.class);
   }
 
   /**
-   * Gets the requested name of the given {@code element}.
+   * Translates the qualifier annotations from jakarta.inject to the aerogel associations.
    *
-   * @param element the element to get the name of.
-   * @return the requested name of the element or null if no name is requested.
+   * @param annotations the annotations to convert.
+   * @throws NullPointerException if the given annotation array or one element is null.
    */
-  public static @Nullable String nameOf(@NotNull AnnotatedElement element) {
-    // get the name from our annotation first
-    Name name = element.getAnnotation(Name.class);
-    if (name != null) {
-      return name.value();
+  public static void translateQualifierAnnotations(@NotNull Annotation[] annotations) {
+    for (int i = 0; i < annotations.length; i++) {
+      Annotation annotation = annotations[i];
+      // translate the default qualifier annotations of jakarta (if any)
+      Class<?> annotationType = annotation.annotationType();
+      if (annotationType.equals(Named.class)) {
+        Named named = (Named) annotation;
+        annotations[i] = Qualifiers.named(named.value());
+      }
     }
-    // check jakarta
-    Named named = element.getAnnotation(Named.class);
-    return named == null ? null : named.value();
   }
 
   /**
@@ -127,7 +117,7 @@ public final class JakartaBridge {
    * @return true if the given type is a provider type.
    */
   public static boolean isProvider(@NotNull Class<?> type) {
-    return type == Provider.class || type == jakarta.inject.Provider.class;
+    return type.equals(Provider.class) || type.equals(jakarta.inject.Provider.class);
   }
 
   /**
@@ -137,7 +127,7 @@ public final class JakartaBridge {
    * @return true if the given type is a jakarta provider.
    */
   public static boolean needsProviderWrapping(@NotNull Class<?> type) {
-    return type == jakarta.inject.Provider.class;
+    return type.equals(jakarta.inject.Provider.class);
   }
 
   /**

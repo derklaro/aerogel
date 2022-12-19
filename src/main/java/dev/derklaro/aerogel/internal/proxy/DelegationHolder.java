@@ -22,30 +22,33 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.unsafe;
+package dev.derklaro.aerogel.internal.proxy;
 
-import dev.derklaro.aerogel.AerogelException;
 import org.apiguardian.api.API;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * Internal utility class to define classes in the runtime.
+ * Represents a proxyable object in the runtime which can receive a delegate object at a later point.
  *
  * @author Pasqual K.
  * @since 1.0
  */
-@FunctionalInterface
-@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
-public interface ClassDefiner {
+@API(status = API.Status.STABLE, since = "2.0")
+public interface DelegationHolder {
 
   /**
-   * Defines the given class {@code bytecode} and return the constructed class object.
+   * Sets the delegate instance for the current proxy.
    *
-   * @param name     the name of the class to construct.
-   * @param parent   the parent class of this class as we are assuming to define an anonymous class.
-   * @param bytecode the bytecode of the class to define.
-   * @return the constructed class object from the given {@code bytecode}.
-   * @throws AerogelException if the class defining failed.
+   * @param delegate the delegate instance to use for the current proxy.
+   * @throws dev.derklaro.aerogel.AerogelException if the delegate is already set.
    */
-  @NotNull Class<?> defineClass(@NotNull String name, @NotNull Class<?> parent, byte[] bytecode);
+  void setDelegate(@Nullable Object delegate);
+
+  /**
+   * Checks if the delegate value is set.
+   *
+   * @return true if the delegate for this proxy is set, false otherwise.
+   * @since 2.0
+   */
+  boolean isDelegatePresent();
 }

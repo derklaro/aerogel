@@ -24,6 +24,8 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.binding.BindingConstructor;
+import dev.derklaro.aerogel.binding.BindingHolder;
 import java.lang.reflect.Type;
 import java.util.function.Predicate;
 import org.apiguardian.api.API;

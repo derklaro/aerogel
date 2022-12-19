@@ -7,7 +7,6 @@ kotlinDokka = "1.7.20"
 nexusPublish = "1.1.0"
 
 # dependencies
-asm = "9.4"
 apiGuardian = "1.1.2"
 annotations = "23.1.0"
 jakartaInject = "2.0.1"
@@ -23,7 +22,6 @@ compileTesting = "0.21.0"
 [libraries]
 
 # dependencies
-asm = { group = "org.ow2.asm", name = "asm", version.ref = "asm" }
 annotations = { group = "org.jetbrains", name = "annotations", version.ref = "annotations" }
 apiGuardian = { group = "org.apiguardian", name = "apiguardian-api", version.ref = "apiGuardian" }
 jakartaInjectApi = { group = "jakarta.inject", name = "jakarta.inject-api", version.ref = "jakartaInject" }
