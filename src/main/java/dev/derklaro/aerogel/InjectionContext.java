@@ -93,6 +93,17 @@ public interface InjectionContext {
   @Nullable <T> T findInstance(@NotNull Element element);
 
   /**
+   * Finds the stored value which was previously constructed by this context and is associated with all the given
+   * elements.
+   *
+   * @param elements the elements to find the value of.
+   * @param <T>      the generic type of the returned element.
+   * @return the previously constructed value within the current scope, null if no value was constructed.
+   * @throws NullPointerException if the given elements array is null.
+   */
+  @Nullable <T> T findConstructedValue(@NotNull Element[] elements);
+
+  /**
    * Used to indicate from a {@link BindingHolder} that the construction of the associated element with {@code element}
    * was successfully done.
    *
@@ -122,11 +133,16 @@ public interface InjectionContext {
    * @param elements          the elements that were constructed.
    * @param constructed       the resulting, constructed value.
    * @param allowMemberInject if member injection is allowed.
+   * @param allowStore        if storing the constructed value associated with the given elements is permitted.
    * @throws NullPointerException if the given elements array or the constructed object is null.
    * @throws AerogelException     if the member injection of the resulting {@code result} failed.
    * @since 2.0
    */
-  void constructDone(@NotNull Element[] elements, @Nullable Object constructed, boolean allowMemberInject);
+  void constructDone(
+    @NotNull Element[] elements,
+    @Nullable Object constructed,
+    boolean allowMemberInject,
+    boolean allowStore);
 
   /**
    * Ensures that the construction of the current element has fully finished throwing an exception if not.

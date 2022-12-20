@@ -95,7 +95,7 @@ public final class Scopes {
       Object value = this.downstream.get(context);
       if (this.reference.compareAndSet(null, NullMask.mask(value))) {
         // we were the first to construct the value
-        this.callConstructDone(context, this.trackedElements, value, true);
+        this.callConstructDone(context, this.trackedElements, value, true, true);
         return value;
       }
 
@@ -115,7 +115,7 @@ public final class Scopes {
     private @Nullable Object returnUnmasked(@NotNull InjectionContext context, @NotNull Object value) {
       // unmask the value and notify the context that the construct was done without injecting members
       Object unmaskedValue = NullMask.unmask(value);
-      this.callConstructDone(context, this.trackedElements, unmaskedValue, false);
+      this.callConstructDone(context, this.trackedElements, unmaskedValue, false, true);
 
       // return the known value, unmasked
       return unmaskedValue;

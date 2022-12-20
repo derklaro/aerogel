@@ -36,7 +36,7 @@ import dev.derklaro.aerogel.internal.unsafe.UnsafeMemberAccess;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
@@ -50,7 +50,7 @@ import org.jetbrains.annotations.NotNull;
 public final class ConstructingBindingConstructor extends BaseBindingConstructor {
 
   private final Constructor<?> targetConstructor;
-  private final Function<InjectionContext, Object[]> parameterValuesSupplier;
+  private final BiFunction<InjectionContext, Element[], Object[]> parameterValuesSupplier;
 
   /**
    * Constructs a new constructing binding constructor.
@@ -81,9 +81,13 @@ public final class ConstructingBindingConstructor extends BaseBindingConstructor
     return new FunctionalContextualProvider<>(injector, this.types, context -> {
       try {
         // get the parameter values & construct a new instance
-        Object[] paramValues = this.parameterValuesSupplier.apply(context);
+        Object[] paramValues = this.parameterValuesSupplier.apply(context, this.types);
         return this.targetConstructor.newInstance(paramValues);
+      } catch (ConstructedValueException constructedException) {
+        // the value was constructed while getting all parameter values
+        return constructedException.constructedValue();
       } catch (ReflectiveOperationException ex) {
+        // unexpected, explode
         throw AerogelException.forMessagedException("Unable to construct requested value using a constructor", ex);
       }
     });

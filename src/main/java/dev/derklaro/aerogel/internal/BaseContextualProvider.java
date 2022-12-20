@@ -118,10 +118,11 @@ public abstract class BaseContextualProvider<T> implements ContextualProvider<T>
     @NotNull InjectionContext context,
     @NotNull Element[] elements,
     @Nullable Object constructed,
-    boolean allowMemberInject
+    boolean allowMemberInject,
+    boolean allowStore
   ) {
     if (!this.hasUpstreamProvider) {
-      context.constructDone(elements, constructed, allowMemberInject);
+      context.constructDone(elements, constructed, allowMemberInject, allowStore);
     }
   }
 }

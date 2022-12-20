@@ -30,6 +30,7 @@ import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
 import java.lang.reflect.Parameter;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +45,7 @@ import org.jetbrains.annotations.NotNull;
 final class ParameterHelper {
 
   private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
-  private static final Function<InjectionContext, Object[]> EMPTY_SUPPLIER = $ -> EMPTY_OBJECT_ARRAY;
+  private static final BiFunction<InjectionContext, Element[], Object[]> EMPTY_SUPPLIER = (__, ___) -> EMPTY_OBJECT_ARRAY;
 
   private ParameterHelper() {
     throw new UnsupportedOperationException();
@@ -54,12 +55,15 @@ final class ParameterHelper {
    * Constructs a function which takes an injection context and returns a new object array which represents the value
    * for each parameter, in order. This method handles the request to inject a provider appropriately.
    *
+   * <p>The returned function throws an {@link ConstructedValueException} if the value representing all given elements
+   * (to the apply method of the constructed function) was constructed while constructing a parameter type.
+   *
    * @param parameters the parameters which the target executable element takes.
    * @return a function which takes an injection context and returns the value for each parameter.
    * @throws NullPointerException if the given parameter array or one element of it is null.
    */
   @SuppressWarnings("unchecked")
-  public static @NotNull Function<InjectionContext, Object[]> constructParameterSuppliers(
+  public static @NotNull BiFunction<InjectionContext, Element[], Object[]> constructParameterSuppliers(
     @NotNull Parameter[] parameters
   ) {
     // if no parameters were given there is nothing to do
@@ -92,12 +96,19 @@ final class ParameterHelper {
     }
 
     // use the parameters suppliers to construct a function for all parameters
-    return context -> {
+    return (context, trackedElements) -> {
       Object[] values = new Object[suppliers.length];
       for (int i = 0; i < suppliers.length; i++) {
         // get and store each value
         Object value = suppliers[i].apply(context);
         values[i] = value;
+
+        // check if we constructed the target value as a side effect of the previous call
+        // and stop the current resolve in that case
+        Object constructed = context.findConstructedValue(trackedElements);
+        if (constructed != null) {
+          throw new ConstructedValueException(constructed);
+        }
       }
       return values;
     };

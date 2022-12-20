@@ -73,7 +73,7 @@ public final class FunctionalContextualProvider<T> extends BaseContextualProvide
     T value = this.downstream.apply(context);
 
     // call construct done for the result
-    this.callConstructDone(context, this.trackedElements, value, true);
+    this.callConstructDone(context, this.trackedElements, value, true, false);
 
     // return the value
     return value;

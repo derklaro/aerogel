@@ -67,6 +67,7 @@ public final class DefaultInjectionContext implements InjectionContext {
   private final ElementStack trackingStack;
   private final Set<Object> constructedValues;
   private final Map<Element, ProxyMapping> createdProxies;
+  private final Map<Element[], Object> storedConstructedValues;
   private final Map<Element, Object> overriddenTypes;
 
   /**
@@ -86,6 +87,7 @@ public final class DefaultInjectionContext implements InjectionContext {
 
     this.constructedValues = new HashSet<>();
     this.createdProxies = new HashMap<>();
+    this.storedConstructedValues = new HashMap<>();
     this.overriddenTypes = new HashMap<>(overriddenTypes);
   }
 
@@ -175,6 +177,15 @@ public final class DefaultInjectionContext implements InjectionContext {
    * {@inheritDoc}
    */
   @Override
+  @SuppressWarnings("unchecked")
+  public <T> @Nullable T findConstructedValue(@NotNull Element[] elements) {
+    return (T) this.storedConstructedValues.get(elements);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public boolean storeValue(@NotNull Element element, @Nullable Object result) {
     Objects.requireNonNull(element, "element");
 
@@ -228,7 +239,17 @@ public final class DefaultInjectionContext implements InjectionContext {
    * {@inheritDoc}
    */
   @Override
-  public void constructDone(@NotNull Element[] elements, @Nullable Object constructed, boolean allowMemberInject) {
+  public void constructDone(
+    @NotNull Element[] elements,
+    @Nullable Object constructed,
+    boolean allowMemberInject,
+    boolean allowStore
+  ) {
+    // store the constructed value
+    if (allowStore) {
+      this.storedConstructedValues.put(elements, constructed);
+    }
+
     // push the constructed value to the context, check if member injection should be done
     boolean doMemberInjection = false;
     for (Element constructedElement : elements) {
