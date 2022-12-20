@@ -120,8 +120,11 @@ public final class ElementHelper {
       qualifiers.addAll(extractQualifierAnnotations(annotation));
     }
 
-    // require all annotations & finish the build
-    qualifiers.forEach(element::requireAnnotation);
+    // require all annotations
+    for (Annotation annotation : qualifiers) {
+      element = element.requireAnnotation(annotation);
+    }
+
     return element;
   }
 

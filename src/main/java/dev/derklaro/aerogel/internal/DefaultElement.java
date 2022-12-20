@@ -60,7 +60,18 @@ public final class DefaultElement implements Element {
    */
   public DefaultElement(@NotNull Type componentType) {
     this.componentType = componentType;
-    this.annotationPredicates = new LinkedList<>();
+    this.annotationPredicates = Collections.emptyList();
+  }
+
+  /**
+   * Constructs a new default element type instance.
+   *
+   * @param componentType        the type of the element.
+   * @param annotationPredicates the required annotations of the element.
+   */
+  private DefaultElement(@NotNull Type componentType, @NotNull List<AnnotationPredicate> annotationPredicates) {
+    this.componentType = componentType;
+    this.annotationPredicates = Collections.unmodifiableList(annotationPredicates);
   }
 
   /**
@@ -77,7 +88,7 @@ public final class DefaultElement implements Element {
   @Override
   @UnmodifiableView
   public @NotNull Collection<AnnotationPredicate> requiredAnnotations() {
-    return Collections.unmodifiableCollection(this.annotationPredicates);
+    return this.annotationPredicates;
   }
 
   /**
@@ -86,9 +97,16 @@ public final class DefaultElement implements Element {
   @Override
   public @NotNull Element requireAnnotation(@NotNull Annotation annotation) {
     Objects.requireNonNull(annotation, "annotation");
-    this.annotationPredicates.add(DefaultAnnotationPredicate.forAnnotation(annotation));
-    // for chaining
-    return this;
+
+    // construct the predicate for the given annotation
+    AnnotationPredicate predicate = DefaultAnnotationPredicate.forAnnotation(annotation);
+
+    // register the new predicate in a copy of the current predicates
+    List<AnnotationPredicate> annotationPredicates = new LinkedList<>(this.annotationPredicates);
+    annotationPredicates.add(predicate);
+
+    // construct and return a new element
+    return new DefaultElement(this.componentType, annotationPredicates);
   }
 
   /**

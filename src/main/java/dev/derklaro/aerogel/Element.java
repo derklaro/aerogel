@@ -76,9 +76,10 @@ public interface Element {
    * Adds the given annotations as required annotations.
    *
    * @param annotation the annotations to add.
-   * @return the same instance as used to call the method, for chaining.
+   * @return a new element with the given annotation required.
    * @throws NullPointerException if the given annotation is null.
    */
+  @Contract(value = "_ -> new", pure = true)
   @NotNull Element requireAnnotation(@NotNull Annotation annotation);
 
   /**
@@ -89,11 +90,12 @@ public interface Element {
    * If a value of the annotation should have a different type, use {@link #requireAnnotation(Class, Map)} instead.
    *
    * @param annotationType the type of annotation to require.
-   * @return the same instance as used to call the method, for chaining.
+   * @return a new element with the given annotation required.
    * @throws NullPointerException if the given annotation type is null.
    * @throws AerogelException     if the given annotation has a non-defaulted method.
    * @since 2.0
    */
+  @Contract(value = "_ -> new", pure = true)
   @API(status = API.Status.STABLE, since = "2.0")
   @NotNull Element requireAnnotation(@NotNull Class<? extends Annotation> annotationType);
 
@@ -104,11 +106,12 @@ public interface Element {
    *
    * @param annotationType         the annotation types to add.
    * @param overriddenMethodValues the overridden method return values for the given annotation type.
-   * @return the same instance as used to call the method, for chaining.
+   * @return a new element with the given annotation required.
    * @throws NullPointerException if the given annotation type or overridden value map is null.
    * @throws AerogelException     if the given annotation has a non-defaulted method which has no overridden value.
    * @since 2.0
    */
+  @Contract(value = "_, _ -> new", pure = true)
   @API(status = API.Status.STABLE, since = "2.0")
   @NotNull Element requireAnnotation(
     @NotNull Class<? extends Annotation> annotationType,
