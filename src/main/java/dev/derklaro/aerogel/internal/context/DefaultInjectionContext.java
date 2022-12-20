@@ -33,9 +33,11 @@ import dev.derklaro.aerogel.internal.proxy.InjectionTimeProxy;
 import dev.derklaro.aerogel.internal.proxy.ProxyMapping;
 import dev.derklaro.aerogel.internal.utility.NullMask;
 import dev.derklaro.aerogel.internal.utility.Preconditions;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -71,6 +73,11 @@ public final class DefaultInjectionContext implements InjectionContext {
   private final Map<Element, Object> overriddenTypes;
 
   /**
+   * Holds the member injection processes that were postponed due to incomplete proxies
+   */
+  private final Collection<Runnable> postponedMemberInjections;
+
+  /**
    * The current element which gets constructed by this context.
    */
   private Element currentElement;
@@ -89,6 +96,9 @@ public final class DefaultInjectionContext implements InjectionContext {
     this.createdProxies = new HashMap<>();
     this.storedConstructedValues = new HashMap<>();
     this.overriddenTypes = new HashMap<>(overriddenTypes);
+
+    // needs the least memory + needs no hashing or equals for writing and iterating
+    this.postponedMemberInjections = new LinkedList<>();
   }
 
   /**
@@ -194,6 +204,12 @@ public final class DefaultInjectionContext implements InjectionContext {
     if (proxy != null && !proxy.isDelegatePresent()) {
       // mark the proxy as available, in case it's needed during member injection
       proxy.setDelegate(result);
+
+      // the delegate to a proxy was just set - if there are no other incomplete proxies
+      // left we can now execute the postponed member injections
+      if (!this.hasIncompleteProxy()) {
+        this.postponedMemberInjections.forEach(Runnable::run);
+      }
     }
 
     // store the result if given, and check if we already encountered the value
@@ -292,6 +308,13 @@ public final class DefaultInjectionContext implements InjectionContext {
    * @param result  the result instance into which the members should get injected, may be null.
    */
   private void injectMembers(@NotNull Element element, @Nullable Object result) {
+    // postpone the member injection process if this context still has incomplete proxies
+    // some users might rely on the proxy instances to be available when doing member injection
+    if (this.hasIncompleteProxy()) {
+      this.postponedMemberInjections.add(() -> this.injectMembers(element, result));
+      return;
+    }
+
     // if we do have an instance we can do the member injection directly
     if (result != null) {
       this.injector.memberInjector(result.getClass()).inject(result, ALL_MEMBERS, this);
