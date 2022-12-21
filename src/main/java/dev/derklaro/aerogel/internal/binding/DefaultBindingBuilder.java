@@ -298,6 +298,13 @@ public final class DefaultBindingBuilder implements BindingBuilder {
       factoryMethod.getReturnType().getDeclaredAnnotations());
     this.bindFully(element);
 
+    // apply the scopes of the factory method
+    for (Annotation annotation : factoryMethod.getDeclaredAnnotations()) {
+      if (JakartaBridge.isScopeAnnotation(annotation)) {
+        this.unresolvedScopes.add(annotation.annotationType());
+      }
+    }
+
     // copy over all elements from this builder to allow further uses
     Set<Element> elements = new LinkedHashSet<>(this.bindings);
     Set<ScopeProvider> scopes = new LinkedHashSet<>(this.scopes);
