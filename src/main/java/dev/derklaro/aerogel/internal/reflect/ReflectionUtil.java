@@ -162,6 +162,11 @@ public final class ReflectionUtil {
     // add all super classes of the class
     Class<?> currentClass = startingPoint;
     do {
+      // if this gets called for a type without super (f. ex. a primitive type) then the current class might be null
+      if (currentClass == null) {
+        break;
+      }
+
       result.add(currentClass);
     } while ((currentClass = currentClass.getSuperclass()) != Object.class);
     // return the result
