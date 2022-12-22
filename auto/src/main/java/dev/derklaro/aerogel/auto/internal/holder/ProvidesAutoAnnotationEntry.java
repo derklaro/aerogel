@@ -98,13 +98,16 @@ public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Set<BindingConstructor> makeBinding(@NotNull DataInputStream in) throws IOException {
+  public @NotNull Set<BindingConstructor> makeBinding(
+    @NotNull ClassLoader classLoader,
+    @NotNull DataInputStream in
+  ) throws IOException {
     try {
       // the data version used to write the data
       short dataVersion = in.readShort();
 
       // the class to which all provided classes should get bound
-      Class<?> boundClass = loadClass(in.readUTF());
+      Class<?> boundClass = loadClass(classLoader, in.readUTF());
 
       // read the amount of elements the given type is bound to & begin the build process
       int elements = in.readInt();
@@ -113,7 +116,7 @@ public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
       // bind all provided classes
       for (int i = 0; i < elements; i++) {
         // load the surrounding class & build an element from it
-        Class<?> providedClass = loadClass(in.readUTF());
+        Class<?> providedClass = loadClass(classLoader, in.readUTF());
         Element element = ElementHelper.buildElement(providedClass, providedClass);
 
         // apply the element to the builder

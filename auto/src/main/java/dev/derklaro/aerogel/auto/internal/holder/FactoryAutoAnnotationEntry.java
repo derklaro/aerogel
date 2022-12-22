@@ -133,7 +133,10 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Set<BindingConstructor> makeBinding(@NotNull DataInputStream in) throws IOException {
+  public @NotNull Set<BindingConstructor> makeBinding(
+    @NotNull ClassLoader classLoader,
+    @NotNull DataInputStream in
+  ) throws IOException {
     short dataVersion = in.readShort(); // the data version used to write the data
     String methodName = in.readUTF(); // the name of the factory method
     String enclosingClass = in.readUTF(); // the class which declares the method
@@ -147,12 +150,12 @@ public final class FactoryAutoAnnotationEntry implements AutoAnnotationEntry {
     // try to load every type & find the method
     try {
       // load the declaring class
-      Class<?> declaringClass = loadClass(enclosingClass);
+      Class<?> declaringClass = loadClass(classLoader, enclosingClass);
       // load the type arguments as classes to a new array
       Class<?>[] params = new Class<?>[typeArguments.length];
       for (int i = 0; i < typeArguments.length; i++) {
         // register the argument
-        params[i] = loadClass(typeArguments[i]);
+        params[i] = loadClass(classLoader, typeArguments[i]);
       }
 
       // get the factory method from the declaring class & create a constructing holder from that

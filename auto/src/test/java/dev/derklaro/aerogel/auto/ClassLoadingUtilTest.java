@@ -33,28 +33,32 @@ public class ClassLoadingUtilTest {
 
   @Test
   void testLoadingOfNormalClass() {
-    Class<?> clazz = Assertions.assertDoesNotThrow(() -> ClassLoadingUtil.loadClass("java.util.Collection"));
+    Class<?> clazz = Assertions.assertDoesNotThrow(
+      () -> ClassLoadingUtil.loadClass(ClassLoadingUtilTest.class.getClassLoader(), "java.util.Collection"));
     Assertions.assertNotNull(clazz);
     Assertions.assertEquals(Collection.class, clazz);
   }
 
   @Test
   void testLoadingOfPrimitiveClass() {
-    Class<?> clazz = Assertions.assertDoesNotThrow(() -> ClassLoadingUtil.loadClass("int"));
+    Class<?> clazz = Assertions.assertDoesNotThrow(
+      () -> ClassLoadingUtil.loadClass(ClassLoadingUtilTest.class.getClassLoader(), "int"));
     Assertions.assertNotNull(clazz);
     Assertions.assertEquals(int.class, clazz);
   }
 
   @Test
   void testLoadingOfArray() {
-    Class<?> clazz = Assertions.assertDoesNotThrow(() -> ClassLoadingUtil.loadClass("java.lang.String[]"));
+    Class<?> clazz = Assertions.assertDoesNotThrow(
+      () -> ClassLoadingUtil.loadClass(ClassLoadingUtilTest.class.getClassLoader(), "java.lang.String[]"));
     Assertions.assertNotNull(clazz);
     Assertions.assertEquals(String[].class, clazz);
   }
 
   @Test
   void testLoadingOfMultipleDimensionalArray() {
-    Class<?> clazz = Assertions.assertDoesNotThrow(() -> ClassLoadingUtil.loadClass("java.lang.String[][][]"));
+    Class<?> clazz = Assertions.assertDoesNotThrow(
+      () -> ClassLoadingUtil.loadClass(ClassLoadingUtilTest.class.getClassLoader(), "java.lang.String[][][]"));
     Assertions.assertNotNull(clazz);
     Assertions.assertEquals(String[][][].class, clazz);
   }

@@ -100,6 +100,16 @@ public interface AutoAnnotationRegistry {
   @NotNull Set<BindingConstructor> makeConstructors(@NotNull InputStream emittedFile);
 
   /**
+   * Makes all binding constructors which were emitted to the target stream.
+   *
+   * @param loader      the class loader to use when loading of classes is needed.
+   * @param emittedFile the input stream of the file to read from.
+   * @return all constructed bindings based on the file output.
+   * @throws AerogelException if an I/O exception occurs while loading, reading or closing the data stream.
+   */
+  @NotNull Set<BindingConstructor> makeConstructors(@NotNull ClassLoader loader, @NotNull InputStream emittedFile);
+
+  /**
    * Makes and installs all bindings which were emitted to the target file.
    *
    * @param loader   the loader in which the file resource is located.

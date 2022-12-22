@@ -58,11 +58,15 @@ public final class ClassLoadingUtil {
    * Loads a class by its name using the current thread context class loader. This will not initialize the class.
    * Primitive classes and arrays are supported as well.
    *
-   * @param name the name of the class to load, may be a primitive type name.
+   * @param loader the loader to load the class from.
+   * @param name   the name of the class to load, may be a primitive type name.
    * @return a class object representing the requested class.
    * @throws ClassNotFoundException if the class can not be located using the thread context class loader.
    */
-  public static @NotNull Class<?> loadClass(@NotNull String name) throws ClassNotFoundException {
+  public static @NotNull Class<?> loadClass(
+    @NotNull ClassLoader loader,
+    @NotNull String name
+  ) throws ClassNotFoundException {
     // check if the name is a primitive class
     Class<?> primitive = PRIMITIVE_CLASSES.get(name);
     if (primitive != null) {
@@ -72,11 +76,11 @@ public final class ClassLoadingUtil {
     // check if the given type is an array
     if (name.endsWith(TypeUtil.ARRAY_INDICATOR)) {
       // get the component type and create an array from it
-      Class<?> componentType = loadClass(name.substring(0, name.length() - TypeUtil.ARRAY_INDICATOR.length()));
+      Class<?> componentType = loadClass(loader, name.substring(0, name.length() - TypeUtil.ARRAY_INDICATOR.length()));
       return Array.newInstance(componentType, 0).getClass();
     }
 
     // try to load the class normally
-    return Class.forName(name, false, Thread.currentThread().getContextClassLoader());
+    return Class.forName(name, false, loader);
   }
 }

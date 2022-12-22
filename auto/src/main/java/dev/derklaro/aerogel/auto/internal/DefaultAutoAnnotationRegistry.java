@@ -106,7 +106,7 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
         throw AerogelException.forMessage("Loader " + loader + " is unable to provide " + fileName);
       }
       // load the constructors from the stream
-      return this.makeConstructors(in);
+      return this.makeConstructors(loader, in);
     } catch (IOException exception) {
       throw AerogelException.forMessagedException("Unable to load file " + fileName + " from " + loader, exception);
     }
@@ -117,7 +117,22 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
    */
   @Override
   public @NotNull Set<BindingConstructor> makeConstructors(@NotNull InputStream emittedFile) {
-    try (DataInputStream in = new DataInputStream(emittedFile)) {
+    // select the class loader to use based on the call context
+    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    if (classLoader == null) {
+      classLoader = DefaultAutoAnnotationRegistry.class.getClassLoader();
+    }
+
+    // make the constructors
+    return this.makeConstructors(classLoader, emittedFile);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull Set<BindingConstructor> makeConstructors(@NotNull ClassLoader loader, @NotNull InputStream stream) {
+    try (DataInputStream in = new DataInputStream(stream)) {
       // check if the stream has data
       if (in.available() > 0) {
         // the result data
@@ -132,7 +147,7 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
             throw AerogelException.forMessage("Defined reader " + decoder + " is not registered");
           }
           // read the constructors from the reader
-          result.addAll(entry.makeBinding(in));
+          result.addAll(entry.makeBinding(loader, in));
         }
         // done
         return result;

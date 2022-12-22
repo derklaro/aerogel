@@ -53,10 +53,14 @@ public interface AutoAnnotationEntry {
   /**
    * Re-constructs all bindings which were emitted by this factory.
    *
-   * @param in the data input to read the data previously written from.
+   * @param loader the class loader to use when loading of classes is required.
+   * @param in     the data input to read the data previously written from.
    * @return the constructed bindings based on the data from the input stream.
    * @throws IOException if an I/O error occurs.
    */
   @Unmodifiable
-  @NotNull Set<BindingConstructor> makeBinding(@NotNull DataInputStream in) throws IOException;
+  @NotNull Set<BindingConstructor> makeBinding(
+    @NotNull ClassLoader loader,
+    @NotNull DataInputStream in
+  ) throws IOException;
 }
