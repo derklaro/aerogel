@@ -38,10 +38,11 @@ import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
 import dev.derklaro.aerogel.internal.unsafe.UnsafeMemberAccess;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
+import dev.derklaro.aerogel.internal.utility.MethodHandleUtil;
 import dev.derklaro.aerogel.internal.utility.Preconditions;
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -597,12 +598,18 @@ public final class DefaultMemberInjector implements MemberInjector {
       Object[] params = this.lookupParamInstances(method, context);
       if (params != null) {
         // invoke the method using the collected parameters
-        return method.method.invoke(instance, params);
+        if (instance == null) {
+          return params.length == 0 ? method.methodHandle.invoke((Object) null) : method.methodHandle.invoke(null, params);
+        } else {
+          return params.length == 0
+            ? method.methodHandle.invoke(instance)
+            : method.methodHandle.invoke(instance, params);
+        }
       }
       // return null if we didn't invoke the method
       return null;
-    } catch (IllegalAccessException | InvocationTargetException exception) {
-      throw AerogelException.forMessagedException("Unable to invoke method", exception);
+    } catch (Throwable exception) {
+      throw AerogelException.forMessagedException("Unable to invoke method " + method.method, exception);
     }
   }
 
@@ -642,9 +649,13 @@ public final class DefaultMemberInjector implements MemberInjector {
       // check if we got a field value - skip the set if the field is optional
       if (fieldValue != null || !injectable.optional) {
         // set the field using the collected parameter
-        injectable.field.set(instance, fieldValue);
+        if (instance == null) {
+          injectable.fieldSetter.invoke(fieldValue);
+        } else {
+          injectable.fieldSetter.invoke(instance, fieldValue);
+        }
       }
-    } catch (IllegalAccessException exception) {
+    } catch (Throwable exception) {
       throw AerogelException.forMessagedException("Unable to set field value", exception);
     }
   }
@@ -757,6 +768,8 @@ public final class DefaultMemberInjector implements MemberInjector {
     private final Class<?>[] parameterTypes;
     private final Annotation[][] parameterAnnotations;
 
+    private final MethodHandle methodHandle;
+
     // precomputed hash to improve speed down the line
     private final int hashCode;
 
@@ -772,6 +785,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       this.parameterTypes = method.getParameterTypes(); // prevents copy of these
       this.parameterAnnotations = method.getParameterAnnotations(); // prevents copy of these
       this.hashCode = this.method.hashCode() ^ Boolean.hashCode(this.optional);
+      this.methodHandle = MethodHandleUtil.toGenericMethodHandle(method);
 
       Order orderAnnotation = method.getAnnotation(Order.class);
       this.order = orderAnnotation == null ? Order.DEFAULT : orderAnnotation.value();
@@ -806,6 +820,8 @@ public final class DefaultMemberInjector implements MemberInjector {
     private final boolean optional;
     private final Annotation[] annotations;
 
+    private final MethodHandle fieldSetter;
+
     // precomputed hash to improve speed down the line
     private final int hashCode;
 
@@ -819,6 +835,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       this.optional = JakartaBridge.isOptional(field);
       this.annotations = field.getDeclaredAnnotations(); // prevents copy of these
       this.hashCode = this.field.hashCode() ^ Boolean.hashCode(this.optional);
+      this.fieldSetter = MethodHandleUtil.toGenericSetterMethodHandle(field);
     }
 
     /**

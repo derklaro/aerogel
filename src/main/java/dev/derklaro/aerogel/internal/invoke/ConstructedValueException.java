@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.binding.constructors;
+package dev.derklaro.aerogel.internal.invoke;
 
 import java.util.Objects;
 import org.apiguardian.api.API;
@@ -40,7 +40,7 @@ import org.jetbrains.annotations.Nullable;
  * @since 2.0
  */
 @API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.binding.constructors")
-final class ConstructedValueException extends RuntimeException {
+public final class ConstructedValueException extends RuntimeException {
 
   private final Object constructed;
 

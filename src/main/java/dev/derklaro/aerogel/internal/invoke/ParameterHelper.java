@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.binding.constructors;
+package dev.derklaro.aerogel.internal.invoke;
 
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
@@ -42,7 +42,7 @@ import org.jetbrains.annotations.NotNull;
  * @since 2.0
  */
 @API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.binding.constructors")
-final class ParameterHelper {
+public final class ParameterHelper {
 
   private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
   private static final BiFunction<InjectionContext, Element[], Object[]> EMPTY_SUPPLIER = (__, ___) -> EMPTY_OBJECT_ARRAY;

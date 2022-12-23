@@ -32,8 +32,11 @@ import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.ScopeProvider;
 import dev.derklaro.aerogel.internal.binding.FunctionalContextualProvider;
 import dev.derklaro.aerogel.internal.binding.defaults.BaseBindingConstructor;
-import dev.derklaro.aerogel.internal.unsafe.UnsafeMemberAccess;
+import dev.derklaro.aerogel.internal.invoke.ConstructedValueException;
+import dev.derklaro.aerogel.internal.invoke.ParameterHelper;
+import dev.derklaro.aerogel.internal.utility.MethodHandleUtil;
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -49,7 +52,7 @@ import org.jetbrains.annotations.NotNull;
 @API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.binding.*")
 public final class FactoryMethodBindingConstructor extends BaseBindingConstructor {
 
-  private final Method factoryMethod;
+  private final MethodHandle factoryMethod;
   private final BiFunction<InjectionContext, Element[], Object[]> parameterValuesSupplier;
 
   /**
@@ -69,7 +72,7 @@ public final class FactoryMethodBindingConstructor extends BaseBindingConstructo
     super(types, scopes, unresolvedScopes);
 
     // assign the constructor & make sure that we can access it
-    this.factoryMethod = UnsafeMemberAccess.forceMakeAccessible(factoryMethod);
+    this.factoryMethod = MethodHandleUtil.toGenericMethodHandle(factoryMethod);
     this.parameterValuesSupplier = ParameterHelper.constructParameterSuppliers(factoryMethod.getParameters());
   }
 
@@ -82,11 +85,11 @@ public final class FactoryMethodBindingConstructor extends BaseBindingConstructo
       try {
         // get the parameter values & construct a new instance
         Object[] paramValues = this.parameterValuesSupplier.apply(context, this.types);
-        return this.factoryMethod.invoke(null, paramValues);
+        return this.factoryMethod.invoke(paramValues);
       } catch (ConstructedValueException constructedException) {
         // the value was constructed while getting all parameter values
         return constructedException.constructedValue();
-      } catch (ReflectiveOperationException ex) {
+      } catch (Throwable ex) {
         // unexpected, explode
         throw AerogelException.forMessagedException("Unable to construct requested value using a constructor", ex);
       }
