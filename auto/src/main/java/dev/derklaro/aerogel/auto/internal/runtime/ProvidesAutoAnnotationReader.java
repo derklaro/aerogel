@@ -22,101 +22,60 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto.internal.holder;
+package dev.derklaro.aerogel.auto.internal.runtime;
 
 import static dev.derklaro.aerogel.auto.internal.utility.ClassLoadingUtil.loadClass;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.auto.AutoAnnotationEntry;
-import dev.derklaro.aerogel.auto.Provides;
+import dev.derklaro.aerogel.auto.runtime.AbstractAutoAnnotationReader;
 import dev.derklaro.aerogel.binding.BindingBuilder;
 import dev.derklaro.aerogel.binding.BindingConstructor;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
-import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * An auto annotation factory implementation which supports the {@link Provides} annotation.
+ * The runtime reader for emitted provides auto annotation entries.
  *
  * @author Pasqual K.
- * @since 1.0
+ * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.auto.internal")
-public final class ProvidesAutoAnnotationEntry implements AutoAnnotationEntry {
-
-  private static final int CURRENT_DATA_VERSION = 1;
-
-  private final String bindingName;
-  private final Set<String> bindings;
+public class ProvidesAutoAnnotationReader extends AbstractAutoAnnotationReader {
 
   /**
-   * Constructs an empty entry. Used for deserialization.
+   * Constructs a new provides auto annotation reader instance.
    */
-  public ProvidesAutoAnnotationEntry() {
-    this.bindingName = null;
-    this.bindings = null;
-  }
-
-  /**
-   * Constructs a new entry.
-   *
-   * @param element  the element which was annotated.
-   * @param provides the annotation.
-   */
-  public ProvidesAutoAnnotationEntry(@NotNull TypeElement element, @NotNull List<? extends TypeMirror> provides) {
-    this.bindingName = element.getQualifiedName().toString();
-    // we assume that provides has always at least one provided class
-    this.bindings = provides.stream().map(TypeMirror::toString).collect(Collectors.toSet());
+  public ProvidesAutoAnnotationReader() {
+    super("provides");
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public void emit(@NotNull DataOutputStream out) throws IOException {
-    out.writeUTF("provides"); // the processor which is responsible for the binding construction
-    out.writeShort(CURRENT_DATA_VERSION); // the data version of the content
-    out.writeUTF(this.bindingName); // the class all provided classes should get bound to
-    out.writeInt(this.bindings.size()); // the size of the bindings array
-    // emit all bindings to the stream
-    for (String binding : this.bindings) {
-      out.writeUTF(binding);
-    }
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull Set<BindingConstructor> makeBinding(
-    @NotNull ClassLoader classLoader,
-    @NotNull DataInputStream in
+  public @NotNull Collection<BindingConstructor> readBindings(
+    @NotNull ClassLoader sourceLoader,
+    @NotNull DataInputStream source
   ) throws IOException {
     try {
       // the data version used to write the data
-      short dataVersion = in.readShort();
+      short dataVersion = source.readShort();
 
       // the class to which all provided classes should get bound
-      Class<?> boundClass = loadClass(classLoader, in.readUTF());
+      Class<?> boundClass = loadClass(sourceLoader, source.readUTF());
 
       // read the amount of elements the given type is bound to & begin the build process
-      int elements = in.readInt();
+      int elements = source.readInt();
       BindingBuilder builder = BindingBuilder.create();
 
       // bind all provided classes
       for (int i = 0; i < elements; i++) {
         // load the surrounding class & build an element from it
-        Class<?> providedClass = loadClass(classLoader, in.readUTF());
+        Class<?> providedClass = loadClass(sourceLoader, source.readUTF());
         Element element = ElementHelper.buildElement(providedClass, providedClass);
 
         // apply the element to the builder

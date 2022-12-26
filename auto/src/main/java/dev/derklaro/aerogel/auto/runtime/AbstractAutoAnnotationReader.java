@@ -22,18 +22,36 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto;
+package dev.derklaro.aerogel.auto.runtime;
 
-import com.google.testing.compile.Compiler;
-import dev.derklaro.aerogel.auto.internal.processing.AutoInjectAnnotationProcessor;
+import org.apiguardian.api.API;
+import org.jetbrains.annotations.NotNull;
 
-final class CompilationUtil {
+/**
+ * An abstract implementation of an auto annotation reader which takes over the handling of the reader name.
+ *
+ * @author Pasqual K.
+ * @since 2.0
+ */
+@API(status = API.Status.STABLE, since = "2.0")
+public abstract class AbstractAutoAnnotationReader implements AutoAnnotationReader {
 
-  private CompilationUtil() {
-    throw new UnsupportedOperationException();
+  private final String name;
+
+  /**
+   * Constructs a new abstract auto annotation reader instance.
+   *
+   * @param name the name of this reader.
+   */
+  public AbstractAutoAnnotationReader(@NotNull String name) {
+    this.name = name;
   }
 
-  public static Compiler javacWithProcessor() {
-    return Compiler.javac().withProcessors(new AutoInjectAnnotationProcessor());
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull String name() {
+    return this.name;
   }
 }

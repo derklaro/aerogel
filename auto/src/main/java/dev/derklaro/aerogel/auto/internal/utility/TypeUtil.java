@@ -30,11 +30,14 @@ import java.util.AbstractMap;
 import java.util.List;
 import java.util.Map;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.MirroredTypesException;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -99,17 +102,34 @@ public final class TypeUtil {
   }
 
   /**
+   * Get the binary name of the given element. This method makes the assumption that the given element is a type element
+   * and will fail if that is not the case. It is up to the caller to ensure that the given element is a type element.
+   *
+   * @param elements the element utils instance for the current processing environment.
+   * @param element  the element to get the binary name of.
+   * @return the binary name of the given type element.
+   */
+  public static @NotNull Name getBinaryName(@NotNull Elements elements, @NotNull Element element) {
+    return elements.getBinaryName((TypeElement) element);
+  }
+
+  /**
    * Converts the given type mirror to a runtime readable class name representation.
    *
    * @param typeMirror the type mirror to convert.
    * @param types      the type utils instance for the current processing environment.
+   * @param elements   the element utils instance for the current processing environment.
    * @return the given type mirror as a runtime readable class name string.
    */
-  public static @NotNull String asRuntimeType(@NotNull TypeMirror typeMirror, @NotNull Types types) {
+  public static @NotNull String asRuntimeType(
+    @NotNull TypeMirror typeMirror,
+    @NotNull Types types,
+    @NotNull Elements elements
+  ) {
     // try to convert the given type mirror to an element
     Element element = types.asElement(typeMirror);
     if (element != null) {
-      return element.toString();
+      return getBinaryName(elements, element).toString();
     }
 
     // unable to convert, might be a primitive

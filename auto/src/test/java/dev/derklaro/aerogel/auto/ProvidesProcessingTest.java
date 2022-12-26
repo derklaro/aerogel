@@ -32,6 +32,7 @@ import com.google.testing.compile.Compilation;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.TypeSpec;
 import dev.derklaro.aerogel.AerogelException;
+import dev.derklaro.aerogel.auto.runtime.AutoAnnotationRegistry;
 import java.io.InputStream;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
@@ -88,7 +89,7 @@ public class ProvidesProcessingTest {
       // of the provides annotation was successful
       AerogelException thrown = Assertions.assertThrows(
         AerogelException.class,
-        () -> AutoAnnotationRegistry.newRegistry().makeConstructors(in));
+        () -> AutoAnnotationRegistry.newRegistry().makeConstructors(ClassLoader.getSystemClassLoader(), in));
 
       // check that the error came because the class is missing
       ClassNotFoundException cause = Assertions.assertInstanceOf(ClassNotFoundException.class, thrown.getCause());

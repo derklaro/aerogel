@@ -22,11 +22,11 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto;
+package dev.derklaro.aerogel.auto.runtime;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.auto.internal.DefaultAutoAnnotationRegistry;
+import dev.derklaro.aerogel.auto.internal.runtime.DefaultAutoAnnotationRegistry;
 import dev.derklaro.aerogel.binding.BindingConstructor;
 import java.io.InputStream;
 import java.util.Map;
@@ -36,7 +36,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnmodifiableView;
 
 /**
- * A runtime registry for annotation loading based on emitted file output during compile time.
+ * A runtime registry for readers of autoconfiguration file entries. A reader can either be registered through this
+ * registry directly or will be loaded automatically by using the java service api.
  *
  * @author Pasqual K.
  * @since 1.0
@@ -59,26 +60,25 @@ public interface AutoAnnotationRegistry {
    * @return all the automated factories to load annotations.
    */
   @NotNull
-  @UnmodifiableView Map<String, AutoAnnotationEntry> entries();
+  @UnmodifiableView Map<String, AutoAnnotationReader> entries();
 
   /**
-   * Unregisters a factory by its name.
+   * Unregisters a reader by its name.
    *
    * @param name the name of the factory to unregister.
    * @return the same instance as used to call the method, for chaining.
    * @throws NullPointerException if name is null.
    */
-  @NotNull AutoAnnotationRegistry unregisterEntry(@NotNull String name);
+  @NotNull AutoAnnotationRegistry unregisterReader(@NotNull String name);
 
   /**
-   * Registers a new factory if its name is not already present.
+   * Registers a new reader if its name is not already present.
    *
-   * @param name  the name of the factory to register.
-   * @param entry the factory instance to register.
+   * @param reader the reader instance to register.
    * @return the same instance as used to call the method, for chaining.
    * @throws NullPointerException if name or entry is null.
    */
-  @NotNull AutoAnnotationRegistry registerEntry(@NotNull String name, @NotNull AutoAnnotationEntry entry);
+  @NotNull AutoAnnotationRegistry registerReader(@NotNull AutoAnnotationReader reader);
 
   /**
    * Makes all binding constructors which were emitted to the target file.
@@ -89,15 +89,6 @@ public interface AutoAnnotationRegistry {
    * @throws AerogelException if an I/O exception occurs while loading or closing the data stream.
    */
   @NotNull Set<BindingConstructor> makeConstructors(@NotNull ClassLoader loader, @NotNull String fileName);
-
-  /**
-   * Makes all binding constructors which were emitted to the target stream.
-   *
-   * @param emittedFile the input stream of the file to read from.
-   * @return all constructed bindings based on the file output.
-   * @throws AerogelException if an I/O exception occurs while loading, reading or closing the data stream.
-   */
-  @NotNull Set<BindingConstructor> makeConstructors(@NotNull InputStream emittedFile);
 
   /**
    * Makes all binding constructors which were emitted to the target stream.
@@ -118,13 +109,4 @@ public interface AutoAnnotationRegistry {
    * @throws AerogelException if an I/O exception occurs while loading or closing the data stream.
    */
   void installBindings(@NotNull ClassLoader loader, @NotNull String fileName, @NotNull Injector target);
-
-  /**
-   * Makes and installs all binding constructors which were emitted to the target stream.
-   *
-   * @param emittedFile the input stream of the file to read from.
-   * @param target      the injector to install the bindings to.
-   * @throws AerogelException if an I/O exception occurs while loading, reading or closing the data stream.
-   */
-  void installBindings(@NotNull InputStream emittedFile, @NotNull Injector target);
 }

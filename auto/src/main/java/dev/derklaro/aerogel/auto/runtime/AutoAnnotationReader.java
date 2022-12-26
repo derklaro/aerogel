@@ -22,45 +22,43 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto;
+package dev.derklaro.aerogel.auto.runtime;
 
 import dev.derklaro.aerogel.binding.BindingConstructor;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Set;
+import java.util.Collection;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Unmodifiable;
 
 /**
- * A factory for reading and re-constructing bindings to and from data streams.
+ * Represents an entry which can construct all bindings from an autoconfiguration file that was emitted during compile
+ * time from the associated processing entry.
  *
  * @author Pasqual K.
- * @since 1.0
+ * @since 2.0
  */
-@API(status = API.Status.STABLE, since = "1.0")
-public interface AutoAnnotationEntry {
+@API(status = API.Status.STABLE, since = "2.0")
+public interface AutoAnnotationReader {
 
   /**
-   * Emits the collected data of this entry to the given data output.
+   * Get the name of the emitted annotation entries which are handled by this reader.
    *
-   * @param out the data output.
-   * @throws IOException if an I/O error occurs.
+   * @return the name of the handled annotation types of this reader.
    */
-  void emit(@NotNull DataOutputStream out) throws IOException;
+  @NotNull String name();
 
   /**
-   * Re-constructs all bindings which were emitted by this factory.
+   * Constructs all bindings which were emitted by the associated processing entry during compile time.
    *
-   * @param loader the class loader to use when loading of classes is required.
-   * @param in     the data input to read the data previously written from.
-   * @return the constructed bindings based on the data from the input stream.
+   * @param sourceLoader the class loader which should be used when needing to load classes.
+   * @param source       the data stream to read the binding data from.
+   * @return the constructed bindings based on the data stream.
    * @throws IOException if an I/O error occurs.
    */
-  @Unmodifiable
-  @NotNull Set<BindingConstructor> makeBinding(
-    @NotNull ClassLoader loader,
-    @NotNull DataInputStream in
+  @NotNull
+  Collection<BindingConstructor> readBindings(
+    @NotNull ClassLoader sourceLoader,
+    @NotNull DataInputStream source
   ) throws IOException;
 }

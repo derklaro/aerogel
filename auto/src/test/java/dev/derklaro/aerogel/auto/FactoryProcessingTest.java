@@ -33,6 +33,7 @@ import com.google.common.reflect.TypeToken;
 import com.google.testing.compile.Compilation;
 import com.squareup.javapoet.ParameterSpec;
 import dev.derklaro.aerogel.AerogelException;
+import dev.derklaro.aerogel.auto.runtime.AutoAnnotationRegistry;
 import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -106,7 +107,7 @@ public class FactoryProcessingTest {
       // of the factory method works as expected
       Exception thrown = Assertions.assertThrows(
         AerogelException.class,
-        () -> AutoAnnotationRegistry.newRegistry().makeConstructors(in));
+        () -> AutoAnnotationRegistry.newRegistry().makeConstructors(ClassLoader.getSystemClassLoader(), in));
       // Ensures that:
       //   - the classes were found correctly
       //   - the parameters are in the correct order

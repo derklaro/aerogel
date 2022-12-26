@@ -22,26 +22,24 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto.internal;
+package dev.derklaro.aerogel.auto.internal.runtime;
 
 import static java.util.Objects.requireNonNull;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.auto.AutoAnnotationEntry;
-import dev.derklaro.aerogel.auto.AutoAnnotationRegistry;
-import dev.derklaro.aerogel.auto.Factory;
-import dev.derklaro.aerogel.auto.Provides;
-import dev.derklaro.aerogel.auto.internal.holder.FactoryAutoAnnotationEntry;
-import dev.derklaro.aerogel.auto.internal.holder.ProvidesAutoAnnotationEntry;
+import dev.derklaro.aerogel.auto.runtime.AutoAnnotationReader;
+import dev.derklaro.aerogel.auto.runtime.AutoAnnotationRegistry;
 import dev.derklaro.aerogel.binding.BindingConstructor;
 import dev.derklaro.aerogel.internal.utility.MapUtil;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -56,21 +54,28 @@ import org.jetbrains.annotations.UnmodifiableView;
 @API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.auto")
 public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegistry {
 
-  private final Map<String, AutoAnnotationEntry> entries = MapUtil.newConcurrentMap();
+  private final Map<String, AutoAnnotationReader> entries = MapUtil.newConcurrentMap();
 
   /**
-   * Constructs a new factory which by default supports the {@link Factory} and {@link Provides} annotation.
+   * Constructs a new default factory and automatically registers all auto annotation entries.
    */
   public DefaultAutoAnnotationRegistry() {
-    this.entries.put("factory", new FactoryAutoAnnotationEntry());
-    this.entries.put("provides", new ProvidesAutoAnnotationEntry());
+    // load the known readers from the context or system class loader
+    ServiceLoader<AutoAnnotationReader> systemLoader = ServiceLoader.load(AutoAnnotationReader.class);
+    systemLoader.forEach(this::registerReader);
+
+    // load the known readers from the current class loader
+    ServiceLoader<AutoAnnotationReader> thisLoader = ServiceLoader.load(
+      AutoAnnotationReader.class,
+      this.getClass().getClassLoader());
+    thisLoader.forEach(this::registerReader);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public @NotNull @UnmodifiableView Map<String, AutoAnnotationEntry> entries() {
+  public @NotNull @UnmodifiableView Map<String, AutoAnnotationReader> entries() {
     return Collections.unmodifiableMap(this.entries);
   }
 
@@ -78,7 +83,7 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
    * {@inheritDoc}
    */
   @Override
-  public @NotNull AutoAnnotationRegistry unregisterEntry(@NotNull String name) {
+  public @NotNull AutoAnnotationRegistry unregisterReader(@NotNull String name) {
     this.entries.remove(requireNonNull(name, "name"));
     return this;
   }
@@ -87,11 +92,10 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
    * {@inheritDoc}
    */
   @Override
-  public @NotNull AutoAnnotationRegistry registerEntry(@NotNull String name, @NotNull AutoAnnotationEntry entry) {
-    requireNonNull(name, "name");
+  public @NotNull AutoAnnotationRegistry registerReader(@NotNull AutoAnnotationReader entry) {
     requireNonNull(entry, "entry");
     // only register the entry if there is no entry yet
-    this.entries.putIfAbsent(name, entry);
+    this.entries.putIfAbsent(entry.name(), entry);
     return this;
   }
 
@@ -116,21 +120,6 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Set<BindingConstructor> makeConstructors(@NotNull InputStream emittedFile) {
-    // select the class loader to use based on the call context
-    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-    if (classLoader == null) {
-      classLoader = DefaultAutoAnnotationRegistry.class.getClassLoader();
-    }
-
-    // make the constructors
-    return this.makeConstructors(classLoader, emittedFile);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public @NotNull Set<BindingConstructor> makeConstructors(@NotNull ClassLoader loader, @NotNull InputStream stream) {
     try (DataInputStream in = new DataInputStream(stream)) {
       // check if the stream has data
@@ -141,13 +130,15 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
         while (in.available() > 0) {
           // read the constructor which is responsible to read the data
           String decoder = in.readUTF();
-          AutoAnnotationEntry entry = this.entries.get(decoder);
+          AutoAnnotationReader entry = this.entries.get(decoder);
           // check if the entry exists
           if (entry == null) {
             throw AerogelException.forMessage("Defined reader " + decoder + " is not registered");
           }
+
           // read the constructors from the reader
-          result.addAll(entry.makeBinding(loader, in));
+          Collection<BindingConstructor> bindings = entry.readBindings(loader, in);
+          result.addAll(bindings);
         }
         // done
         return result;
@@ -167,17 +158,6 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
   public void installBindings(@NotNull ClassLoader loader, @NotNull String fileName, @NotNull Injector target) {
     // load all the bindings constructors and install them to the injector
     for (BindingConstructor constructor : this.makeConstructors(loader, fileName)) {
-      target.install(constructor);
-    }
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public void installBindings(@NotNull InputStream emittedFile, @NotNull Injector target) {
-    // load all the bindings constructors and install them to the injector
-    for (BindingConstructor constructor : this.makeConstructors(emittedFile)) {
       target.install(constructor);
     }
   }

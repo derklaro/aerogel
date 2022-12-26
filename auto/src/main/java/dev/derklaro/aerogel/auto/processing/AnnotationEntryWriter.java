@@ -22,18 +22,29 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto;
+package dev.derklaro.aerogel.auto.processing;
 
-import com.google.testing.compile.Compiler;
-import dev.derklaro.aerogel.auto.internal.processing.AutoInjectAnnotationProcessor;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import org.apiguardian.api.API;
+import org.jetbrains.annotations.NotNull;
 
-final class CompilationUtil {
+/**
+ * A writer for an entry in an autoconfiguration file. A writer instance is constructed by a processing entry and will
+ * be called to write the known data of the entry to the final data stream.
+ *
+ * @author Pasqual K.
+ * @since 2.0
+ */
+@FunctionalInterface
+@API(status = API.Status.STABLE, since = "2.0")
+public interface AnnotationEntryWriter {
 
-  private CompilationUtil() {
-    throw new UnsupportedOperationException();
-  }
-
-  public static Compiler javacWithProcessor() {
-    return Compiler.javac().withProcessors(new AutoInjectAnnotationProcessor());
-  }
+  /**
+   * Emits the data of this binding to the given data stream.
+   *
+   * @param target the stream to write the known data to.
+   * @throws IOException if an i/o exception occurs.
+   */
+  void emitEntry(@NotNull DataOutputStream target) throws IOException;
 }

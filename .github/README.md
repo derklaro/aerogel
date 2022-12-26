@@ -115,11 +115,16 @@ options when calling the compiler by using: `-A<option>=<value>`. For example to
 the `META-INF` directory and naming it `testing.abc` you would use `-AaerogelAutoFileName=META-INF/testing.abc`). This
 file can be loaded using the build-in loader and will automatically create all necessary bindings.
 
-The default auto annotation entries are expandable by providing the entries as services. Just extend
-the `AutoAnnotationEntry` class and the registry will auto-detect and load the entries. The entries are searched in two
-different class loaders, the registry class loader and the system class loader. See
+The default auto annotation entries are expandable by providing the entries as services. There are two different types
+of entries which need to be registered through the service loading api (See
 the [Java Documentation](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/ServiceLoader.html) to
-get an entrypoint how services are working (you can start reading at `Developing service providers`).
+get an entrypoint how services are working (you can start reading at `Developing service providers`)):
+
+* `AutoProcessingEntry`: must be available during the compile time and will be used to parse the bindings from elements
+  which are annotated with the handled annotations of the entry.
+* `AutoAnnotationReader`: must be available in the runtime and is the counterpart to a processing entry. The reader will
+  be called when an autoconfiguration entry with the name of the reader is encountered and will reverse the written data
+  back to a binding constructor which can be installed into an injector.
 
 Auto entries are always prefixed with their name to make the later identification in the runtime easier. For that
 purpose the `writeUTF` method
@@ -189,7 +194,7 @@ Bindings can now get loaded in the runtime:
 
 ```java
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.auto.AutoAnnotationRegistry;
+import dev.derklaro.aerogel.auto.runtime.AutoAnnotationRegistry;
 
 public final class Application {
 
