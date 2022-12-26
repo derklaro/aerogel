@@ -85,7 +85,7 @@ public final class ConstructingBindingConstructor extends BaseBindingConstructor
       try {
         // get the parameter values & construct a new instance
         Object[] paramValues = this.parameterValuesSupplier.apply(context, this.types);
-        return paramValues.length == 0 ? this.targetConstructor.invoke() : this.targetConstructor.invoke(paramValues);
+        return MethodHandleUtil.invokeConstructor(this.targetConstructor, paramValues);
       } catch (ConstructedValueException constructedException) {
         // the value was constructed while getting all parameter values
         return constructedException.constructedValue();

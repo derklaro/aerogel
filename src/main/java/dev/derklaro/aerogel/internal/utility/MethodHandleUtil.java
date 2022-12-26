@@ -35,7 +35,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+/**
+ * A utility class to make working with method handles internally easier.
+ *
+ * @author Pasqual K.
+ * @since 2.0
+ */
 @API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.*")
 public final class MethodHandleUtil {
 
@@ -45,6 +52,53 @@ public final class MethodHandleUtil {
     throw new UnsupportedOperationException();
   }
 
+  /**
+   * Invokes the given generic method handle targeting a method, treated as it would be produced by
+   * {@link #toGenericMethodHandle(Method)}.
+   *
+   * @param handle   the handle to invoke.
+   * @param instance the instance to use when invoking, null for static methods.
+   * @param params   the parameters to supply to the method.
+   * @return the signature-polymorphic result of the method invocation.
+   * @throws NullPointerException if the given handle or params are null.
+   * @throws Throwable            anything thrown by the underlying method.
+   */
+  public static @Nullable Object invokeMethod(
+    @NotNull MethodHandle handle,
+    @Nullable Object instance,
+    @NotNull Object[] params
+  ) throws Throwable {
+    return params.length == 0 ? handle.invoke(instance) : handle.invoke(instance, params);
+  }
+
+  /**
+   * Invokes the given generic method handle targeting a constructor, treated as it would be produced by
+   * {@link #toGenericMethodHandle(Constructor)}.
+   *
+   * @param handle the handle to invoke.
+   * @param params the parameters to supply to the constructor.
+   * @return the signature-polymorphic constructed instance, produced by the constructor call.
+   * @throws NullPointerException if the given handle or params are null.
+   * @throws Throwable            anything thrown by the underlying constructor.
+   */
+  public static @Nullable Object invokeConstructor(
+    @NotNull MethodHandle handle,
+    @NotNull Object[] params
+  ) throws Throwable {
+    return params.length == 0 ? handle.invoke() : handle.invoke(params);
+  }
+
+  /**
+   * Constructs a generic method handle for the given method, using either the signature {@code (Object)Object} for
+   * methods which are not taking any arguments (the object arguments represents the instance to call the method on, for
+   * static methods that would always be {@code null}), or {@code (Object,Object[])Object} for methods which are taking
+   * arguments.
+   *
+   * @param method the method to construct the generic handle for.
+   * @return a generic method handle for the given method.
+   * @throws NullPointerException if the given method is null.
+   * @throws AerogelException     if this method is unable to convert the given method to a method handle.
+   */
   public static @NotNull MethodHandle toGenericMethodHandle(@NotNull Method method) {
     try {
       // unreflect the method - the handle we use to call the method on does not matter, as we ensure that
@@ -77,6 +131,15 @@ public final class MethodHandleUtil {
     }
   }
 
+  /**
+   * Constructs a generic method handle for the given constructor, using either the signature {@code ()Object} for
+   * constructors which aren't taking any arguments or {@code (Object[])Object} for constructors which are taking
+   * arguments.
+   *
+   * @param constructor the constructor to construct the generic handle for.
+   * @return a generic method handle for the given constructor.
+   * @throws NullPointerException if the given constructor is null.
+   */
   public static @NotNull MethodHandle toGenericMethodHandle(@NotNull Constructor<?> constructor) {
     try {
       // unreflect the constructor - the handle we use to call the method on does not matter, as we ensure that
@@ -103,6 +166,14 @@ public final class MethodHandleUtil {
     }
   }
 
+  /**
+   * Constructs a generic method handle to get the value of the given field, using either the signature {@code ()Object}
+   * for static fields or {@code (Object)Object} for instance fields.
+   *
+   * @param field the field to construct the generic getter handle for.
+   * @return a generic method handle to get the value of the given field.
+   * @throws NullPointerException if the given field is null.
+   */
   public static @NotNull MethodHandle toGenericGetterMethodHandle(@NotNull Field field) {
     try {
       // unreflect the field - the handle we use to call the method on does not matter, as we ensure that
@@ -126,6 +197,14 @@ public final class MethodHandleUtil {
     }
   }
 
+  /**
+   * Constructs a generic method handle to set the value of the given field, using either the signature
+   * {@code (Object)void} for static fields or {@code (Object,Object)void} for instance fields.
+   *
+   * @param field the field to construct the generic setter handle for.
+   * @return a generic method handle to set the value of the given field.
+   * @throws NullPointerException if the given field is null.
+   */
   public static @NotNull MethodHandle toGenericSetterMethodHandle(@NotNull Field field) {
     try {
       // unreflect the field - the handle we use to call the method on does not matter, as we ensure that

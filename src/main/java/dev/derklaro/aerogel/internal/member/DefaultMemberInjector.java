@@ -598,13 +598,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       Object[] params = this.lookupParamInstances(method, context);
       if (params != null) {
         // invoke the method using the collected parameters
-        if (instance == null) {
-          return params.length == 0 ? method.methodHandle.invoke((Object) null) : method.methodHandle.invoke(null, params);
-        } else {
-          return params.length == 0
-            ? method.methodHandle.invoke(instance)
-            : method.methodHandle.invoke(instance, params);
-        }
+        return MethodHandleUtil.invokeMethod(method.methodHandle, instance, params);
       }
       // return null if we didn't invoke the method
       return null;

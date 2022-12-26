@@ -85,7 +85,7 @@ public final class FactoryMethodBindingConstructor extends BaseBindingConstructo
       try {
         // get the parameter values & construct a new instance
         Object[] paramValues = this.parameterValuesSupplier.apply(context, this.types);
-        return this.factoryMethod.invoke(paramValues);
+        return MethodHandleUtil.invokeMethod(this.factoryMethod, null, paramValues);
       } catch (ConstructedValueException constructedException) {
         // the value was constructed while getting all parameter values
         return constructedException.constructedValue();
