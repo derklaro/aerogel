@@ -1,8 +1,9 @@
-Aerogel ![Build Status](https://github.com/derklaro/aerogel/actions/workflows/build.yml/badge.svg) ![LGTM quality rating](https://img.shields.io/lgtm/grade/java/github/derklaro/aerogel) ![Central Release Version](https://img.shields.io/maven-central/v/dev.derklaro.aerogel/aerogel)
+Aerogel ![Build Status](https://github.com/derklaro/aerogel/actions/workflows/ci.yml/badge.svg) ![Central Release Version](https://img.shields.io/maven-central/v/dev.derklaro.aerogel/aerogel)
 ===========
 
-A lightweight dependency injection framework for Java 8 - 17 which aims for stability, performance and reliability.
-Aerogel is a fully implemented [JSR 330](https://jcp.org/en/jsr/detail?id=330) injector.
+A lightweight dependency injection framework for Java 8 - 20 which aims for stability, performance and reliability.
+Aerogel is fully compliant with [JSR 330](https://jcp.org/en/jsr/detail?id=330) and the [Jakarta Dependency Injection
+Specification](https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html).
 
 ### How to (Core)
 
@@ -13,19 +14,28 @@ for the core injection framework:
   be used for class creating, applied to class members it indicates which members should be injected after a successful
   construction.
 - `@Name`: a build-in qualifier annotation which - applied to a parameter or field - sets an extra name property in an
-  element allowing multiple instances of a type to be distinguished (a name can be requested in an element
-  using `Element#requireName(String)`).
+  element allowing multiple instances of a type to be distinguished (a name annotation can be generated and applied to
+  an element using the Qualifiers utility class).
 - `@ProvidedBy`: an annotation which - applied to a type - signals the injector that the requested instance is not
   implemented by the current class but the class given as the annotation's value.
 - `@Qualifier`: Identifies qualifier annotations. When constructing an element, qualifier annotations will be detected
   on fields and parameters and applied as special properties to an element. See down below for an example (In this
   case `@Greeting` and `@GoodBye`).
-- `@Singleton`: Signals an injector that an instance of the class should only get created once per injector chain. The
-  annotation is respected on all types as well as factory method binding types.
+- `@Scope`: Identifies a scope annotation. When a binding is constructed all scopes will be resolved from the parent
+  injector which is requesting the binding. Scopes are used to re-use the same constructed instance of a class multiple
+  times within a specified context.
+- `@Singleton`: A scope which signals an injector that an instance of the class should only get created once per
+  injector chain. The annotation is respected on all types as well as factory method binding types.
+- `@PostConstruct`: An annotation which gets applied to a non-static method which takes no arguments and will be called
+  after class and member injection was done. There can be zero to unlimited post constructs methods in a class.
+- `@Order`: An annotation which defines in which order member injection or post construct methods should be done. In
+  general member injection is done in two steps:
+  - All fields and methods annotated as `@Inject` are injected
+  - All methods annotated as `@PostConstruct` are called
 
 All libraries of aerogel are published to maven central:
 
-```groovy
+```kotlin
 repositories {
   mavenCentral()
 }
@@ -38,9 +48,11 @@ dependencies {
 You can now start building your application based on the input:
 
 ```java
-import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.Bindings;
 import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.binding.BindingBuilder;
+import dev.derklaro.aerogel.util.Qualifiers;
+import dev.derklaro.aerogel.util.Scopes;
 
 public final class Application {
 
@@ -48,15 +60,20 @@ public final class Application {
     // creates a new injector without any binding
     Injector injector = Injector.newInjector();
     // binds all types of 'int' to '1234'
-    injector.install(Bindings.fixed(Element.get(int.class), 1234));
-    // binds all types of int which are annotated as @Name("serverPort") to '25656'
-    injector.install(Bindings.fixed(Element.get(int.class).requireName("serverPort"), 25656));
-    // binds all types of String which are annotated as @Greeting to "Hello there :)"
-    injector.install(Bindings.fixed(Element.get(String.class).requireAnnotations(Greeting.class), "Hello there :)"));
-    // binds all types of String which are annotated as @GoodBye to a static factory method in this class
-    injector.install(Bindings.factory(
-      Element.get(String.class).requireAnnotations(GoodBye.class),
-      Application.class.getDeclaredMethod("goodbye", String.class)));
+    injector.install(BindingBuilder.create().bind(int.class).toInstance(1234));
+    // binds all types of 'int' which are annotated as @Name("serverPort") to '25656'
+    injector.install(BindingBuilder.create()
+      .bind(Element.forType(int.class).requireAnnotation(Qualifiers.named("serverPort")))
+      .toInstance(25656));
+    // binds all types of 'String' which are annotated as @Greeting to "Hello there :)"
+    injector.install(BindingBuilder.create()
+      .bind(Element.forType(String.class).requireAnnotation(Greeting.class))
+      .toInstance("Hello there :)"));
+    // binds all types of String which are annotated as @GoodBye to a static singleton factory method in this class
+    injector.install(BindingBuilder.create()
+      .bind(Element.forType(String.class).requireAnnotation(GoodBye.class))
+      .scoped(Scopes.SINGLETON)
+      .toFactory(Application.class, "goodbye", String.class));
 
     // dynamically creates the instance of 'ApplicationEntryPoint' using all previously installed bindings and creates
     // all bindings if possible dynamically when requested. A dynamic injection is only possible if no special needs
@@ -68,6 +85,8 @@ public final class Application {
     aep.bootstrap();
   }
 
+  // this method will always receive "Hello there :)" as the argument as we bound the 
+  // 'String' type in combination with @Greeting to the injector
   private static String goodbye(@Greeting String greetingMessage) {
     return greetingMessage + " but now you have to go :/";
   }
@@ -83,39 +102,68 @@ There are some limitations when proxies are used:
 
 * Injecting the same type twice when the type is proxied will result in the same instance instead of two different
   instances.
-* Injected proxies into classes are not available in the constructor are the type which got injected is required for the
-  implementation of the proxied interface to be constructed. (This applies as well to all `Provider` methods when you
-  try to prevent circular dependencies in a constructor)
+* Injected proxies might not be available for usage until the full construction chain finished. Any method invocation on
+  a proxy will result in an exception if the underlying delegate instance is not yet available (This applies as well to
+  all `Provider`s methods when you try to prevent circular dependencies).
 
 ### How to (Auto)
 
-The auto module is used to generate binding data during compile time. This data is emitted to a file
-called `auto-factories.txt` in the output directory and will be located in the jar after compile. This file can be
-loaded using the build-in loader and will automatically create all bindings necessary. At the moment there are two
-annotations supported by this: `@Factory` (which automatically creates factory bindings as showed above)
-and `@Provides` (which automatically maps an implementation class to its source interface). The `AutoAnnotationRegistry`
-also supports adding own annotation readers which were emitted by your own annotation processor. The data stream must
-begin with the target factory name which should be used for reading the data (using `writeUTF`). That data will not be
-there anymore when the `makeBinding` method gets called as it was used by the registry already. You can then write any
-data you need to construct the binding in the runtime.
+The auto module is used to generate binding data during compile time. This data is (by default) emitted to a file
+called `auto-config.aero` in the output directory and will be located in the jar after compile. The output file name can
+be overridden using an annotation processor option called `aerogelAutoFileName` (you can pass annotation processor
+options when calling the compiler by using: `-A<option>=<value>`. For example to put the auto bindings file into
+the `META-INF` directory and naming it `testing.abc` you would use `-AaerogelAutoFileName=META-INF/testing.abc`). This
+file can be loaded using the build-in loader and will automatically create all necessary bindings.
+
+The default auto annotation entries are expandable by providing the entries as services. Just extend
+the `AutoAnnotationEntry` class and the registry will auto-detect and load the entries. The entries are searched in two
+different class loaders, the registry class loader and the system class loader. See
+the [Java Documentation](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/ServiceLoader.html) to
+get an entrypoint how services are working (you can start reading at `Developing service providers`).
+
+Auto entries are always prefixed with their name to make the later identification in the runtime easier. For that
+purpose the `writeUTF` method
+of [DataOutputStream](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/io/DataOutputStream.html) is
+used. All other values can be written dynamically to the stream by the entries themselves. Note that own implementations
+are required to consume all the data written to the stream (even if not needed) in order to ensure that the next entry
+can be decoded correctly. It is a good practice to write a data version to the stream and ensure backwards compatibility
+with old emitted entries.
+
+At the moment there are two default annotations:
+
+* `@Factory`: (applied to static methods which are not returning `void`) will automatically bind the given method for
+  later use as a factory method. The qualifier and scope annotations added to the factory method, and it's return type
+  will be taken into account.
+* `@Provides`: (applied to the implementation of other classes) will automatically bind the type to which the annotation
+  is applied as an implementation of the types supplied to the annotation. Qualifier and scope annotations of the
+  binding type as well as all implemented types are taken into account. Note that this annotation comes with the
+  limitation that you can only bind to raw types, not to generic ones.
 
 Add the auto module as follows (you still need to add the core module as shown above):
 
-```groovy
+```kotlin
 repositories {
   mavenCentral()
 }
 
 dependencies {
-  implentation group: 'dev.derklaro.aerogel', name: 'aerogel-auto', version: '<VERSION>'
-  annotationProcessor group: 'dev.derklaro.aerogel', name: 'aerogel-auto', version: '<VERSION>'
+  // annotationProcessor is needed here in order to tell gradle to call the processor
+  implementation("dev.derklaro.aerogel", "aerogel-auto", "<VERSION>")
+  annotationProcessor("dev.derklaro.aerogel", "aerogel-auto", "<VERSION>")
+}
+
+tasks.withType<JavaCompile> {
+  // adds the option to change the output file name of the aerogel-auto file name
+  // this option is optional, see the documentation above
+  options.compilerArgs.add("-AaerogelAutoFileName=autoconfigure/bindings.aero")
 }
 ```
 
-We can for example do something like this (it's an example and not best practice tho - keep your code clean):
+We can for example do something like this:
 
 ```java
-import auto.dev.derklaro.aerogel.Factory;
+import dev.derklaro.aerogel.auto.Factory;
+import dev.derklaro.aerogel.auto.Provides;
 
 public final class Bindings {
 
@@ -148,11 +196,11 @@ public final class Application {
   public static void main(String[] args) {
     // creates a new injector without any binding
     Injector injector = Injector.newInjector();
-    // creates a new registry instance which by default supports @Factory and @Provides
-    AutoAnnotationRegistry registry = AutoAnnotationRegistry.newInstance();
-    // loads and installs all bindings from the file which was emitted to the class output
-    registry.installBindings(Application.class.getClassLoader(), "auto-factories.txt", injector);
-    // we can now add more bindings, start the application ...
+    // creates a new registry instance
+    AutoAnnotationRegistry registry = AutoAnnotationRegistry.newRegistry();
+    // loads and installs all bindings from the file which were emitted
+    registry.installBindings(Application.class.getClassLoader(), "autoconfigure/bindings.aero", injector);
+    // we can now add more bindings, start the application...
   }
 }
 ```
@@ -161,46 +209,56 @@ public final class Application {
 
 The kotlin extension module is basically a nice-to-have collection of inline features mostly related to generics so that
 there is no need for kotlin developers to actually convert the kotlin type to a java type. There are some restriction
-when it comes to the kotlin type resolving as for primitive types most of the type the wrapper class is resolved instead
-of the primitive type. This may lead to some weird behaviours when primitive types are requested but wrapper types were
-bound.
+when it comes to the kotlin type resolving. For primitive types the wrapper class is resolved instead of the primitive
+type. This may lead to some weird behaviours when primitive types are requested but wrapper types were bound.
 
 Add the kotlin extensions module as follows (you still need to add the core module as shown above):
 
-```groovy
+```kotlin
 repositories {
   mavenCentral()
 }
 
 dependencies {
-  implentation group: 'dev.derklaro', name: 'aerogel-kotlin-extensions', version: '<VERSION>'
+  implementation("dev.derklaro.aerogel", "aerogel-kotlin-extensions", "<VERSION>")
 }
 ```
 
 There are now replacements for everything which works with generics. Here are some examples:
 
 ```kotlin
-import dev.derklaro.aerogel.Injector
-import dev.derklaro.aerogel.kotlin.fixed
-import dev.derklaro.aerogel.kotlin.instance
+import dev.derklaro.aerogel.binding.BindingBuilder
 import dev.derklaro.aerogel.kotlin.element
+import dev.derklaro.aerogel.kotlin.instance
+import dev.derklaro.aerogel.util.Qualifiers
 
 fun main() {
   val injector = Injector.newInjector()
-  // instead of Bindings.fixed(Element.get(String::class.java), "Test2345")
-  injector.install(fixed<String>("Test2345"))
-  // instead of Element.get(String.class::java)
-  val element = element<String>()
-  // instead of injector.instance(String::class.java)
-  val testString = injector.instance<String>()
+  injector
+    // binds an element of type 'String' annotated with @Name("Hello World") to "Hello World! :)"  
+    .install(
+      BindingBuilder.create()
+        .bind(element<String>().requireAnnotation(Qualifiers.named("Hello World")))
+        .toInstance("Hello World! :)")
+    )
+    // binds an element of type 'String' annotated with @Name("Hello there") to "Hello People!"  
+    .install(
+      BindingBuilder.create()
+        .bind(element<String>().requireAnnotation(Qualifiers.named("Hello there")))
+        .toInstance("Hello People!")
+    )
+
+  // gets the instance of the application entrypoint from the injector
+  val entryPoint = injector.instance<ApplicationEntryPoint>()
+  entryPoint.start()
 }
 ```
 
 ### How to (Build from source)
 
-To run the full build lifecycle you can just execute `./gradlew` or `gradlew.bat` depending on your current operating
-system. The final jar, javadoc jar and sources jar are now located in `**/build/libs`. All tasks which are possible to
-be executed can be listed by running `./gradlew tasks` or `gradlew.bat tasks`.
+To run the full build you can just execute `./gradlew` or `gradlew.bat` depending on your current operating system. The
+final jar, javadoc jar and sources jar are now located in `**/build/libs`. All tasks which are registered can be listed
+by running `./gradlew tasks` or `gradlew.bat tasks`.
 
 Publishing
 --------
@@ -209,31 +267,20 @@ The library gets published on a regular basis to the sonatype snapshot repositor
 You can get these versions by using the current snapshot version and adding the sonatype repository as a maven
 repository to your build:
 
-```groovy
+```kotlin
 repositories {
-  maven {
-    name 'sonatype-snapshots'
-    url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
-  }
+  maven("https://s01.oss.sonatype.org/content/repositories/snapshots/")
 }
 ```
 
-Releases are published to the maven central repository and jitpack:
+Releases are published to the maven central repository:
 
-```groovy
+```kotlin
 repositories {
   // to use the releases from maven-central
   mavenCentral()
   // alternative to mavenCentral()
-  maven {
-    name 'central'
-    url 'https://repo1.maven.org/maven2/'
-  }
-  // to use the releases from jitpack
-  maven {
-    name 'jitpack'
-    url 'https://jitpack.io/'
-  }
+  maven("https://repo1.maven.org/maven2/")
 }
 ```
 
@@ -245,8 +292,6 @@ Release candidates gets tagged as `Pre-release`.
 ### Version naming
 
 - `<version>-SNAPSHOT`: the current development snapshot, will be located in the sonatype snapshot repository.
-- `<version->-RC<rc-version-count>`: the current pre-release. The development process of the next version ended but
-  needs more testing before an actual release.
 - `<version>`: A stable release version of aerogel.
 
 JSR 330
@@ -257,11 +302,12 @@ in [JSR 330](https://jcp.org/en/jsr/detail?id=330). The Jakarta inject api is sh
 Here is a list of each jakarta type and its equivalents in aerogel:
 
 | jakarta.inject | aerogel    |
-| -------------- | ---------- |
+|----------------|------------|
 | @Inject        | @Inject    |
 | @Singleton     | @Singleton |
 | @Qualifier     | @Qualifier |
 | @Named         | @Name      |
+| @Scope         | @Scope     |
 | Provider       | Provider   |
 
 Issue reporting and contributing

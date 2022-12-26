@@ -1,4 +1,4 @@
-name: "Build lifecycle"
+name: "CI"
 
 on:
   - push
