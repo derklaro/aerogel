@@ -32,6 +32,8 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.LinkedList;
 import java.util.List;
 import org.apiguardian.api.API;
@@ -75,15 +77,25 @@ public final class ReflectionUtil {
       return (Class<?>) type;
     } else if (type instanceof GenericArrayType) {
       // unbox the component type, create an array of that type and use it's class
-      Class<?> genericType = rawType(((GenericArrayType) type).getGenericComponentType());
-      return Array.newInstance(genericType, 0).getClass();
+      Class<?> componentType = rawType(((GenericArrayType) type).getGenericComponentType());
+      return Array.newInstance(componentType, 0).getClass();
     } else if (type instanceof ParameterizedType) {
       // the raw type is always of type class - the internet is not sure why exactly this is a type
       return rawType(((ParameterizedType) type).getRawType());
+    } else if (type instanceof TypeVariable<?>) {
+      // get the raw type from the first bound, if present
+      TypeVariable<?> typeVariable = (TypeVariable<?>) type;
+      Type[] bounds = typeVariable.getBounds(); // prevent cloning twice
+      return bounds.length == 0 ? Object.class : rawType(bounds[0]);
+    } else if (type instanceof WildcardType) {
+      // get the type variable from the lower bounds, if not present use the first upper bound
+      WildcardType wildcardType = (WildcardType) type;
+      Type[] lowerBounds = wildcardType.getLowerBounds(); // prevent cloning twice
+      return rawType(lowerBounds.length > 0 ? lowerBounds[0] : wildcardType.getUpperBounds()[0]);
     }
 
     // every other type implementation can not be exactly found - ignored them
-    throw AerogelException.forMessage("Unsupported type " + type + " to unbox");
+    throw AerogelException.forMessage("Unsupported type " + type + " to erase");
   }
 
   /**
