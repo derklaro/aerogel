@@ -141,6 +141,16 @@ public interface Injector {
   @NotNull Injector install(@NotNull Iterable<BindingConstructor> constructors);
 
   /**
+   * Installs the given binding holder into this injector.
+   *
+   * @param bindingHolder the binding holder to install.
+   * @return the same instance as used to call this method, for chaining.
+   * @throws NullPointerException if the given binding holder is null.
+   */
+  @API(status = API.Status.EXPERIMENTAL, since = "2.0")
+  @NotNull Injector install(@NotNull BindingHolder bindingHolder);
+
+  /**
    * Get a member injector for all fields and methods annotated as {@literal @}{@code Inject} in the class. This might
    * be a cached injector of this or any injector in the parent injector chain.
    *

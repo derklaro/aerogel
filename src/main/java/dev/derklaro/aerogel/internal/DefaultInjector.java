@@ -142,14 +142,10 @@ public final class DefaultInjector implements Injector {
   @Override
   public @NotNull Injector install(@NotNull BindingConstructor constructor) {
     Objects.requireNonNull(constructor, "constructor");
+
     // construct the binding
-    BindingHolder holder = Objects.requireNonNull(constructor.construct(this), "holder");
-    // registers the binding
-    for (Element type : holder.types()) {
-      this.bindings.putIfAbsent(type, holder);
-    }
-    // for chaining
-    return this;
+    BindingHolder holder = constructor.construct(this);
+    return this.install(holder);
   }
 
   /**
@@ -162,6 +158,20 @@ public final class DefaultInjector implements Injector {
       this.install(constructor);
     }
     // for chaining
+    return this;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull Injector install(@NotNull BindingHolder bindingHolder) {
+    Objects.requireNonNull(bindingHolder, "bindingHolder");
+
+    // apply the binding to this injector
+    for (Element type : bindingHolder.types()) {
+      this.bindings.putIfAbsent(type, bindingHolder);
+    }
     return this;
   }
 

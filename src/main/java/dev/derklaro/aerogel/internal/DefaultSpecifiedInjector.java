@@ -87,7 +87,9 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    */
   @Override
   public @NotNull Injector install(@NotNull BindingConstructor constructor) {
-    return this.parent.install(constructor);
+    // construct the binding in this injector and install it in the parent
+    BindingHolder bindingHolder = constructor.construct(this);
+    return this.parent.install(bindingHolder);
   }
 
   /**
@@ -95,13 +97,25 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    */
   @Override
   public @NotNull Injector install(@NotNull Iterable<BindingConstructor> constructors) {
-    return this.parent.install(constructors);
+    // install all constructors
+    for (BindingConstructor constructor : constructors) {
+      this.install(constructor);
+    }
+    // for chaining
+    return this;
   }
 
   /**
    * {@inheritDoc}
    */
+  @Override
+  public @NotNull Injector install(@NotNull BindingHolder bindingHolder) {
+    return this.parent.install(bindingHolder);
+  }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull MemberInjector memberInjector(@NotNull Class<?> memberHolderClass) {
     return this.parent.memberInjector(memberHolderClass);
