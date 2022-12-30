@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -48,6 +49,8 @@ public final class DefaultAnnotationPredicate implements AnnotationPredicate {
   private final Method[] annotationMethods;
   private final Map<String, Object> annotationValues;
   private final Class<? extends Annotation> annotationType;
+
+  private String toStringCached; // lazy initialized
 
   /**
    * Constructs a new annotation predicate instance.
@@ -148,5 +151,35 @@ public final class DefaultAnnotationPredicate implements AnnotationPredicate {
   @Override
   public int hashCode() {
     return Objects.hash(this.annotationType, this.annotationValues);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public String toString() {
+    // check if we already computed the toString value
+    if (this.toStringCached != null) {
+      return this.toStringCached;
+    }
+
+    // construct the toString value
+    StringBuilder builder = new StringBuilder("@").append(this.annotationType.getSimpleName()).append('(');
+
+    // only append the entries if there are any
+    Set<Map.Entry<String, Object>> entries = this.annotationValues.entrySet();
+    if (!entries.isEmpty()) {
+      for (Map.Entry<String, Object> entry : entries) {
+        builder.append(entry.getKey()).append(" = ").append(entry.getValue()).append(", ");
+      }
+
+      // remove the trailing comma
+      int builderLength = builder.length();
+      builder.delete(builderLength - 2, builderLength);
+    }
+
+    // close the opening bracket and set the cached value
+    this.toStringCached = builder.append(')').toString();
+    return this.toStringCached;
   }
 }
