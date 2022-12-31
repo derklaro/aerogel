@@ -26,7 +26,6 @@ package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
-import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.internal.utility.NullMask;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -46,17 +45,6 @@ import org.jetbrains.annotations.Nullable;
 public final class DefaultInjectionContextBuilder implements InjectionContext.Builder {
 
   private final Map<Element, Object> overriddenElements = new HashMap<>();
-
-  private Injector parentInjector;
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull InjectionContext.Builder injector(@NotNull Injector injector) {
-    this.parentInjector = Objects.requireNonNull(injector, "Injector must be non-null");
-    return this;
-  }
 
   /**
    * {@inheritDoc}
@@ -83,9 +71,6 @@ public final class DefaultInjectionContextBuilder implements InjectionContext.Bu
    */
   @Override
   public @NotNull InjectionContext build() {
-    // ensure that the necessary information are provided
-    Objects.requireNonNull(this.parentInjector, "Parent injector must be given before building");
-    // create the instance
-    return new DefaultInjectionContext(this.parentInjector, this.overriddenElements);
+    return new DefaultInjectionContext(this.overriddenElements);
   }
 }

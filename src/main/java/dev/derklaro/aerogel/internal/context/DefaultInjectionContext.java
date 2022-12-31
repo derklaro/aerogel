@@ -65,7 +65,6 @@ public final class DefaultInjectionContext implements InjectionContext {
    */
   private static final Element INJECTION_CONTEXT_ELEMENT = Element.forType(InjectionContext.class);
 
-  private final Injector injector;
   private final ElementStack trackingStack;
   private final Set<Object> constructedValues;
   private final Map<Element, ProxyMapping> createdProxies;
@@ -85,11 +84,9 @@ public final class DefaultInjectionContext implements InjectionContext {
   /**
    * Constructs a new injection context.
    *
-   * @param injector        the injector which is used for instance lookups.
    * @param overriddenTypes all types which were overridden and are already present.
    */
-  public DefaultInjectionContext(@NotNull Injector injector, @NotNull Map<Element, Object> overriddenTypes) {
-    this.injector = injector;
+  public DefaultInjectionContext(@NotNull Map<Element, Object> overriddenTypes) {
     this.trackingStack = new ElementStack();
 
     this.constructedValues = new HashSet<>();
@@ -99,14 +96,6 @@ public final class DefaultInjectionContext implements InjectionContext {
 
     // needs the least memory + needs no hashing or equals for writing and iterating
     this.postponedMemberInjections = new LinkedList<>();
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull Injector injector() {
-    return this.injector;
   }
 
   /**
@@ -130,7 +119,7 @@ public final class DefaultInjectionContext implements InjectionContext {
    */
   @Override
   @SuppressWarnings("unchecked")
-  public <T> @Nullable T findInstance(@NotNull Element element) {
+  public <T> @Nullable T findInstance(@NotNull Element element, @NotNull Injector injector) {
     Objects.requireNonNull(element, "element");
     // check if the type was overridden when creating the context
     Object overriddenElement = this.overriddenTypes.get(element);
@@ -177,7 +166,7 @@ public final class DefaultInjectionContext implements InjectionContext {
     this.trackingStack.push(element);
     try {
       // no cached instance yet - fall back to a binding of the injector
-      return (T) this.injector.binding(element).provider().get(this);
+      return (T) injector.binding(element).provider().get(this);
     } catch (Throwable throwable) {
       throw AerogelException.forMessagedException("Unable to construct " + element + ':', throwable);
     }
@@ -233,10 +222,15 @@ public final class DefaultInjectionContext implements InjectionContext {
    * {@inheritDoc}
    */
   @Override
-  public void postConstruct(@NotNull Element element, @Nullable Object result, boolean doMemberInjection) {
+  public void postConstruct(
+    @NotNull Element element,
+    @NotNull Injector injector,
+    @Nullable Object result,
+    boolean doMemberInjection
+  ) {
     // do member injection if requested
     if (doMemberInjection) {
-      this.injectMembers(element, result);
+      this.injectMembers(element, injector, result);
     }
 
     // remove the constructed element from the tracking stack
@@ -257,6 +251,7 @@ public final class DefaultInjectionContext implements InjectionContext {
   @Override
   public void constructDone(
     @NotNull Element[] elements,
+    @NotNull Injector injector,
     @Nullable Object constructed,
     boolean allowMemberInject,
     boolean allowStore
@@ -274,7 +269,7 @@ public final class DefaultInjectionContext implements InjectionContext {
 
     // call the post construct on the given context, do member injection if needed
     for (int i = 0, typeLength = elements.length; i < typeLength; i++) {
-      this.postConstruct(elements[i], constructed, i == 0 && allowMemberInject && doMemberInjection);
+      this.postConstruct(elements[i], injector, constructed, i == 0 && allowMemberInject && doMemberInjection);
     }
   }
 
@@ -304,23 +299,24 @@ public final class DefaultInjectionContext implements InjectionContext {
   /**
    * Inject all members into the given {@code result} if possible.
    *
-   * @param element the element which holds the result.
-   * @param result  the result instance into which the members should get injected, may be null.
+   * @param element  the element which holds the result.
+   * @param injector the injector which is requesting the member injection.
+   * @param result   the result instance into which the members should get injected, may be null.
    */
-  private void injectMembers(@NotNull Element element, @Nullable Object result) {
+  private void injectMembers(@NotNull Element element, @NotNull Injector injector, @Nullable Object result) {
     // postpone the member injection process if this context still has incomplete proxies
     // some users might rely on the proxy instances to be available when doing member injection
     if (this.hasIncompleteProxy()) {
-      this.postponedMemberInjections.add(() -> this.injectMembers(element, result));
+      this.postponedMemberInjections.add(() -> this.injectMembers(element, injector, result));
       return;
     }
 
     // if we do have an instance we can do the member injection directly
     if (result != null) {
-      this.injector.memberInjector(result.getClass()).inject(result, ALL_MEMBERS, this);
+      injector.memberInjector(result.getClass()).inject(result, ALL_MEMBERS, this);
     } else if (element.componentType() instanceof Class<?>) {
       // only if the component type is a class we can at least inject the static members
-      this.injector.memberInjector((Class<?>) element.componentType()).inject(ALL_MEMBERS, this);
+      injector.memberInjector((Class<?>) element.componentType()).inject(ALL_MEMBERS, this);
     }
   }
 }

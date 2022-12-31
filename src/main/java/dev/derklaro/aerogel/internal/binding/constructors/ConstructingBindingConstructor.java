@@ -27,19 +27,18 @@ package dev.derklaro.aerogel.internal.binding.constructors;
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.ScopeProvider;
 import dev.derklaro.aerogel.internal.binding.FunctionalContextualProvider;
 import dev.derklaro.aerogel.internal.binding.defaults.BaseBindingConstructor;
 import dev.derklaro.aerogel.internal.invoke.ConstructedValueException;
 import dev.derklaro.aerogel.internal.invoke.ParameterHelper;
+import dev.derklaro.aerogel.internal.invoke.ParameterValueGetter;
 import dev.derklaro.aerogel.internal.utility.MethodHandleUtil;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.util.Set;
-import java.util.function.BiFunction;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,7 +52,7 @@ import org.jetbrains.annotations.NotNull;
 public final class ConstructingBindingConstructor extends BaseBindingConstructor {
 
   private final MethodHandle targetConstructor;
-  private final BiFunction<InjectionContext, Element[], Object[]> parameterValuesSupplier;
+  private final ParameterValueGetter parameterValueGetter;
 
   /**
    * Constructs a new constructing binding constructor.
@@ -73,7 +72,7 @@ public final class ConstructingBindingConstructor extends BaseBindingConstructor
 
     // assign the constructor & make sure that we can access it
     this.targetConstructor = MethodHandleUtil.toGenericMethodHandle(targetConstructor);
-    this.parameterValuesSupplier = ParameterHelper.constructParameterSuppliers(targetConstructor.getParameters());
+    this.parameterValueGetter = ParameterHelper.constructParameterSuppliers(targetConstructor.getParameters());
   }
 
   /**
@@ -84,7 +83,7 @@ public final class ConstructingBindingConstructor extends BaseBindingConstructor
     return new FunctionalContextualProvider<>(injector, this.types, context -> {
       try {
         // get the parameter values & construct a new instance
-        Object[] paramValues = this.parameterValuesSupplier.apply(context, this.types);
+        Object[] paramValues = this.parameterValueGetter.resolveParamInstances(context, this.types, injector);
         return MethodHandleUtil.invokeConstructor(this.targetConstructor, paramValues);
       } catch (ConstructedValueException constructedException) {
         // the value was constructed while getting all parameter values

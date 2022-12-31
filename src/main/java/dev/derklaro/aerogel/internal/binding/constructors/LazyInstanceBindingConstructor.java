@@ -73,6 +73,6 @@ public final class LazyInstanceBindingConstructor extends BaseBindingConstructor
     return new FunctionalContextualProvider<>(
       injector,
       this.types,
-      context -> this.valueSupplier.apply(context.injector()));
+      context -> this.valueSupplier.apply(injector));
   }
 }

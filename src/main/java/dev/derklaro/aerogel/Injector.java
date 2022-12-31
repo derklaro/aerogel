@@ -151,8 +151,9 @@ public interface Injector {
   @NotNull Injector install(@NotNull BindingHolder bindingHolder);
 
   /**
-   * Get a member injector for all fields and methods annotated as {@literal @}{@code Inject} in the class. This might
-   * be a cached injector of this or any injector in the parent injector chain.
+   * Get a member injector for all fields and methods annotated as {@literal @}{@code Inject} in the class. The returned
+   * member injector is cached in this injector once this method was called for the given holder class, but any other
+   * injector in the downstream injector chain will have no access to the injector.
    *
    * @param memberHolderClass the holder class of the members.
    * @return the created or cached member injector for the given {@code memberHolderClass}.

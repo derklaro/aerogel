@@ -32,6 +32,7 @@ import dev.derklaro.aerogel.ScopeProvider;
 import dev.derklaro.aerogel.SpecifiedInjector;
 import dev.derklaro.aerogel.binding.BindingConstructor;
 import dev.derklaro.aerogel.binding.BindingHolder;
+import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
 import dev.derklaro.aerogel.internal.utility.InjectorUtil;
 import dev.derklaro.aerogel.internal.utility.MapUtil;
 import java.lang.annotation.Annotation;
@@ -61,6 +62,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
 
   private final Injector parent;
   private final Map<Element, BindingHolder> specificBindings;
+  private final Map<Class<?>, MemberInjector> cachedMemberInjectors;
 
   /**
    * Constructs a new default specified injector instance.
@@ -71,6 +73,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
   public DefaultSpecifiedInjector(@NotNull Injector parent) {
     this.parent = Objects.requireNonNull(parent, "parent");
     this.specificBindings = MapUtil.newConcurrentMap();
+    this.cachedMemberInjectors = MapUtil.newConcurrentMap();
     this.specificBindings.put(InjectorUtil.INJECTOR_ELEMENT, InjectorUtil.INJECTOR_BINDING_CONSTRUCTOR.construct(this));
   }
 
@@ -118,7 +121,9 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    */
   @Override
   public @NotNull MemberInjector memberInjector(@NotNull Class<?> memberHolderClass) {
-    return this.parent.memberInjector(memberHolderClass);
+    return this.cachedMemberInjectors.computeIfAbsent(
+      memberHolderClass,
+      clazz -> new DefaultMemberInjector(this, clazz));
   }
 
   /**
@@ -126,7 +131,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    */
   @Override
   public @Nullable MemberInjector fastMemberInjector(@NotNull Class<?> memberHolderClass) {
-    return this.parent.fastMemberInjector(memberHolderClass);
+    return this.cachedMemberInjectors.get(memberHolderClass);
   }
 
   /**

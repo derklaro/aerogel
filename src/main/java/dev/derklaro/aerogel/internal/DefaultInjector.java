@@ -181,20 +181,7 @@ public final class DefaultInjector implements Injector {
   @Override
   public @NotNull MemberInjector memberInjector(@NotNull Class<?> memberClazz) {
     Objects.requireNonNull(memberClazz, "memberClazz");
-    // try to find the member injector in one of the parent injectors
-    Injector injector = this;
-    do {
-      // check if the injector has a cached member injector for the class - in this case use that one
-      MemberInjector memberInjector = injector.fastMemberInjector(memberClazz);
-      if (memberInjector != null) {
-        return memberInjector;
-      }
-    } while ((injector = injector.parent()) != null);
-    // construct a new member injector as neither this nor the parent injectors have a cached member injector instance
-    MemberInjector memberInjector = new DefaultMemberInjector(this, memberClazz);
-    this.cachedMemberInjectors.putIfAbsent(memberClazz, memberInjector); // putIfAbsent for concurrency reasons
-    // return the newly created injector
-    return memberInjector;
+    return this.cachedMemberInjectors.computeIfAbsent(memberClazz, clazz -> new DefaultMemberInjector(this, clazz));
   }
 
   /**
@@ -203,7 +190,6 @@ public final class DefaultInjector implements Injector {
   @Override
   public @Nullable MemberInjector fastMemberInjector(@NotNull Class<?> memberHolderClass) {
     Objects.requireNonNull(memberHolderClass, "memberHolderClass");
-    // read the cached instance from the class.
     return this.cachedMemberInjectors.get(memberHolderClass);
   }
 

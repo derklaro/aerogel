@@ -26,6 +26,7 @@ package dev.derklaro.aerogel.kotlin
 
 import dev.derklaro.aerogel.InjectionContext
 import dev.derklaro.aerogel.InjectionContext.Builder
+import dev.derklaro.aerogel.Injector
 
 /**
  * Tries to get or construct an instance of the given type [T], the instance may be null if null was bound.
@@ -34,7 +35,7 @@ import dev.derklaro.aerogel.InjectionContext.Builder
  * @author Pasqual K.
  * @since 1.0
  */
-inline fun <reified T> InjectionContext.findInstance(): T? = this.findInstance(element<T>())
+inline fun <reified T> InjectionContext.findInstance(injector: Injector): T? = this.findInstance(element<T>(), injector)
 
 /**
  * Used to indicate that the construction of [result] typed [T] was done successfully. The resulting instance may be
@@ -57,8 +58,12 @@ inline fun <reified T> InjectionContext.storeValue(result: Any?) {
  * @author Pasqual K.
  * @since 2.0
  */
-inline fun <reified T> InjectionContext.postConstruct(result: Any?, doMemberInjection: Boolean = true) {
-  this.postConstruct(element<T>(), result, doMemberInjection)
+inline fun <reified T> InjectionContext.postConstruct(
+  result: Any?,
+  injector: Injector,
+  doMemberInjection: Boolean = true
+) {
+  this.postConstruct(element<T>(), injector, result, doMemberInjection)
 }
 
 /**

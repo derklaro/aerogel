@@ -84,7 +84,7 @@ public abstract class BaseContextualProvider<T> implements ContextualProvider<T>
   @Override
   public @Nullable T get() throws AerogelException {
     // enter the injection context
-    InjectionContext context = InjectionContextHolder.enter(this.injector);
+    InjectionContext context = InjectionContextHolder.enter();
 
     try {
       // call get to method which takes a context
@@ -122,7 +122,7 @@ public abstract class BaseContextualProvider<T> implements ContextualProvider<T>
     boolean allowStore
   ) {
     if (!this.hasUpstreamProvider) {
-      context.constructDone(elements, constructed, allowMemberInject, allowStore);
+      context.constructDone(elements, this.injector, constructed, allowMemberInject, allowStore);
     }
   }
 }

@@ -26,12 +26,12 @@ package dev.derklaro.aerogel.internal.invoke;
 
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
+import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
 import java.lang.reflect.Parameter;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,11 +41,11 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.binding.constructors")
+@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.*")
 public final class ParameterHelper {
 
   private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
-  private static final BiFunction<InjectionContext, Element[], Object[]> EMPTY_SUPPLIER = (__, ___) -> EMPTY_OBJECT_ARRAY;
+  private static final ParameterValueGetter EMPTY_SUPPLIER = (__, ___, ____) -> EMPTY_OBJECT_ARRAY;
 
   private ParameterHelper() {
     throw new UnsupportedOperationException();
@@ -59,36 +59,34 @@ public final class ParameterHelper {
    * (to the apply method of the constructed function) was constructed while constructing a parameter type.
    *
    * @param parameters the parameters which the target executable element takes.
-   * @return a function which takes an injection context and returns the value for each parameter.
+   * @return a parameter value getter which resolves the value for each given parameter.
    * @throws NullPointerException if the given parameter array or one element of it is null.
    */
   @SuppressWarnings("unchecked")
-  public static @NotNull BiFunction<InjectionContext, Element[], Object[]> constructParameterSuppliers(
-    @NotNull Parameter[] parameters
-  ) {
+  public static @NotNull ParameterValueGetter constructParameterSuppliers(@NotNull Parameter[] parameters) {
     // if no parameters were given there is nothing to do
     if (parameters.length == 0) {
       return EMPTY_SUPPLIER;
     }
 
     // build a value supplier for each parameter
-    Function<InjectionContext, Object>[] suppliers = new Function[parameters.length];
+    BiFunction<InjectionContext, Injector, Object>[] suppliers = new BiFunction[parameters.length];
     for (int i = 0; i < parameters.length; i++) {
       // build an element for the parameter at the given index
       Parameter parameter = parameters[i];
       Element element = ElementHelper.buildElement(parameter, parameter.getDeclaredAnnotations());
 
       // construct the base function to resolve the parameter
-      Function<InjectionContext, Object> supplier;
+      BiFunction<InjectionContext, Injector, Object> supplier;
       if (JakartaBridge.isProvider(parameter.getType())) {
         // get the provider for the type & check if we need to bridge to provider as the value takes a jakarta one
-        supplier = context -> context.injector().binding(element).provider();
+        supplier = (context, injector) -> injector.binding(element).provider();
         if (JakartaBridge.needsProviderWrapping(parameter.getType())) {
           supplier = supplier.andThen(provider -> JakartaBridge.bridgeJakartaProvider((Provider<Object>) provider));
         }
       } else {
         // we can construct the value directly from the context
-        supplier = context -> context.findInstance(element);
+        supplier = (context, injector) -> context.findInstance(element, injector);
       }
 
       // set the created supplier
@@ -96,11 +94,11 @@ public final class ParameterHelper {
     }
 
     // use the parameters suppliers to construct a function for all parameters
-    return (context, trackedElements) -> {
+    return (context, trackedElements, injector) -> {
       Object[] values = new Object[suppliers.length];
       for (int i = 0; i < suppliers.length; i++) {
         // get and store each value
-        Object value = suppliers[i].apply(context);
+        Object value = suppliers[i].apply(context, injector);
         values[i] = value;
 
         // check if we constructed the target value as a side effect of the previous call

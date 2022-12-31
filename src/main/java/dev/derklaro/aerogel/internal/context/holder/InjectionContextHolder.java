@@ -25,8 +25,7 @@
 package dev.derklaro.aerogel.internal.context.holder;
 
 import dev.derklaro.aerogel.InjectionContext;
-import dev.derklaro.aerogel.Injector;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,8 +39,7 @@ import org.jetbrains.annotations.NotNull;
 public final class InjectionContextHolder {
 
   private static final ThreadLocal<ContextInfo> CONTEXT_HOLDER = new ThreadLocal<>();
-  private static final Function<Injector, InjectionContext> DEFAULT_CONTEXT_SUPPLIER =
-    injector -> InjectionContext.builder().injector(injector).build();
+  private static final Supplier<InjectionContext> DEFAULT_CONTEXT_SUPPLIER = () -> InjectionContext.builder().build();
 
   private InjectionContextHolder() {
     throw new UnsupportedOperationException();
@@ -50,29 +48,24 @@ public final class InjectionContextHolder {
   /**
    * Enters the given injection context, creating a new empty one if the current thread has no context available yet.
    *
-   * @param injector the injector to use for the backing context if a new needs to be created.
    * @return the claimed injection context for the current thread.
    */
-  public static @NotNull InjectionContext enter(@NotNull Injector injector) {
-    return enter(injector, DEFAULT_CONTEXT_SUPPLIER);
+  public static @NotNull InjectionContext enter() {
+    return enter(DEFAULT_CONTEXT_SUPPLIER);
   }
 
   /**
    * Enters the given injection context, creating a new empty one if the current thread has no context available yet.
    *
-   * @param injector        the injector to use for the backing context if a new needs to be created.
-   * @param defaultSupplier the factory to create a new injector if needed.
+   * @param defaultSupplier the factory to create a new injection context if needed.
    * @return the claimed injection context for the current thread.
    */
-  public static @NotNull InjectionContext enter(
-    @NotNull Injector injector,
-    @NotNull Function<Injector, InjectionContext> defaultSupplier
-  ) {
+  public static @NotNull InjectionContext enter(@NotNull Supplier<InjectionContext> defaultSupplier) {
     // check if a context is already present, use that one in that case
     ContextInfo contextInfo = CONTEXT_HOLDER.get();
     if (contextInfo == null) {
       // create and set a new context
-      contextInfo = new ContextInfo(defaultSupplier.apply(injector));
+      contextInfo = new ContextInfo(defaultSupplier.get());
       CONTEXT_HOLDER.set(contextInfo);
     }
 

@@ -624,9 +624,8 @@ public final class DefaultMemberInjector implements MemberInjector {
       Object fieldValue;
       // check if the field is a provider
       if (JakartaBridge.isProvider(injectable.field.getType())) {
-        BindingHolder bindingHolder = context == null
-          ? this.injector.binding(ElementHelper.buildElement(injectable.field, injectable.annotations))
-          : context.injector().binding(ElementHelper.buildElement(injectable.field, injectable.annotations));
+        BindingHolder bindingHolder = this.injector.binding(
+          ElementHelper.buildElement(injectable.field, injectable.annotations));
         Provider<?> provider = bindingHolder.provider();
         // check if the provider is a jakarta provider
         if (JakartaBridge.needsProviderWrapping(injectable.field.getType())) {
@@ -638,7 +637,7 @@ public final class DefaultMemberInjector implements MemberInjector {
         // just needs the direct instance of the field type
         fieldValue = context == null
           ? this.injector.instance(ElementHelper.buildElement(injectable.field, injectable.annotations))
-          : context.findInstance(ElementHelper.buildElement(injectable.field, injectable.annotations));
+          : context.findInstance(ElementHelper.buildElement(injectable.field, injectable.annotations), this.injector);
       }
       // check if we got a field value - skip the set if the field is optional
       if (fieldValue != null || !injectable.optional) {
@@ -677,9 +676,7 @@ public final class DefaultMemberInjector implements MemberInjector {
         // check if the parameter is a provider
         if (JakartaBridge.isProvider(injectable.parameters[i].getType())) {
           // we only need the binding, not the direct instance then
-          Provider<?> provider = context == null
-            ? this.injector.binding(element).provider()
-            : context.injector().binding(element).provider();
+          Provider<?> provider = this.injector.binding(element).provider();
           // check if the provider is a jakarta provider
           if (JakartaBridge.needsProviderWrapping(injectable.parameters[i].getType())) {
             paramInstances[i] = JakartaBridge.bridgeJakartaProvider(provider);
@@ -690,7 +687,7 @@ public final class DefaultMemberInjector implements MemberInjector {
           // we do need the direct instance of the type
           paramInstances[i] = context == null
             ? this.injector.instance(element)
-            : context.findInstance(element);
+            : context.findInstance(element, this.injector);
           // check if the parameter is null and the method is optional - skip the method injection in that case
           if (paramInstances[i] == null && injectable.optional) {
             return null;

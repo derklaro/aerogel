@@ -55,13 +55,6 @@ public interface InjectionContext {
   }
 
   /**
-   * Gets the injector from which the injection process was triggered and which is used for instance lookups.
-   *
-   * @return the associated injector of this context.
-   */
-  @NotNull Injector injector();
-
-  /**
    * Get the current element this context is constructing. This value is only the top level element. If an element
    * request is passed to this context and requires the construct of more element, this method will return the element
    * for which the elements get created.
@@ -84,13 +77,14 @@ public interface InjectionContext {
   /**
    * Tries to find or construct the given element in the known types or the associated injector.
    *
-   * @param element the element to search.
-   * @param <T>     the type of the expected element.
+   * @param element  the element to search.
+   * @param injector the injector which requests the instance associated with the given element.
+   * @param <T>      the type of the expected element.
    * @return the constructed or cached instance for the given {@code element}, may be null.
    * @throws NullPointerException if {@code element} is null.
    * @throws AerogelException     if an exception occurs while constructing the element instance.
    */
-  @Nullable <T> T findInstance(@NotNull Element element);
+  @Nullable <T> T findInstance(@NotNull Element element, @NotNull Injector injector);
 
   /**
    * Finds the stored value which was previously constructed by this context and is associated with all the given
@@ -119,18 +113,24 @@ public interface InjectionContext {
    * Executes the post construct tasks on the given constructed value, optionally executing member injection.
    *
    * @param element           the element type of the constructed instance.
+   * @param injector          the injector which requested the instance associated with the given element.
    * @param result            the resulting constructed instance, may be null.
    * @param doMemberInjection if member injection should be done on the given object.
    * @throws NullPointerException if {@code element} is null.
    * @throws AerogelException     if the member injection of the resulting {@code result} failed.
    * @since 2.0
    */
-  void postConstruct(@NotNull Element element, @Nullable Object result, boolean doMemberInjection);
+  void postConstruct(
+    @NotNull Element element,
+    @NotNull Injector injector,
+    @Nullable Object result,
+    boolean doMemberInjection);
 
   /**
    * Stores the values which were constructed in this context and optionally executes member injection afterwards.
    *
    * @param elements          the elements that were constructed.
+   * @param injector          the injector which requested the instance associated with the given element.
    * @param constructed       the resulting, constructed value.
    * @param allowMemberInject if member injection is allowed.
    * @param allowStore        if storing the constructed value associated with the given elements is permitted.
@@ -140,6 +140,7 @@ public interface InjectionContext {
    */
   void constructDone(
     @NotNull Element[] elements,
+    @NotNull Injector injector,
     @Nullable Object constructed,
     boolean allowMemberInject,
     boolean allowStore);
@@ -159,15 +160,6 @@ public interface InjectionContext {
    * @since 1.0
    */
   interface Builder {
-
-    /**
-     * Sets the injector of the newly created context.
-     *
-     * @param injector the injector to use.
-     * @return the same instance of the builder as used to call the method, for chaining.
-     * @throws NullPointerException if {@code injector} is null.
-     */
-    @NotNull Builder injector(@NotNull Injector injector);
 
     /**
      * Overrides the given {@code type} with the given {@code instance}.
@@ -196,7 +188,6 @@ public interface InjectionContext {
      * injector and rebuild the context.
      *
      * @return the newly created injection context instance.
-     * @throws NullPointerException if no injector was set.
      */
     @Contract(pure = true)
     @NotNull InjectionContext build();
