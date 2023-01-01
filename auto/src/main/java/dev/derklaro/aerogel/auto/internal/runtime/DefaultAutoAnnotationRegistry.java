@@ -60,15 +60,17 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
    * Constructs a new default factory and automatically registers all auto annotation entries.
    */
   public DefaultAutoAnnotationRegistry() {
-    // load the known readers from the context or system class loader
-    ServiceLoader<AutoAnnotationReader> systemLoader = ServiceLoader.load(AutoAnnotationReader.class);
+    // load the known readers from the system class loader
+    ClassLoader scl = ClassLoader.getSystemClassLoader();
+    ServiceLoader<AutoAnnotationReader> systemLoader = ServiceLoader.load(AutoAnnotationReader.class, scl);
     systemLoader.forEach(this::registerReader);
 
-    // load the known readers from the current class loader
-    ServiceLoader<AutoAnnotationReader> thisLoader = ServiceLoader.load(
-      AutoAnnotationReader.class,
-      this.getClass().getClassLoader());
-    thisLoader.forEach(this::registerReader);
+    // load the known readers from the current class loader, if it is not the system class loader
+    ClassLoader cl = this.getClass().getClassLoader();
+    if (scl != cl) {
+      ServiceLoader<AutoAnnotationReader> thisLoader = ServiceLoader.load(AutoAnnotationReader.class, cl);
+      thisLoader.forEach(this::registerReader);
+    }
   }
 
   /**
