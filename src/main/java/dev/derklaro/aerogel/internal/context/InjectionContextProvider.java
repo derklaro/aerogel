@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Map;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Holds the injection context for the given thread and provides some convince method to enter a new root context or
@@ -106,5 +107,14 @@ public final class InjectionContextProvider {
     if (currentContext == expectedContext) {
       CURRENT_ROOT_CONTEXT.remove();
     }
+  }
+
+  /**
+   * Get the current root context which is used on the current thread. If no context is used this method returns null.
+   *
+   * @return the current root context used on the caller thread, null if none.
+   */
+  public static @Nullable InjectionContext currentRootContext() {
+    return CURRENT_ROOT_CONTEXT.get();
   }
 }

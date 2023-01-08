@@ -25,6 +25,7 @@
 package dev.derklaro.aerogel;
 
 import dev.derklaro.aerogel.internal.context.DefaultInjectionContextBuilder;
+import dev.derklaro.aerogel.internal.context.InjectionContextProvider;
 import java.lang.reflect.Type;
 import java.util.function.BiConsumer;
 import org.apiguardian.api.API;
@@ -59,6 +60,15 @@ import org.jetbrains.annotations.Nullable;
  */
 @API(status = API.Status.STABLE, since = "1.0")
 public interface InjectionContext {
+
+  /**
+   * Get the current root context which is used on the current thread. If no context is used this method returns null.
+   *
+   * @return the current root context used on the caller thread, null if none.
+   */
+  static @Nullable InjectionContext currentRootContext() {
+    return InjectionContextProvider.currentRootContext();
+  }
 
   /**
    * Constructs a new builder for an {@link InjectionContext}.
