@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2022 Pasqual K. and contributors
+ * Copyright (c) 2021-2023 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,9 @@
 
 package dev.derklaro.aerogel.internal.context;
 
+import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
-import dev.derklaro.aerogel.internal.utility.NullMask;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,7 +44,24 @@ import org.jetbrains.annotations.Nullable;
 @API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
 public final class DefaultInjectionContextBuilder implements InjectionContext.Builder {
 
-  private final Map<Element, Object> overriddenElements = new HashMap<>();
+  private final Map<Element, LazyContextualProvider> overriddenInstances = new HashMap<>();
+
+  private final Type constructingType;
+  private final ContextualProvider<?> callingProvider;
+
+  /**
+   * Constructs a new injection context builder.
+   *
+   * @param constructingType the type that should be constructed.
+   * @param callingProvider  the provider for which the context should get created.
+   */
+  public DefaultInjectionContextBuilder(
+    @NotNull Type constructingType,
+    @NotNull ContextualProvider<?> callingProvider
+  ) {
+    this.constructingType = Objects.requireNonNull(constructingType, "constructingType");
+    this.callingProvider = Objects.requireNonNull(callingProvider, "callingProvider");
+  }
 
   /**
    * {@inheritDoc}
@@ -59,10 +76,9 @@ public final class DefaultInjectionContextBuilder implements InjectionContext.Bu
    * {@inheritDoc}
    */
   @Override
-  public @NotNull <T> InjectionContext.Builder override(@NotNull Element element, @Nullable T instance) {
-    this.overriddenElements.put(
-      Objects.requireNonNull(element, "Element must be non-null"),
-      NullMask.mask(instance));
+  public <T> InjectionContext.@NotNull Builder override(@NotNull Element element, @Nullable T instance) {
+    Objects.requireNonNull(element, "element");
+    this.overriddenInstances.put(element, new LazyContextualProvider(instance, element));
     return this;
   }
 
@@ -71,6 +87,17 @@ public final class DefaultInjectionContextBuilder implements InjectionContext.Bu
    */
   @Override
   public @NotNull InjectionContext build() {
-    return new DefaultInjectionContext(this.overriddenElements);
+    return new DefaultInjectionContext(this.callingProvider, this.constructingType, this.overriddenInstances);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull InjectionContext enterLocal() {
+    return InjectionContextProvider.enterRootContext(
+      this.callingProvider,
+      this.constructingType,
+      this.overriddenInstances);
   }
 }

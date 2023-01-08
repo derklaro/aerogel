@@ -32,6 +32,7 @@ import dev.derklaro.aerogel.ScopeProvider;
 import dev.derklaro.aerogel.binding.BindingConstructor;
 import dev.derklaro.aerogel.binding.BindingHolder;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 import java.util.Set;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.ApiStatus;
@@ -50,6 +51,7 @@ public abstract class BaseBindingConstructor implements BindingConstructor {
   private static final Element[] EMPTY_ELEMENT_ARRAY = new Element[0];
 
   protected final Element[] types;
+  protected final Type constructingType;
   protected final Set<ScopeProvider> scopes;
   protected final Set<Class<? extends Annotation>> unresolvedScopes;
 
@@ -62,10 +64,12 @@ public abstract class BaseBindingConstructor implements BindingConstructor {
    */
   public BaseBindingConstructor(
     @NotNull Set<Element> types,
+    @NotNull Type constructingType,
     @NotNull Set<ScopeProvider> scopes,
     @NotNull Set<Class<? extends Annotation>> unresolvedScopes
   ) {
     this.types = types.toArray(EMPTY_ELEMENT_ARRAY);
+    this.constructingType = constructingType;
     this.scopes = scopes;
     this.unresolvedScopes = unresolvedScopes;
   }
@@ -80,7 +84,7 @@ public abstract class BaseBindingConstructor implements BindingConstructor {
 
     // apply the known scopes
     for (ScopeProvider scope : this.scopes) {
-      provider = scope.applyScope(this.types, provider.asUpstreamContext());
+      provider = scope.applyScope(this.constructingType, this.types, provider.asUpstreamContext());
     }
 
     // resolve and apply the unresolved scopes
@@ -92,7 +96,7 @@ public abstract class BaseBindingConstructor implements BindingConstructor {
       }
 
       // apply the resolved scope
-      provider = resolvedScope.applyScope(this.types, provider.asUpstreamContext());
+      provider = resolvedScope.applyScope(this.constructingType, this.types, provider.asUpstreamContext());
     }
 
     // build the binding

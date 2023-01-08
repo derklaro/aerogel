@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2022 Pasqual K. and contributors
+ * Copyright (c) 2021-2023 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,60 +22,45 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.context.holder;
+package dev.derklaro.aerogel.internal.context;
 
-import dev.derklaro.aerogel.InjectionContext;
+import dev.derklaro.aerogel.internal.PassthroughException;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * Holds information about an injection context associated with the amount of times it got claimed.
+ * An exception thrown by an injection context that indicates that the type constructed by the current context was
+ * proxied. The instance of this exception is jvm-static and the exception has neither a message, cause nor stack.
  *
  * @author Pasqual K.
  * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.context.holder")
-final class ContextInfo {
-
-  private int claims;
-  private final InjectionContext context;
+@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.context")
+final class SelfTypeProxiedException extends PassthroughException {
 
   /**
-   * Constructs a new context information for the given context with 0 claims.
-   *
-   * @param context the context to create the info for.
+   * The jvm-static instance of this exception.
    */
-  public ContextInfo(@NotNull InjectionContext context) {
-    this.claims = 0;
-    this.context = context;
+  public static final SelfTypeProxiedException INSTANCE = new SelfTypeProxiedException();
+
+  private SelfTypeProxiedException() {
+    // we don't want anyone to construct this exception type directly
   }
 
   /**
-   * Claims this context by one.
-   *
-   * @return the same instance as used to call the method, for chaining.
+   * {@inheritDoc}
    */
-  public @NotNull ContextInfo claim() {
-    this.claims++;
+  @Override
+  public @NotNull Throwable fillInStackTrace() {
     return this;
   }
 
   /**
-   * Releases this context by one.
-   *
-   * @return true if the context is fully released as a result of this method, false otherwise.
+   * {@inheritDoc}
    */
-  public boolean release() {
-    this.claims--;
-    return this.claims == 0;
-  }
-
-  /**
-   * Get the underlying context of this information.
-   *
-   * @return the underlying context.
-   */
-  public @NotNull InjectionContext context() {
-    return this.context;
+  @Override
+  public @NotNull Throwable initCause(@Nullable Throwable cause) {
+    return this;
   }
 }

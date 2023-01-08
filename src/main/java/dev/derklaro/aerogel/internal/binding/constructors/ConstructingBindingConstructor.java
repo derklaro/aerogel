@@ -29,11 +29,12 @@ import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.ScopeProvider;
+import dev.derklaro.aerogel.internal.PassthroughException;
 import dev.derklaro.aerogel.internal.binding.FunctionalContextualProvider;
 import dev.derklaro.aerogel.internal.binding.defaults.BaseBindingConstructor;
-import dev.derklaro.aerogel.internal.invoke.ConstructedValueException;
 import dev.derklaro.aerogel.internal.invoke.ParameterHelper;
 import dev.derklaro.aerogel.internal.invoke.ParameterValueGetter;
+import dev.derklaro.aerogel.internal.reflect.TypeUtil;
 import dev.derklaro.aerogel.internal.utility.MethodHandleUtil;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
@@ -68,7 +69,7 @@ public final class ConstructingBindingConstructor extends BaseBindingConstructor
     @NotNull Set<Class<? extends Annotation>> unresolvedScopes,
     @NotNull Constructor<?> targetConstructor
   ) {
-    super(types, scopes, unresolvedScopes);
+    super(types, targetConstructor.getDeclaringClass(), scopes, unresolvedScopes);
 
     // assign the constructor & make sure that we can access it
     this.targetConstructor = MethodHandleUtil.toGenericMethodHandle(targetConstructor);
@@ -80,17 +81,20 @@ public final class ConstructingBindingConstructor extends BaseBindingConstructor
    */
   @Override
   protected @NotNull ContextualProvider<Object> constructProvider(@NotNull Injector injector) {
-    return new FunctionalContextualProvider<>(injector, this.types, context -> {
+    return new FunctionalContextualProvider<>(injector, this.constructingType, this.types, (context, provider) -> {
       try {
         // get the parameter values & construct a new instance
-        Object[] paramValues = this.parameterValueGetter.resolveParamInstances(context, this.types, injector);
+        Object[] paramValues = this.parameterValueGetter.resolveParamInstances(context, provider, this.types, injector);
         return MethodHandleUtil.invokeConstructor(this.targetConstructor, paramValues);
-      } catch (ConstructedValueException constructedException) {
-        // the value was constructed while getting all parameter values
-        return constructedException.constructedValue();
-      } catch (Throwable ex) {
+      } catch (PassthroughException | AerogelException passthroughException) {
+        throw passthroughException;
+      } catch (Throwable throwable) {
         // unexpected, explode
-        throw AerogelException.forMessagedException("Unable to construct requested value using a constructor", ex);
+        String constructorDesc =
+          TypeUtil.toPrettyString(this.constructingType) + "(" + this.targetConstructor.type() + ")";
+        throw AerogelException.forMessagedException(
+          "Unable to construct requested value constructor " + constructorDesc,
+          throwable);
       }
     });
   }

@@ -37,7 +37,7 @@ import dev.derklaro.aerogel.internal.binding.constructors.LazyInstanceBindingCon
 import dev.derklaro.aerogel.internal.binding.constructors.ProviderBindingConstructor;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.InjectionClassLookup;
-import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
+import dev.derklaro.aerogel.internal.reflect.TypeUtil;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
 import dev.derklaro.aerogel.internal.utility.Preconditions;
 import java.lang.annotation.Annotation;
@@ -81,7 +81,7 @@ public final class DefaultBindingBuilder implements BindingBuilder {
   @Override
   public @NotNull BindingBuilder bindFully(@NotNull Type type) {
     // build an element from the given type & the raw type
-    Class<?> rawType = ReflectionUtil.rawType(type);
+    Class<?> rawType = TypeUtil.rawType(type);
     Element fullElement = ElementHelper.buildElement(type, rawType);
 
     // apply all scopes
@@ -109,7 +109,7 @@ public final class DefaultBindingBuilder implements BindingBuilder {
   @Override
   public @NotNull BindingBuilder bindFully(@NotNull Element element) {
     // apply all scopes
-    Class<?> rawType = ReflectionUtil.rawType(element.componentType());
+    Class<?> rawType = TypeUtil.rawType(element.componentType());
     for (Annotation annotation : rawType.getDeclaredAnnotations()) {
       if (JakartaBridge.isScopeAnnotation(annotation)) {
         this.unresolvedScopes.add(annotation.annotationType());

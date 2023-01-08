@@ -29,9 +29,9 @@ import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.ScopeProvider;
+import dev.derklaro.aerogel.internal.PassthroughException;
 import dev.derklaro.aerogel.internal.binding.FunctionalContextualProvider;
 import dev.derklaro.aerogel.internal.binding.defaults.BaseBindingConstructor;
-import dev.derklaro.aerogel.internal.invoke.ConstructedValueException;
 import dev.derklaro.aerogel.internal.invoke.ParameterHelper;
 import dev.derklaro.aerogel.internal.invoke.ParameterValueGetter;
 import dev.derklaro.aerogel.internal.utility.MethodHandleUtil;
@@ -51,6 +51,8 @@ import org.jetbrains.annotations.NotNull;
 @API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.binding.*")
 public final class FactoryMethodBindingConstructor extends BaseBindingConstructor {
 
+  private final Method rawMethod;
+
   private final MethodHandle factoryMethod;
   private final ParameterValueGetter parameterValueGetter;
 
@@ -68,7 +70,10 @@ public final class FactoryMethodBindingConstructor extends BaseBindingConstructo
     @NotNull Set<Class<? extends Annotation>> unresolvedScopes,
     @NotNull Method factoryMethod
   ) {
-    super(types, scopes, unresolvedScopes);
+    super(types, factoryMethod.getGenericReturnType(), scopes, unresolvedScopes);
+
+    // set the raw method for debug
+    this.rawMethod = factoryMethod;
 
     // assign the constructor & make sure that we can access it
     this.factoryMethod = MethodHandleUtil.toGenericMethodHandle(factoryMethod);
@@ -80,17 +85,18 @@ public final class FactoryMethodBindingConstructor extends BaseBindingConstructo
    */
   @Override
   protected @NotNull ContextualProvider<Object> constructProvider(@NotNull Injector injector) {
-    return new FunctionalContextualProvider<>(injector, this.types, context -> {
+    return new FunctionalContextualProvider<>(injector, this.constructingType, this.types, (context, provider) -> {
       try {
         // get the parameter values & construct a new instance
-        Object[] paramValues = this.parameterValueGetter.resolveParamInstances(context, this.types, injector);
+        Object[] paramValues = this.parameterValueGetter.resolveParamInstances(context, provider, this.types, injector);
         return MethodHandleUtil.invokeMethod(this.factoryMethod, null, paramValues);
-      } catch (ConstructedValueException constructedException) {
-        // the value was constructed while getting all parameter values
-        return constructedException.constructedValue();
-      } catch (Throwable ex) {
+      } catch (PassthroughException | AerogelException passthroughException) {
+        throw passthroughException;
+      } catch (Throwable throwable) {
         // unexpected, explode
-        throw AerogelException.forMessagedException("Unable to construct requested value using a constructor", ex);
+        throw AerogelException.forMessagedException(
+          "Unable to construct requested value using factory method " + this.rawMethod,
+          throwable);
       }
     });
   }

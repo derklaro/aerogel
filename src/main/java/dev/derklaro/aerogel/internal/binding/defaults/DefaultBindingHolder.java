@@ -26,6 +26,7 @@ package dev.derklaro.aerogel.internal.binding.defaults;
 
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.BindingHolder;
 import org.apiguardian.api.API;
@@ -83,5 +84,13 @@ final class DefaultBindingHolder implements BindingHolder {
   @Override
   public @NotNull ContextualProvider<Object> provider() {
     return this.provider;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull InjectionContext.Builder createContextBuilder() {
+    return this.provider.createContextBuilder();
   }
 }

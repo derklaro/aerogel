@@ -72,17 +72,6 @@ public interface MemberInjector {
   void inject(@NotNull MemberInjectionSettings settings);
 
   /**
-   * Injects all static members of the target class using the given {@code setting} and if provided the {@code context}
-   * for instance lookups rather than the {@link #injector()}.
-   *
-   * @param settings the settings to use when injecting the members.
-   * @param context  the context in which this injection happens or null if not in a context operation.
-   * @throws AerogelException     if a field or method injection fails.
-   * @throws NullPointerException if {@code settings} is null.
-   */
-  void inject(@NotNull MemberInjectionSettings settings, @Nullable InjectionContext context);
-
-  /**
    * Inject all members into the given {@code instance} using the default {@link MemberInjectionSettings}.
    *
    * @param instance the instance to inject the members in.
@@ -100,18 +89,6 @@ public interface MemberInjector {
    * @throws NullPointerException if {@code instance} or {@code settings} is null.
    */
   void inject(@NotNull Object instance, @NotNull MemberInjectionSettings settings);
-
-  /**
-   * Inject all members into the given {@code instance} using the given {@code settings} and if provided the {@code
-   * context} * for instance lookups rather than the {@link #injector()}.
-   *
-   * @param instance the instance to inject the members in.
-   * @param settings the settings to use when injecting the members.
-   * @param context  the context in which this injection happens or null if not in a context operation.
-   * @throws AerogelException     if a field or method injection fails.
-   * @throws NullPointerException if {@code instance} or {@code settings} is null.
-   */
-  void inject(@NotNull Object instance, @NotNull MemberInjectionSettings settings, @Nullable InjectionContext context);
 
   /**
    * Injects a specific static field in the target class.

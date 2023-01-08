@@ -22,30 +22,42 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.kotlin
+package dev.derklaro.aerogel;
 
-import dev.derklaro.aerogel.ContextualProvider
-import dev.derklaro.aerogel.InjectionContext
-import dev.derklaro.aerogel.InjectionContext.Builder
+import dev.derklaro.aerogel.internal.reflect.TypeUtil;
+import io.leangen.geantyref.TypeFactory;
+import java.lang.reflect.Type;
+import java.util.Collection;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-/**
- * Resolves a provider for the given [type]. The resolve is done via the injector that is associated with this
- * context. If the root provider has an override for the given element present, a provider which represents the
- * overridden value is returned instead.
- *
- * @see InjectionContext.resolveProvider
- * @author Pasqual K.
- * @since 2.0
- */
-inline fun <reified T> InjectionContext.resolveProvider(type: T): ContextualProvider<out Any> {
-  return this.resolveProvider(element<T>())
+public class TypeUtilTest {
+
+  @Test
+  void testRawClassTypeExtraction() {
+    Type classType = TypeUtil.rawType(String.class);
+    Assertions.assertSame(String.class, classType);
+  }
+
+  @Test
+  void testArrayTypeExtraction() {
+    Type arrayType = TypeFactory.arrayOf(String.class);
+    Type rawType = TypeUtil.rawType(arrayType);
+    Assertions.assertSame(String[].class, rawType);
+  }
+
+  @Test
+  void testRawGenericTypeExtraction() {
+    Type genericType = TypeFactory.parameterizedClass(Collection.class, String.class);
+    Type rawType = TypeUtil.rawType(genericType);
+    Assertions.assertSame(Collection.class, rawType);
+  }
+
+  @Test
+  void testRawGenericArrayTypeExtraction() {
+    Type genericType = TypeFactory.parameterizedClass(Collection.class, String.class);
+    Type arrayType = TypeFactory.arrayOf(genericType);
+    Type rawType = TypeUtil.rawType(arrayType);
+    Assertions.assertSame(Collection[].class, rawType);
+  }
 }
-
-/**
- * Overrides the given generic element [T] with the provided [value].
- *
- * @see Builder.override
- * @author Pasqual K.
- * @since 1.0
- */
-inline fun <reified T> Builder.override(value: T?): Builder = this.override(element<T>(), value)

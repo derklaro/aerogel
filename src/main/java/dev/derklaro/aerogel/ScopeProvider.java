@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel;
 
+import java.lang.reflect.Type;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,11 +47,13 @@ public interface ScopeProvider {
    * decide to either wrap the given provider or return the same provider in case no scoping must be applied. This
    * method should never return a scope which isn't interacting with the given downstream provider.
    *
-   * @param trackedElements the elements which are tracked by the given downstream provider.
-   * @param downstream      the last constructed provider, might either be the root or a scoped provider.
+   * @param constructingType the type constructed by the given downstream provider.
+   * @param trackedElements  the elements which are tracked by the given downstream provider.
+   * @param downstream       the last constructed provider, might either be the root or a scoped provider.
    * @return a wrapped provider which applies the current scope, or the same provider if no scoping is required.
    */
   @NotNull ContextualProvider<Object> applyScope(
+    @NotNull Type constructingType,
     @NotNull Element[] trackedElements,
     @NotNull ContextualProvider<Object> downstream);
 }

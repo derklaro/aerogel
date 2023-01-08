@@ -30,7 +30,7 @@ import dev.derklaro.aerogel.ProvidedBy;
 import dev.derklaro.aerogel.binding.BindingBuilder;
 import dev.derklaro.aerogel.binding.BindingConstructor;
 import dev.derklaro.aerogel.binding.BindingHolder;
-import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
+import dev.derklaro.aerogel.internal.reflect.TypeUtil;
 import dev.derklaro.aerogel.util.Scopes;
 import java.util.function.Supplier;
 import org.apiguardian.api.API;
@@ -75,7 +75,7 @@ public final class InjectorUtil {
   ) {
     return () -> {
       // resolve the raw type of the given element
-      Class<?> rawType = ReflectionUtil.rawType(element.componentType());
+      Class<?> rawType = TypeUtil.rawType(element.componentType());
 
       // check if @ProvidedBy is added to the type
       ProvidedBy providedBy = rawType.getDeclaredAnnotation(ProvidedBy.class);

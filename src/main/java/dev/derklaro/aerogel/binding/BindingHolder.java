@@ -26,6 +26,7 @@ package dev.derklaro.aerogel.binding;
 
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -59,4 +60,12 @@ public interface BindingHolder {
    * @return the provider which is able to construct an instance for the bound types.
    */
   @NotNull ContextualProvider<Object> provider();
+
+  /**
+   * Creates a context builder for this binding which targets the type which this binding constructs and the provider of
+   * this binding.
+   *
+   * @return an injection context builder for this binding.
+   */
+  @NotNull InjectionContext.Builder createContextBuilder();
 }

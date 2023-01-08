@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2022 Pasqual K. and contributors
+ * Copyright (c) 2021-2023 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,40 +24,30 @@
 
 package dev.derklaro.aerogel;
 
-import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
-import io.leangen.geantyref.TypeFactory;
-import java.lang.reflect.Type;
-import java.util.Collection;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class ReflectionUtilTest {
+public class UnbreakableCircularDependencyTest {
 
   @Test
-  void testRawClassTypeExtraction() {
-    Type classType = ReflectionUtil.rawType(String.class);
-    Assertions.assertSame(String.class, classType);
+  void unbreakableCycleShouldThrowException() {
+    Injector injector = Injector.newInjector();
+    Assertions.assertThrows(AerogelException.class, () -> injector.instance(A.class));
   }
 
-  @Test
-  void testArrayTypeExtraction() {
-    Type arrayType = TypeFactory.arrayOf(String.class);
-    Type rawType = ReflectionUtil.rawType(arrayType);
-    Assertions.assertSame(String[].class, rawType);
+  private static final class A {
+
+    @Inject
+    public A(B b) {
+
+    }
   }
 
-  @Test
-  void testRawGenericTypeExtraction() {
-    Type genericType = TypeFactory.parameterizedClass(Collection.class, String.class);
-    Type rawType = ReflectionUtil.rawType(genericType);
-    Assertions.assertSame(Collection.class, rawType);
-  }
+  private static final class B {
 
-  @Test
-  void testRawGenericArrayTypeExtraction() {
-    Type genericType = TypeFactory.parameterizedClass(Collection.class, String.class);
-    Type arrayType = TypeFactory.arrayOf(genericType);
-    Type rawType = ReflectionUtil.rawType(arrayType);
-    Assertions.assertSame(Collection[].class, rawType);
+    @Inject
+    public B(A a) {
+
+    }
   }
 }

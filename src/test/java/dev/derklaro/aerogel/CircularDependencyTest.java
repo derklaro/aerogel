@@ -48,7 +48,7 @@ public class CircularDependencyTest {
     assertNotSameProxySafe(entryPoint.someProvider.apiClassB, entryPoint.apiClassA.apiB());
 
     OtherProvider other = entryPoint.someProvider.otherProvider;
-    assertSameProxySafe(other.apiB(), entryPoint.apiClassA.apiB());
+    assertNotSameProxySafe(other.apiB(), entryPoint.apiClassA.apiB());
     assertNotSameProxySafe(other.someProvider(), entryPoint.someProvider);
 
     // re-check singletons

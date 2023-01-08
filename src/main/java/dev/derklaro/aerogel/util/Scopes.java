@@ -28,9 +28,10 @@ import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
+import dev.derklaro.aerogel.KnownValue;
 import dev.derklaro.aerogel.ScopeProvider;
 import dev.derklaro.aerogel.internal.BaseContextualProvider;
-import dev.derklaro.aerogel.internal.utility.NullMask;
+import java.lang.reflect.Type;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -61,22 +62,22 @@ public final class Scopes {
   @API(status = API.Status.INTERNAL, since = "2.0")
   private static final class SingletonContextualProvider extends BaseContextualProvider<Object> {
 
-    private final Element[] trackedElements;
     private final ContextualProvider<Object> downstream;
-    private final AtomicReference<Object> reference = new AtomicReference<>();
+    private final AtomicReference<KnownValue> reference = new AtomicReference<>();
 
     /**
      * Constructs a new singleton contextual provider instance.
      *
-     * @param trackedElements the elements tracked by the upstream provider.
-     * @param downstream      the provider which is wrapped by this scope.
+     * @param constructingType the type constructed by the given downstream provider.
+     * @param trackedElements  the elements tracked by the upstream provider.
+     * @param downstream       the provider which is wrapped by this scope.
      */
     public SingletonContextualProvider(
+      @NotNull Type constructingType,
       @NotNull Element[] trackedElements,
       @NotNull ContextualProvider<Object> downstream
     ) {
-      super(downstream.injector());
-      this.trackedElements = trackedElements;
+      super(downstream.injector(), constructingType, trackedElements);
       this.downstream = downstream;
     }
 
@@ -86,39 +87,21 @@ public final class Scopes {
     @Override
     public @Nullable Object get(@NotNull InjectionContext context) throws AerogelException {
       // check if the value was already constructed
-      Object knownValue = this.reference.get();
+      KnownValue knownValue = this.reference.get();
       if (knownValue != null) {
-        return this.returnUnmasked(context, knownValue);
+        return knownValue;
       }
 
-      // construct the value using the downstream provider
+      // construct the value using the downstream provider & wrap it in a value store request
       Object value = this.downstream.get(context);
-      if (this.reference.compareAndSet(null, NullMask.mask(value))) {
-        // we were the first to construct the value
-        this.callConstructDone(context, this.trackedElements, value, true, true);
-        return value;
+      KnownValue firstOccurrence = KnownValue.of(value);
+      if (this.reference.compareAndSet(null, firstOccurrence.asSecondOccurrence())) {
+        return firstOccurrence;
       }
 
       // the value was provided while we were doing our stuff, return the old value
       knownValue = this.reference.get();
-      return this.returnUnmasked(context, knownValue);
-    }
-
-    /**
-     * Returns the given value unmasked, indicating to the given context that all elements tracked by this scope were
-     * constructed successfully, if no other upstream is wrapping this provider.
-     *
-     * @param context the current construction context.
-     * @param value   the masked value constructed or remembered by this provider.
-     * @return the given value, unmasked.
-     */
-    private @Nullable Object returnUnmasked(@NotNull InjectionContext context, @NotNull Object value) {
-      // unmask the value and notify the context that the construct was done without injecting members
-      Object unmaskedValue = NullMask.unmask(value);
-      this.callConstructDone(context, this.trackedElements, unmaskedValue, false, true);
-
-      // return the known value, unmasked
-      return unmaskedValue;
+      return knownValue;
     }
   }
 }

@@ -26,7 +26,6 @@ package dev.derklaro.aerogel.internal.member;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjectionSettings;
 import dev.derklaro.aerogel.MemberInjector;
@@ -307,32 +306,23 @@ public final class DefaultMemberInjector implements MemberInjector {
   @Override
   public void inject(@NotNull MemberInjectionSettings settings) {
     Objects.requireNonNull(settings, "settings");
-    this.inject(settings, (InjectionContext) null);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public void inject(@NotNull MemberInjectionSettings settings, @Nullable InjectionContext context) {
-    Objects.requireNonNull(settings, "settings");
     // according to the jakarta injection rules, all fields then all methods need to get injected
     // every static method must only be injected once
     // supertype fields
     if (this.injectedStaticMemberTypes.add(MemberType.INHERITED_FIELD)) {
-      this.injectStaticFields(settings, context, this.onlyNotThisClass);
+      this.injectStaticFields(settings, this.onlyNotThisClass);
     }
     // supertype methods
     if (this.injectedStaticMemberTypes.add(MemberType.INHERITED_METHOD)) {
-      this.injectStaticMethods(settings, context, this.onlyNotThisClass);
+      this.injectStaticMethods(settings, this.onlyNotThisClass);
     }
     // direct fields
     if (this.injectedStaticMemberTypes.add(MemberType.FIELD)) {
-      this.injectStaticFields(settings, context, this.onlyThisClass);
+      this.injectStaticFields(settings, this.onlyThisClass);
     }
     // direct methods
     if (this.injectedStaticMemberTypes.add(MemberType.METHOD)) {
-      this.injectStaticMethods(settings, context, this.onlyThisClass);
+      this.injectStaticMethods(settings, this.onlyThisClass);
     }
   }
 
@@ -349,27 +339,18 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   @Override
   public void inject(@NotNull Object instance, @NotNull MemberInjectionSettings settings) {
-    this.inject(instance, settings, null);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public void inject(
-    @NotNull Object instance,
-    @NotNull MemberInjectionSettings settings,
-    @Nullable InjectionContext context
-  ) {
     Objects.requireNonNull(instance, "instance");
     Objects.requireNonNull(settings, "settings");
     // do the static member injection first
-    this.inject(settings, context);
+    this.inject(settings);
+
     // instance methods
-    this.injectInstanceFields(instance, settings, context, this.onlyNotThisClass);
-    this.injectInstanceMethods(instance, settings, context, this.onlyNotThisClass);
-    this.injectInstanceFields(instance, settings, context, this.onlyThisClass);
-    this.injectInstanceMethods(instance, settings, context, this.onlyThisClass);
+    this.injectInstanceFields(instance, settings, this.onlyNotThisClass);
+    this.injectInstanceMethods(instance, settings, this.onlyNotThisClass);
+    this.injectInstanceFields(instance, settings, this.onlyThisClass);
+    this.injectInstanceMethods(instance, settings, this.onlyThisClass);
+
+    // post construct listeners
     this.executePostConstructListeners(instance, settings);
   }
 
@@ -382,7 +363,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     // try to find a static field with the given name and inject that
     for (InjectableField injectable : this.staticFields) {
       if (injectable.field.getName().equals(name)) {
-        this.injectField(null, injectable, null);
+        this.injectField(null, injectable);
         return; // a field name is unique
       }
     }
@@ -400,14 +381,14 @@ public final class DefaultMemberInjector implements MemberInjector {
     // try to find a static field with the given name and inject that
     for (InjectableField injectable : this.staticFields) {
       if (injectable.field.getName().equals(name)) {
-        this.injectField(null, injectable, null);
+        this.injectField(null, injectable);
         return; // a field name is unique
       }
     }
     // try to find an instance field with the given name and inject that
     for (InjectableField injectable : this.instanceFields) {
       if (injectable.field.getName().equals(name)) {
-        this.injectField(instance, injectable, null);
+        this.injectField(instance, injectable);
         return; // a field name is unique
       }
     }
@@ -424,7 +405,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     // try to find a static method with the given name and inject that
     for (InjectableMethod injectable : this.staticMethods) {
       if (injectable.method.getName().equals(name) && Arrays.equals(injectable.parameterTypes, parameterTypes)) {
-        return this.injectMethod(null, injectable, null);
+        return this.injectMethod(null, injectable);
       }
     }
     // no such method found
@@ -445,13 +426,13 @@ public final class DefaultMemberInjector implements MemberInjector {
     // try to find a static method with the given name and inject that
     for (InjectableMethod injectable : this.staticMethods) {
       if (injectable.method.getName().equals(name) && Arrays.equals(injectable.parameterTypes, params)) {
-        return this.injectMethod(null, injectable, null);
+        return this.injectMethod(null, injectable);
       }
     }
     // try to find an instance method with the given name and inject that
     for (InjectableMethod injectable : this.instanceMethods) {
       if (injectable.method.getName().equals(name) && Arrays.equals(injectable.parameterTypes, params)) {
-        return this.injectMethod(instance, injectable, null);
+        return this.injectMethod(instance, injectable);
       }
     }
     // no such method found
@@ -466,21 +447,16 @@ public final class DefaultMemberInjector implements MemberInjector {
    * Inject all static fields which also pass the {@code preTester}.
    *
    * @param settings  the settings of the injection.
-   * @param context   the context of the injection or null if not in a context operation.
    * @param preTester the extra tester if a field matches.
    * @throws AerogelException if the field injection fails.
    */
-  private void injectStaticFields(
-    @NotNull MemberInjectionSettings settings,
-    @Nullable InjectionContext context,
-    @NotNull Predicate<Member> preTester
-  ) {
+  private void injectStaticFields(@NotNull MemberInjectionSettings settings, @NotNull Predicate<Member> preTester) {
     // check if we need to inject all static fields
     if (settings.injectStaticFields()) {
       // loop and search for every field we should inject
       for (InjectableField field : this.staticFields) {
         if (preTester.test(field.field) && this.fieldMatches(field.field, settings, null)) {
-          this.injectField(null, field, context);
+          this.injectField(null, field);
         }
       }
     }
@@ -491,14 +467,12 @@ public final class DefaultMemberInjector implements MemberInjector {
    *
    * @param instance  the instance to inject the fields into.
    * @param settings  the settings of the injection.
-   * @param context   the context of the injection or null if not in a context operation.
    * @param preTester the extra tester if a field matches.
    * @throws AerogelException if the field injection fails.
    */
   private void injectInstanceFields(
     @NotNull Object instance,
     @NotNull MemberInjectionSettings settings,
-    @Nullable InjectionContext context,
     @NotNull Predicate<Member> preTester
   ) {
     // check if we need (and can) to inject instance fields
@@ -506,7 +480,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       // loop and search for every field we should inject
       for (InjectableField injectable : this.instanceFields) {
         if (preTester.test(injectable.field) && this.fieldMatches(injectable.field, settings, instance)) {
-          this.injectField(instance, injectable, context);
+          this.injectField(instance, injectable);
         }
       }
     }
@@ -516,21 +490,16 @@ public final class DefaultMemberInjector implements MemberInjector {
    * Injects all static method which also pass the {@code preTester}.
    *
    * @param settings  the settings of the injection.
-   * @param context   the context of the injection or null if not in a context operation.
    * @param preTester the extra tester if a method matches.
    * @throws AerogelException if the method injection fails.
    */
-  private void injectStaticMethods(
-    @NotNull MemberInjectionSettings settings,
-    @Nullable InjectionContext context,
-    @NotNull Predicate<Member> preTester
-  ) {
+  private void injectStaticMethods(@NotNull MemberInjectionSettings settings, @NotNull Predicate<Member> preTester) {
     // check if we need to inject all static methods
     if (settings.injectStaticMethods()) {
       // loop and search for every method we should inject
       for (InjectableMethod injectable : this.staticMethods) {
         if (preTester.test(injectable.method) && this.methodMatches(injectable.method, settings)) {
-          this.injectMethod(null, injectable, context);
+          this.injectMethod(null, injectable);
         }
       }
     }
@@ -541,14 +510,12 @@ public final class DefaultMemberInjector implements MemberInjector {
    *
    * @param instance  the instance to inject the methods on.
    * @param settings  the settings of the injection.
-   * @param context   the context of the injection or null if not in a context operation.
    * @param preTester the extra tester if a method matches.
    * @throws AerogelException if the method injection fails.
    */
   private void injectInstanceMethods(
     @NotNull Object instance,
     @NotNull MemberInjectionSettings settings,
-    @Nullable InjectionContext context,
     @NotNull Predicate<Member> preTester
   ) {
     // check if we need to inject instance methods
@@ -556,7 +523,7 @@ public final class DefaultMemberInjector implements MemberInjector {
       // loop and search for every method we should inject
       for (InjectableMethod injectable : this.instanceMethods) {
         if (preTester.test(injectable.method) && this.methodMatches(injectable.method, settings)) {
-          this.injectMethod(instance, injectable, context);
+          this.injectMethod(instance, injectable);
         }
       }
     }
@@ -574,7 +541,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     if (settings.executePostConstructListeners()) {
       // loop and search for every method we should execute
       for (InjectableMethod injectable : this.postConstructMethods) {
-        this.injectMethod(instance, injectable, null);
+        this.injectMethod(instance, injectable);
       }
     }
   }
@@ -584,18 +551,13 @@ public final class DefaultMemberInjector implements MemberInjector {
    *
    * @param instance the instance to inject the methods on, can be null if the method is static.
    * @param method   the method to inject.
-   * @param context  the context of the injection or null if not in a context operation.
    * @return the result of the method invocation.
    * @throws AerogelException if the method injection fails.
    */
-  private @Nullable Object injectMethod(
-    @Nullable Object instance,
-    @NotNull InjectableMethod method,
-    @Nullable InjectionContext context
-  ) {
+  private @Nullable Object injectMethod(@Nullable Object instance, @NotNull InjectableMethod method) {
     try {
       // lookup the parameters for the method injection - null means we should skip the injection
-      Object[] params = this.lookupParamInstances(method, context);
+      Object[] params = this.lookupParamInstances(method);
       if (params != null) {
         // invoke the method using the collected parameters
         return MethodHandleUtil.invokeMethod(method.methodHandle, instance, params);
@@ -612,14 +574,9 @@ public final class DefaultMemberInjector implements MemberInjector {
    *
    * @param instance   the instance to inject the field on, can be null if the field is static.
    * @param injectable the field to inject.
-   * @param context    the context of the injection or null if not in a context operation.
    * @throws AerogelException if the field injection fails.
    */
-  private void injectField(
-    @Nullable Object instance,
-    @NotNull InjectableField injectable,
-    @Nullable InjectionContext context
-  ) {
+  private void injectField(@Nullable Object instance, @NotNull InjectableField injectable) {
     try {
       Object fieldValue;
       // check if the field is a provider
@@ -635,9 +592,8 @@ public final class DefaultMemberInjector implements MemberInjector {
         }
       } else {
         // just needs the direct instance of the field type
-        fieldValue = context == null
-          ? this.injector.instance(ElementHelper.buildElement(injectable.field, injectable.annotations))
-          : context.findInstance(ElementHelper.buildElement(injectable.field, injectable.annotations), this.injector);
+        Element fieldElement = ElementHelper.buildElement(injectable.field, injectable.annotations);
+        fieldValue = this.injector.instance(fieldElement);
       }
       // check if we got a field value - skip the set if the field is optional
       if (fieldValue != null || !injectable.optional) {
@@ -657,13 +613,9 @@ public final class DefaultMemberInjector implements MemberInjector {
    * Lookups all dependencies for injection a specific method.
    *
    * @param injectable the method to inject.
-   * @param context    the context of the injection or null if not in a context operation.
    * @return all parameters needed to invoke the method.
    */
-  private @Nullable Object[] lookupParamInstances(
-    @NotNull InjectableMethod injectable,
-    @Nullable InjectionContext context
-  ) {
+  private @Nullable Object[] lookupParamInstances(@NotNull InjectableMethod injectable) {
     // check if we need to collect parameters at all
     if (injectable.method.getParameterCount() == 0) {
       return NO_PARAMS;
@@ -685,9 +637,7 @@ public final class DefaultMemberInjector implements MemberInjector {
           }
         } else {
           // we do need the direct instance of the type
-          paramInstances[i] = context == null
-            ? this.injector.instance(element)
-            : context.findInstance(element, this.injector);
+          paramInstances[i] = this.injector.instance(element);
           // check if the parameter is null and the method is optional - skip the method injection in that case
           if (paramInstances[i] == null && injectable.optional) {
             return null;

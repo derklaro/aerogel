@@ -39,7 +39,7 @@ public class IndirectConstructionTest {
     injector.install(BindingBuilder.create().bind(SomeProvider.class).toConstructing(SomeProviderImpl.class));
 
     // get the provider instance & check how often the constructor was called
-    SomeProviderImpl provider = injector.instance(SomeProviderImpl.class);
+    SomeProviderImpl provider = (SomeProviderImpl) injector.instance(SomeProvider.class);
     Assertions.assertEquals(1, IndirectConstructionTest.constructorCalls);
 
     // ensure that the providers were injected

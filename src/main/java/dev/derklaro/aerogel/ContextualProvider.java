@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel;
 
+import java.lang.reflect.Type;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,6 +50,20 @@ public interface ContextualProvider<T> extends Provider<T> {
   @NotNull Injector injector();
 
   /**
+   * Get the types that this provider constructs.
+   *
+   * @return the type that gets constructed by this provider.
+   */
+  @NotNull Type constructingType();
+
+  /**
+   * The elements that the constructed value of this provider represents.
+   *
+   * @return the tracked elements of this provider.
+   */
+  @NotNull Element[] trackedElements();
+
+  /**
    * Indicates to this context that it got wrapped in a downstream context. The method is free to either do nothing,
    * change the internal state or return a new provider which should be used by the downstream provider to call this
    * provider.
@@ -56,6 +71,14 @@ public interface ContextualProvider<T> extends Provider<T> {
    * @return this context wrapped for downstream use.
    */
   @NotNull ContextualProvider<T> asUpstreamContext();
+
+  /**
+   * Creates a context builder for this provider which targets the type which this provider constructs and this
+   * provider.
+   *
+   * @return an injection context builder for this provider.
+   */
+  @NotNull InjectionContext.Builder createContextBuilder();
 
   /**
    * Provides a full constructed instance of the {@code T} type. This method delegates every {@link Throwable} caused
@@ -66,5 +89,5 @@ public interface ContextualProvider<T> extends Provider<T> {
    * @throws NullPointerException if the given context is null.
    * @throws AerogelException     if any exception occurs during the construction of the underlying type.
    */
-  @Nullable T get(@NotNull InjectionContext context) throws AerogelException;
+  @Nullable Object get(@NotNull InjectionContext context) throws AerogelException;
 }

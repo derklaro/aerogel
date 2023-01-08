@@ -25,11 +25,13 @@
 package dev.derklaro.aerogel.internal.binding;
 
 import dev.derklaro.aerogel.AerogelException;
+import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.internal.BaseContextualProvider;
-import java.util.function.Function;
+import java.lang.reflect.Type;
+import java.util.function.BiFunction;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,23 +46,23 @@ import org.jetbrains.annotations.Nullable;
 @API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.binding.*")
 public final class FunctionalContextualProvider<T> extends BaseContextualProvider<T> {
 
-  private final Element[] trackedElements;
-  private final Function<InjectionContext, T> downstream;
+  private final BiFunction<InjectionContext, ContextualProvider<?>, T> downstream;
 
   /**
    * Constructs a new functional contextual provider instance.
    *
-   * @param injector        the injector associated with this provider.
-   * @param trackedElements the elements tracked by this provider.
-   * @param downstream      the downstream function to call to obtain the underlying value.
+   * @param injector         the injector associated with this provider.
+   * @param constructingType the type constructed by this provider.
+   * @param trackedElements  the elements tracked by this provider.
+   * @param downstream       the downstream function to call to obtain the underlying value.
    */
   public FunctionalContextualProvider(
     @NotNull Injector injector,
+    @NotNull Type constructingType,
     @NotNull Element[] trackedElements,
-    @NotNull Function<InjectionContext, T> downstream
+    @NotNull BiFunction<InjectionContext, ContextualProvider<?>, T> downstream
   ) {
-    super(injector);
-    this.trackedElements = trackedElements;
+    super(injector, constructingType, trackedElements);
     this.downstream = downstream;
   }
 
@@ -70,12 +72,6 @@ public final class FunctionalContextualProvider<T> extends BaseContextualProvide
   @Override
   public @Nullable T get(@NotNull InjectionContext context) throws AerogelException {
     // get the value from the provided downstream function
-    T value = this.downstream.apply(context);
-
-    // call construct done for the result
-    this.callConstructDone(context, this.trackedElements, value, true, false);
-
-    // return the value
-    return value;
+    return this.downstream.apply(context, this);
   }
 }

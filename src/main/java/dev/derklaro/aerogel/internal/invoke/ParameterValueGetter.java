@@ -25,6 +25,7 @@
 package dev.derklaro.aerogel.internal.invoke;
 
 import dev.derklaro.aerogel.AerogelException;
+import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
@@ -50,12 +51,12 @@ public interface ParameterValueGetter {
    * @param elements the elements which are representing the return value of the executable element.
    * @param injector the injector which requested the instantiation of the parent executable member.
    * @return the param instances to invoke the executable element, in order.
-   * @throws NullPointerException      if the given context, elements or injector is null.
-   * @throws AerogelException          if an issue occurred while looking up the parameter instances.
-   * @throws ConstructedValueException if the value represented by the given elements was stored in the given context.
+   * @throws NullPointerException if the given context, elements or injector is null.
+   * @throws AerogelException     if an issue occurred while looking up the parameter instances.
    */
   @NotNull Object[] resolveParamInstances(
     @NotNull InjectionContext context,
+    @NotNull ContextualProvider<?> provider,
     @NotNull Element[] elements,
     @NotNull Injector injector);
 }

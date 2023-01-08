@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2022 Pasqual K. and contributors
+ * Copyright (c) 2021-2023 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,55 +22,48 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal;
+package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.internal.context.util.ContextInstanceResolveHelper;
 import java.lang.reflect.Type;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * An abstract implementation of a contextual provider which simplifies the use of providers for downstream api
- * consumers. This provider implementation ensures that:
- * <ol>
- *   <li>calls to the {@link #get()} method are always executed within an injection context.
- *   <li>no calls to construct done are made when this provider is wrapped by a downstream provider.
- * </ol>
+ * A contextual provider which gets the injector instance lazily injected into it. For internal use during constructing
+ * of instances only!
  *
- * @param <T> the type constructed by this provider.
  * @author Pasqual K.
  * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.*")
-public abstract class BaseContextualProvider<T> implements ContextualProvider<T> {
+@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.context")
+final class LazyContextualProvider implements ContextualProvider<Object> {
 
-  protected final Injector injector;
-  protected final Type constructingType;
-  protected final Element[] trackedElements;
+  private final Object boundInstance;
 
-  protected boolean hasUpstreamProvider;
+  private final Type constructingType;
+  private final Element[] trackedElements;
+
+  Injector injector;
 
   /**
-   * Constructs a new base contextual provider instance.
+   * Constructs a new contextual provider which can get the injector lazily set.
    *
-   * @param injector         the injector associated with this provider.
-   * @param constructingType the type constructed by this provider.
-   * @param trackedElements  the tracked elements of this provider.
+   * @param boundInstance the instance this provider should return.
+   * @param boundElement  the element to which this provider is bound.
    */
-  protected BaseContextualProvider(
-    @NotNull Injector injector,
-    @NotNull Type constructingType,
-    @NotNull Element[] trackedElements
+  public LazyContextualProvider(
+    @Nullable Object boundInstance,
+    @NotNull Element boundElement
   ) {
-    this.injector = injector;
-    this.constructingType = constructingType;
-    this.trackedElements = trackedElements;
+    this.boundInstance = boundInstance;
+    this.constructingType = boundElement.componentType();
+    this.trackedElements = new Element[]{boundElement};
   }
 
   /**
@@ -101,9 +94,8 @@ public abstract class BaseContextualProvider<T> implements ContextualProvider<T>
    * {@inheritDoc}
    */
   @Override
-  public @NotNull ContextualProvider<T> asUpstreamContext() {
-    this.hasUpstreamProvider = true;
-    return this;
+  public @NotNull ContextualProvider<Object> asUpstreamContext() {
+    throw new UnsupportedOperationException("unsupported on this provider");
   }
 
   /**
@@ -111,15 +103,22 @@ public abstract class BaseContextualProvider<T> implements ContextualProvider<T>
    */
   @Override
   public @NotNull InjectionContext.Builder createContextBuilder() {
-    return InjectionContext.builder(this.constructingType, this);
+    throw new UnsupportedOperationException("unsupported on this provider");
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  @SuppressWarnings("unchecked")
-  public @Nullable T get() throws AerogelException {
-    return (T) ContextInstanceResolveHelper.resolveInstance(this.constructingType, this);
+  public @Nullable Object get() throws AerogelException {
+    return this.boundInstance;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @Nullable Object get(@NotNull InjectionContext context) throws AerogelException {
+    return this.boundInstance;
   }
 }

@@ -61,7 +61,7 @@ public final class LazyInstanceBindingConstructor extends BaseBindingConstructor
     @NotNull Set<Class<? extends Annotation>> unresolvedScopes,
     @NotNull Function<Injector, Object> valueSupplier
   ) {
-    super(types, scopes, unresolvedScopes);
+    super(types, Object.class, scopes, unresolvedScopes); // tood
     this.valueSupplier = valueSupplier;
   }
 
@@ -72,7 +72,8 @@ public final class LazyInstanceBindingConstructor extends BaseBindingConstructor
   protected @NotNull ContextualProvider<Object> constructProvider(@NotNull Injector injector) {
     return new FunctionalContextualProvider<>(
       injector,
+      this.constructingType,
       this.types,
-      context -> this.valueSupplier.apply(injector));
+      (context, provider) -> this.valueSupplier.apply(injector));
   }
 }

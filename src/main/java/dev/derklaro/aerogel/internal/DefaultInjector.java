@@ -33,6 +33,7 @@ import dev.derklaro.aerogel.Singleton;
 import dev.derklaro.aerogel.SpecifiedInjector;
 import dev.derklaro.aerogel.binding.BindingConstructor;
 import dev.derklaro.aerogel.binding.BindingHolder;
+import dev.derklaro.aerogel.internal.context.util.ContextInstanceResolveHelper;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
 import dev.derklaro.aerogel.internal.utility.InjectorUtil;
 import dev.derklaro.aerogel.internal.utility.MapUtil;
@@ -133,7 +134,8 @@ public final class DefaultInjector implements Injector {
   @Override
   @SuppressWarnings("unchecked")
   public <T> T instance(@NotNull Element element) {
-    return (T) this.binding(element).provider().get();
+    BindingHolder bindingHolder = this.binding(element);
+    return (T) ContextInstanceResolveHelper.resolveInstance(element.componentType(), bindingHolder);
   }
 
   /**

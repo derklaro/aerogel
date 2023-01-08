@@ -24,19 +24,35 @@
 
 package dev.derklaro.aerogel;
 
-import dev.derklaro.aerogel.binding.BindingHolder;
 import dev.derklaro.aerogel.internal.context.DefaultInjectionContextBuilder;
 import java.lang.reflect.Type;
-import java.util.Map;
+import java.util.function.BiConsumer;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.Unmodifiable;
 
 /**
- * Represents a context used to inject a type. It holds all information which are used for the current injection
- * process.
+ * Represents the context that is used as a node in a construction tree. A construction tree has at its root the actual
+ * type that gets constructed, followed by a subcontext for each parameter, its sub-parameters and so on.
+ *
+ * <p>An example of a tree might look something like this:
+ * <pre>
+ *    [ StringHolder ]
+ *       /       \
+ *    [ Arg1 ]  [ Arg 2 ]
+ *     /          /      \
+ * [ Arg1-1 ]  [ Arg2-1 ] [ Arg2-2 ]
+ * </pre>
+ *
+ * <p>A context might proxy types in order to support circular references. Proxies are inserted in form of virtual
+ * contexts into an injection context, and the node is removed after the construction of the proxied type completed and
+ * the proxy has a delegate available.
+ *
+ * <p>If a provider returns a {@link KnownValue} back to this context, the value returned by the provider will be
+ * stored by the current context and will be available to the <strong>subtree</strong> of the associated context.
+ * Proxies that were created to support circular references will all be completed with the value wrapped by the known
+ * value, even if the proxy was <strong>not</strong> created by the current subtree.
  *
  * @author Pasqual K.
  * @since 1.0
@@ -47,111 +63,140 @@ public interface InjectionContext {
   /**
    * Constructs a new builder for an {@link InjectionContext}.
    *
+   * @param constructingType the type that should be constructed.
+   * @param callingProvider  the provider for which the context should get created.
    * @return a new builder for an {@link InjectionContext}.
    */
   @Contract(pure = true)
-  static @NotNull Builder builder() {
-    return new DefaultInjectionContextBuilder();
+  static @NotNull Builder builder(@NotNull Type constructingType, @NotNull ContextualProvider<?> callingProvider) {
+    return new DefaultInjectionContextBuilder(constructingType, callingProvider);
   }
 
   /**
-   * Get the current element this context is constructing. This value is only the top level element. If an element
-   * request is passed to this context and requires the construct of more element, this method will return the element
-   * for which the elements get created.
+   * Get the type that this injection context is currently constructing.
    *
-   * @return the current constructing element.
-   * @since 1.2.0
+   * @return the type that this context is currently constructing.
    */
-  @NotNull Element currentElement();
+  @NotNull Type constructingType();
 
   /**
-   * Get the types which were overridden when creating this context using the {@link Builder#override(Element, Object)}
-   * method.
+   * Get the provider that is associated with this context.
    *
-   * @return the overridden types in this context.
-   * @since 1.2.0
+   * @return the provider associated with this context.
    */
-  @Unmodifiable
-  @NotNull Map<Element, Object> overriddenTypes();
+  @NotNull ContextualProvider<?> callingProvider();
 
   /**
-   * Tries to find or construct the given element in the known types or the associated injector.
+   * Resolves a provider for the given element. The resolve is done via the injector that is associated with this
+   * context. If the root provider has an override for the given element present, a provider which represents the
+   * overridden value is returned instead.
    *
-   * @param element  the element to search.
-   * @param injector the injector which requests the instance associated with the given element.
-   * @param <T>      the type of the expected element.
-   * @return the constructed or cached instance for the given {@code element}, may be null.
-   * @throws NullPointerException if {@code element} is null.
-   * @throws AerogelException     if an exception occurs while constructing the element instance.
+   * @param element the element to resolve the provider for.
+   * @return a provider that allows to resolve the underlying value of the given element.
    */
-  @Nullable <T> T findInstance(@NotNull Element element, @NotNull Injector injector);
+  @NotNull ContextualProvider<?> resolveProvider(@NotNull Element element);
 
   /**
-   * Finds the stored value which was previously constructed by this context and is associated with all the given
-   * elements.
+   * Get the next context in the tree or null if this context is a leaf.
    *
-   * @param elements the elements to find the value of.
-   * @param <T>      the generic type of the returned element.
-   * @return the previously constructed value within the current scope, null if no value was constructed.
-   * @throws NullPointerException if the given elements array is null.
+   * @return the next context in the tree.
    */
-  @Nullable <T> T findConstructedValue(@NotNull Element[] elements);
+  @Nullable InjectionContext next();
 
   /**
-   * Used to indicate from a {@link BindingHolder} that the construction of the associated element with {@code element}
-   * was successfully done.
+   * Get the previous context in the tree or null if this context is the root.
    *
-   * @param element the element type of the constructed instance.
-   * @param result  the resulting constructed instance, may be null.
-   * @return true if member injection could be done for the element, false otherwise.
-   * @throws NullPointerException if {@code element} is null.
-   * @since 2.0
+   * @return the previous context in the tree.
    */
-  boolean storeValue(@NotNull Element element, @Nullable Object result);
+  @Nullable InjectionContext prev();
 
   /**
-   * Executes the post construct tasks on the given constructed value, optionally executing member injection.
+   * Get the root context in the current tree, this is a shortcut over iterating the tree until the root context is
+   * reached.
    *
-   * @param element           the element type of the constructed instance.
-   * @param injector          the injector which requested the instance associated with the given element.
-   * @param result            the resulting constructed instance, may be null.
-   * @param doMemberInjection if member injection should be done on the given object.
-   * @throws NullPointerException if {@code element} is null.
-   * @throws AerogelException     if the member injection of the resulting {@code result} failed.
-   * @since 2.0
+   * <p>Note that this method will always return a context, when called on the root context it will return the same
+   * context as the method is called on.
+   *
+   * @return the root context of the current tree.
    */
-  void postConstruct(
-    @NotNull Element element,
-    @NotNull Injector injector,
-    @Nullable Object result,
-    boolean doMemberInjection);
+  @NotNull InjectionContext root();
 
   /**
-   * Stores the values which were constructed in this context and optionally executes member injection afterwards.
+   * Enters a subcontext for the provider. If the provider was already encountered in the current tree, this context
+   * will try to proxy either the context that is associated with the given provider or the current context. If both
+   * attempts fail, an exception is thrown containing the full tree which was traversed until the context was hit. If
+   * the current context gets proxied, the method is free to throw an exception to indicate that behaviour to the
+   * calling method.
    *
-   * @param elements          the elements that were constructed.
-   * @param injector          the injector which requested the instance associated with the given element.
-   * @param constructed       the resulting, constructed value.
-   * @param allowMemberInject if member injection is allowed.
-   * @param allowStore        if storing the constructed value associated with the given elements is permitted.
-   * @throws NullPointerException if the given elements array or the constructed object is null.
-   * @throws AerogelException     if the member injection of the resulting {@code result} failed.
-   * @since 2.0
+   * <p>If the requested type was overridden a context is returned that instantly delegates the call to the overridden
+   * value.
+   *
+   * @param provider the provider which requested the subcontext.
+   * @param type     the type that should get constructed.
+   * @return a new subcontext for the provider, might be a virtual context in case the type was proxied.
+   * @throws AerogelException if an exception occurred while trying to proxy a type.
    */
-  void constructDone(
-    @NotNull Element[] elements,
-    @NotNull Injector injector,
-    @Nullable Object constructed,
-    boolean allowMemberInject,
-    boolean allowStore);
+  @NotNull InjectionContext enterSubcontext(@NotNull ContextualProvider<?> provider, @NotNull Type type);
 
   /**
-   * Ensures that the construction of the current element has fully finished throwing an exception if not.
+   * Tries to resolve the instance that is represented by the underlying provider.
    *
-   * @throws AerogelException if the construction is not yet done.
-   * @since 2.0
+   * @return the constructed type of the underlying provider, might be null.
    */
-  void ensureComplete();
+  @Nullable Object resolveInstance();
+
+  /**
+   * Adds a listener to this context that will be called once the construction of the type associated with this context
+   * was constructed successfully. Note that listeners added to the context after a construction finished will not get
+   * called for previous constructions, only for possible later ones.
+   *
+   * @param listener the listener to add.
+   */
+  void addConstructionListener(@NotNull BiConsumer<InjectionContext, Object> listener);
+
+  /**
+   * Requests the injection of members (fields and methods) into the given constructed value. Note that member
+   * injections will be executed once at the end of the construction by the root context.
+   *
+   * <p>If the given value is null the type represented by this context is used and only static members will get
+   * injected. In all other cases the type of the given value will be used (as defined by {@code value.getClass()}).
+   *
+   * @param value the value to inject members into, can be null.
+   */
+  void requestMemberInjection(@Nullable Object value);
+
+  /**
+   * Indicates that the construction process was completed successfully. The context should validate that there are no
+   * more proxies without a delegate and execute all member injection requests.
+   *
+   * @throws AerogelException if this method was called on a non-root context.
+   */
+  void finishConstruction();
+
+  /**
+   * Get if this context is virtual. A virtual context is inserted into the tree but might be removed at a later step.
+   * This might for example be the case for a proxied type.
+   *
+   * <p>In normal cases the context tree does not allow for duplicate nodes, but virtual contexts are allowed to exists
+   * multiple times alongside a real context.
+   *
+   * @return true if this context is virtual, false otherwise.
+   */
+  boolean virtualContext();
+
+  /**
+   * Get if this context is the root of a tree.
+   *
+   * @return true if this is the root context of a context tree, false otherwise.
+   */
+  boolean rootContext();
+
+  /**
+   * Get if this context is the leaf of a tree.
+   *
+   * @return true if this is currently a leaf context of a context tree, false otherwise.
+   */
+  boolean leafContext();
 
   /**
    * A builder for an {@link InjectionContext}.
@@ -191,5 +236,17 @@ public interface InjectionContext {
      */
     @Contract(pure = true)
     @NotNull InjectionContext build();
+
+    /**
+     * Builds the injection context instance. This builder can then be re-used to override other instance or set another
+     * injector and rebuild the context.
+     *
+     * <p>The context constructed by this method will be set at the thread-local injection context. Note that this
+     * method might return a subcontext if there is already a thread-local root context present.
+     *
+     * @return the injection context in the current thread-local situation, might be a subcontext.
+     */
+    @Contract(pure = true)
+    @NotNull InjectionContext enterLocal();
   }
 }

@@ -61,7 +61,7 @@ public final class ProviderBindingConstructor extends BaseBindingConstructor {
     @NotNull Set<Class<? extends Annotation>> unresolvedScopes,
     @NotNull Provider<Object> provider
   ) {
-    super(types, scopes, unresolvedScopes);
+    super(types, Object.class, scopes, unresolvedScopes);
     this.provider = provider;
   }
 
@@ -70,7 +70,7 @@ public final class ProviderBindingConstructor extends BaseBindingConstructor {
    */
   @Override
   protected @NotNull ContextualProvider<Object> constructProvider(@NotNull Injector injector) {
-    return new FunctionalContextualProvider<>(injector, this.types, context -> {
+    return new FunctionalContextualProvider<>(injector, this.constructingType, this.types, (context, provider) -> {
       // check if our wrapped provider is a contextual provider
       if (this.provider instanceof ContextualProvider) {
         return ((ContextualProvider<Object>) this.provider).get(context);
