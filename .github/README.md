@@ -1,9 +1,10 @@
 Aerogel ![Build Status](https://github.com/derklaro/aerogel/actions/workflows/ci.yml/badge.svg) ![Central Release Version](https://img.shields.io/maven-central/v/dev.derklaro.aerogel/aerogel)
 ===========
 
-A lightweight dependency injection framework for Java 8 - 20 which aims for stability, performance and reliability.
+A lightweight dependency injection framework for Java 8 - 21 which aims for stability, performance and reliability.
 Aerogel is fully compliant with [JSR 330](https://jcp.org/en/jsr/detail?id=330) and the [Jakarta Dependency Injection
-Specification](https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html).
+Specification](https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html) and supports bidirectional proxies to break
+circular references.
 
 ### How to (Core)
 
@@ -314,6 +315,40 @@ Here is a list of each jakarta type and its equivalents in aerogel:
 | @Named         | @Name      |
 | @Scope         | @Scope     |
 | Provider       | Provider   |
+
+Instance construction
+--------
+
+Instance construction in general happens by using a tree. In the tree each constructed type (for example a parameter of
+a constructor) is represented by a node. Due to that, each node can find out if entering a sub node would cause a
+circular reference to happen (by traversing up the tree and checking if the calling provider was already seen). In case
+of a circular reference, the context tries to either proxy his type or the type of the node it's entering (bidirectional
+proxy strategy).
+
+When the desired root type (which was requested initially) was constructed successfully, it is up to caller to call
+the `finishConstruction` method (in general the method will be called internally, but custom implementations need to
+ensure that they do call the method). The method will first check that all proxies that were created are delegated, and
+then execute the member injection for all constructed types (and repeat the two steps if more member injection requests
+were made while member injection was executed).
+
+A simple example how the tree works and proxies is shown below. Note that the example makes everything to a singleton,
+but all types are not required to be a singleton. If you want to see the theoretic code in action (but non-singleton),
+check out the corresponding [test](../src/test/java/dev/derklaro/aerogel/SecondCircularDependencyTest.java).
+
+#### Classes
+
+| Type      | Name              | Implementation        | Constructor Arguments           |
+|-----------|-------------------|-----------------------|---------------------------------|
+| Class     | SomeService       | %                     | SomeProvider, SomeOtherService  |
+| Class     | SomeOtherService  | %                     | SomeProvider, SomeOtherProvider |
+| Interface | SomeProvider      | SomeProviderImpl      | SomeService                     |
+| Interface | SomeOtherProvider | SomeOtherProviderImpl | SomeProvider                    |
+
+#### Constructing tree
+
+Example how the tree would look like if all types are singletons:
+
+![Tree Example](../.images/tree_example.png)
 
 Issue reporting and contributing
 --------
