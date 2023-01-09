@@ -95,7 +95,7 @@ public enum InjectionSetting {
   /**
    * A flag type representing all static and inherited members.
    */
-  public static final long FLAGS_STATIC_MEMBERS = toFlag(
+  public static final long FLAG_STATIC_MEMBERS = toFlag(
     InjectionSetting.PRIVATE_FIELDS,
     InjectionSetting.PRIVATE_METHODS,
     InjectionSetting.STATIC_FIELDS,
@@ -105,7 +105,7 @@ public enum InjectionSetting {
   /**
    * A flag that represents all members: static, instance and inherited.
    */
-  public static final long FLAGS_ALL_MEMBERS = toFlag(
+  public static final long FLAG_ALL_MEMBERS = toFlag(
     InjectionSetting.PRIVATE_METHODS,
     InjectionSetting.STATIC_METHODS,
     InjectionSetting.INSTANCE_METHODS,

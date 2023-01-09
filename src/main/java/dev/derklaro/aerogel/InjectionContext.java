@@ -176,6 +176,18 @@ public interface InjectionContext {
   void requestMemberInjection(@Nullable Object value);
 
   /**
+   * Requests the injection of members (fields and methods) into the given constructed value. Note that member
+   * injections will be executed once at the end of the construction by the root context.
+   *
+   * <p>If the given value is null the type represented by this context is used and only static members will get
+   * injected. In all other cases the type of the given value will be used (as defined by {@code value.getClass()}).
+   *
+   * @param value the value to inject members into, can be null.
+   * @param flag  the flag to pass to the member injector when injecting.
+   */
+  void requestMemberInjection(@Nullable Object value, long flag);
+
+  /**
    * Indicates that the construction process was completed successfully. The context should validate that there are no
    * more proxies without a delegate and execute all member injection requests.
    *

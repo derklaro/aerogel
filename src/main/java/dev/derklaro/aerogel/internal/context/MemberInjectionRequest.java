@@ -37,6 +37,7 @@ import org.jetbrains.annotations.Nullable;
  */
 final class MemberInjectionRequest {
 
+  private final long flag;
   private final Class<?> targetClass;
   private final Object constructedValue;
   private final Injector parentInjector;
@@ -46,15 +47,18 @@ final class MemberInjectionRequest {
   /**
    * Constructs a new member injection request.
    *
+   * @param flag             the flag to pass to the member injector when injecting.
    * @param targetClass      the target class to resolve the fields and methods to call from.
    * @param constructedValue the value that was constructed and should receive member injection.
    * @param parentInjector   the injector which should be used as the parent of the member injector.
    */
   public MemberInjectionRequest(
+    long flag,
     @NotNull Class<?> targetClass,
     @Nullable Object constructedValue,
     @NotNull Injector parentInjector
   ) {
+    this.flag = flag;
     this.targetClass = targetClass;
     this.constructedValue = constructedValue;
     this.parentInjector = parentInjector;
@@ -66,13 +70,7 @@ final class MemberInjectionRequest {
    */
   public void executeMemberInjection() {
     MemberInjector memberInjector = this.parentInjector.memberInjector(this.targetClass);
-    if (this.constructedValue == null) {
-      // only inject static
-      memberInjector.inject();
-    } else {
-      // inject static & instance
-      memberInjector.inject(this.constructedValue);
-    }
+    memberInjector.inject(this.constructedValue, this.flag);
   }
 
   /**

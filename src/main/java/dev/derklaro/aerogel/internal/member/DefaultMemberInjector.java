@@ -129,7 +129,7 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   @Override
   public void inject() {
-    this.inject(InjectionSetting.FLAGS_STATIC_MEMBERS);
+    this.inject(InjectionSetting.FLAG_STATIC_MEMBERS);
   }
 
   /**
@@ -145,7 +145,7 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   @Override
   public void inject(@Nullable Object instance) {
-    this.inject(instance, InjectionSetting.FLAGS_ALL_MEMBERS);
+    this.inject(instance, InjectionSetting.FLAG_ALL_MEMBERS);
   }
 
   /**

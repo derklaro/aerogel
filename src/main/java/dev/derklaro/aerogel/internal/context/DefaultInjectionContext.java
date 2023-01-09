@@ -34,6 +34,7 @@ import dev.derklaro.aerogel.internal.proxy.InjectionTimeProxy;
 import dev.derklaro.aerogel.internal.proxy.ProxyMapping;
 import dev.derklaro.aerogel.internal.reflect.TypeUtil;
 import dev.derklaro.aerogel.internal.utility.Preconditions;
+import dev.derklaro.aerogel.member.InjectionSetting;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.HashMap;
@@ -477,6 +478,14 @@ final class DefaultInjectionContext implements InjectionContext {
    */
   @Override
   public void requestMemberInjection(@Nullable Object value) {
+    this.requestMemberInjection(value, InjectionSetting.FLAG_ALL_MEMBERS);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public void requestMemberInjection(@Nullable Object value, long flag) {
     // get the type of the value, if the value is present we can directly use the given type
     // in all other cases we can fall back to the raw type of the constructing type
     Class<?> valueType;
@@ -487,7 +496,7 @@ final class DefaultInjectionContext implements InjectionContext {
     }
 
     // construct and store the injection request
-    MemberInjectionRequest request = new MemberInjectionRequest(valueType, value, this.callingBinding.injector());
+    MemberInjectionRequest request = new MemberInjectionRequest(flag, valueType, value, this.callingBinding.injector());
     this.root.requestedMemberInjections.add(request);
   }
 
