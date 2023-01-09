@@ -27,6 +27,7 @@ package dev.derklaro.aerogel;
 import dev.derklaro.aerogel.binding.BindingConstructor;
 import dev.derklaro.aerogel.binding.BindingHolder;
 import dev.derklaro.aerogel.internal.DefaultInjector;
+import dev.derklaro.aerogel.member.MemberInjector;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;

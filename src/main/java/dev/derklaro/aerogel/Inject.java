@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.member.MemberInjector;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -62,11 +63,11 @@ import org.apiguardian.api.API;
 public @interface Inject {
 
   /**
-   * If true the injector will only do the injection when all types can be collected which are required to proceed and
-   * will not throw an exception if one of them is missing. Fields will still have the same value as before and methods
-   * will not get called. The only exception are constructors. If an instance can not be constructed because one binding
-   * is missing, it will still result in an exception because the invocation can not proceed and there is no way to
-   * provide the requested instance.
+   * If true the injector will only execute field injection when the field value can be resolved and will ignore any
+   * errors that were thrown while getting the field value or setting the field value. For methods this only means that
+   * errors thrown while resolving a parameter instance or during the method invocation will be ignored.
+   *
+   * <p>This setting has no effect on constructors.
    *
    * @return if the value to inject is not required.
    */

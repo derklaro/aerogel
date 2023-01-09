@@ -27,18 +27,15 @@ package dev.derklaro.aerogel.internal.member;
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.MemberInjectionSettings;
-import dev.derklaro.aerogel.MemberInjector;
 import dev.derklaro.aerogel.Order;
-import dev.derklaro.aerogel.PostConstruct;
 import dev.derklaro.aerogel.Provider;
-import dev.derklaro.aerogel.binding.BindingHolder;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
-import dev.derklaro.aerogel.internal.unsafe.UnsafeMemberAccess;
 import dev.derklaro.aerogel.internal.utility.ElementHelper;
 import dev.derklaro.aerogel.internal.utility.MethodHandleUtil;
 import dev.derklaro.aerogel.internal.utility.Preconditions;
+import dev.derklaro.aerogel.member.InjectionSetting;
+import dev.derklaro.aerogel.member.MemberInjector;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
@@ -46,17 +43,9 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apiguardian.api.API;
@@ -77,32 +66,15 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   private static final Object[] NO_PARAMS = new Object[0];
 
-  /**
-   * A member injection setting which inject all members according to the setting standards.
-   */
-  private static final MemberInjectionSettings ALL = MemberInjectionSettings.builder().build();
-  /**
-   * A member injection setting which only injects static members.
-   */
-  private static final MemberInjectionSettings ONLY_STATIC = MemberInjectionSettings.builder()
-    .injectInstanceMethods(false)
-    .injectInstanceFields(false)
-    .build();
-
   private final Injector injector;
   private final Class<?> targetClass;
 
-  private final Predicate<Member> onlyThisClass;
-  private final Predicate<Member> onlyNotThisClass;
+  private final Predicate<Member> memberInTargetClass;
+  private final Predicate<Member> memberInInheritedClass;
 
-  private final Collection<InjectableField> staticFields;
-  private final Collection<InjectableField> instanceFields;
-
-  private final Collection<InjectableMethod> staticMethods;
-  private final Collection<InjectableMethod> instanceMethods;
-  private final Collection<InjectableMethod> postConstructMethods;
-
-  private final Set<MemberType> injectedStaticMemberTypes = EnumSet.noneOf(MemberType.class);
+  private final List<InjectableField> injectableFields;
+  private final List<InjectableMethod> injectableMethods;
+  private final List<InjectableMethod> postConstructMethods;
 
   /**
    * Constructs a new default member injection instance.
@@ -114,166 +86,26 @@ public final class DefaultMemberInjector implements MemberInjector {
     this.injector = injector;
     this.targetClass = target;
 
-    // these are just all fields, lazy initialized
-    Collection<InjectableField> staticFields = null;
-    Collection<InjectableField> instanceFields = null;
+    // build the member tree
+    MemberTree memberTree = new MemberTree(target);
+    memberTree.buildTree();
 
-    // these are holding two things - the method signature mapped to the actual value
-    Collection<InjectableMethod> staticMethods = null;
-    Map<String, InjectableMethod> instanceMethods = null;
-    Map<String, InjectableMethod> postConstructMethods = null;
-
-    // read all fields & methods in reverse (super fields & method should get injected before implementation ones)
-    List<Class<?>> hierarchyTree = ReflectionUtil.hierarchyTree(target);
-    int startIndex = hierarchyTree.size() - 1;
-    for (int i = startIndex; i >= 0; i--) {
-      Class<?> targetClass = hierarchyTree.get(i);
-      // methods
-      for (Method method : targetClass.getDeclaredMethods()) {
-        // only check these once
-        boolean injectable = JakartaBridge.isInjectable(method);
-        boolean postConstructListener = method.isAnnotationPresent(PostConstruct.class);
-
-        // if the method is static we can step all further steps
-        if (Modifier.isStatic(method.getModifiers())) {
-          Preconditions.checkArgument(!postConstructListener, "@PostConstruct method is static");
-
-          // check if the method is injectable
-          if (injectable) {
-            UnsafeMemberAccess.forceMakeAccessible(method);
-
-            // initialize the static methods & register the method
-            if (staticMethods == null) {
-              staticMethods = new ArrayList<>();
-            }
-            staticMethods.add(new InjectableMethod(method));
-          }
-          continue;
-        }
-
-        // the signature is used to check if we already found a comparable method
-        String visibility = ReflectionUtil.shortVisibilitySummary(method);
-        String parameterDesc = Arrays.stream(method.getParameterTypes())
-          .map(Class::getName)
-          .collect(Collectors.joining(", ", "(", ")"));
-        String signature = String.format("[%s]%s%s", visibility, method.getName(), parameterDesc);
-
-        // check if the method is an overridden one
-        if (!injectable && !postConstructListener) {
-          // check if the method was already read but the overridden method is no longer annotated
-          // in this case remove the method
-          if (instanceMethods != null) {
-            instanceMethods.remove(signature);
-          }
-          if (postConstructMethods != null) {
-            postConstructMethods.remove(signature);
-          }
-          continue;
-        }
-
-        Preconditions.checkArgument(
-          !Modifier.isAbstract(method.getModifiers()),
-          "abstract method is marked as @Inject/@PostConstruct");
-
-        // disable these checks - we do want to access them
-        UnsafeMemberAccess.forceMakeAccessible(method);
-
-        // if the method is a post construct listener we can register it
-        if (postConstructListener) {
-          Preconditions.checkArgument(!injectable, "@PostConstruct method is marked as @Inject");
-          Preconditions.checkArgument(method.getParameterCount() == 0, "@PostConstruct method takes arguments");
-
-          // register the method
-          if (postConstructMethods == null) {
-            postConstructMethods = new HashMap<>();
-          }
-          postConstructMethods.put(signature, new InjectableMethod(method));
-          continue;
-        }
-
-        // at this point the injectable boolean is always true - if there are further checks required add that here
-        if (instanceMethods == null) {
-          instanceMethods = new HashMap<>();
-        }
-        instanceMethods.put(signature, new InjectableMethod(method));
-      }
-
-      // fields
-      for (Field field : targetClass.getDeclaredFields()) {
-        // check if the field is marked as @Inject
-        if (JakartaBridge.isInjectable(field)) {
-          // check if the field is final - we cannot inject them as the modifiers field was added to the reflection
-          // blocklist in Java 12 and a warning gets emitted since Java 9. There is no point to support this behaviour
-          // for Java 8 users...
-          if (Modifier.isFinal(field.getModifiers())) {
-            throw AerogelException.forMessage(String.format(
-              "Field %s in %s is final and cannot get injected",
-              field.getName(),
-              field.getDeclaringClass()));
-          }
-          // disable these checks - we do want to access them
-          UnsafeMemberAccess.forceMakeAccessible(field);
-          // check if the field is an instance or static field
-          if (Modifier.isStatic(field.getModifiers())) {
-            // put the field in the map if there was never a field in there before
-            // otherwise check if we already saw a field like that one
-            if (staticFields == null) {
-              staticFields = new HashSet<>();
-            }
-            staticFields.add(new InjectableField(field));
-          } else {
-            // put the field in the map if there was never a field in there before
-            // otherwise check if we already saw a field like that one
-            if (instanceFields == null) {
-              instanceFields = new HashSet<>();
-            }
-            instanceFields.add(new InjectableField(field));
-          }
-        }
-      }
-    }
-
-    // assign the collection values in the class to the values of the maps
-    this.staticFields = staticFields == null ? Collections.emptySet() : staticFields;
-    this.instanceFields = instanceFields == null ? Collections.emptySet() : instanceFields;
-
-    this.instanceMethods = sortMethods(instanceMethods);
-    this.postConstructMethods = sortMethods(postConstructMethods);
-    this.staticMethods = staticMethods == null ? Collections.emptySet() : sortMethods(staticMethods);
+    // move from java.lang members to injectable ones
+    this.injectableFields = memberTree.getInjectableFields().stream()
+      .map(InjectableField::new)
+      .collect(Collectors.toCollection(LinkedList::new));
+    this.injectableMethods = memberTree.getInjectableMethods().stream()
+      .map(InjectableMethod::new)
+      .sorted()
+      .collect(Collectors.toCollection(LinkedList::new));
+    this.postConstructMethods = memberTree.getPostConstructMethods().stream()
+      .map(InjectableMethod::new)
+      .sorted()
+      .collect(Collectors.toCollection(LinkedList::new));
 
     // initialize the predicates to test whether a member belongs to the direct target class or not
-    this.onlyThisClass = member -> member.getDeclaringClass() == this.targetClass;
-    this.onlyNotThisClass = member -> member.getDeclaringClass() != this.targetClass;
-  }
-
-  /**
-   * Extracts the values from the given map and sorts them according to the order annotation defined on the methods.
-   *
-   * @param methods the methods to extract and sort.
-   * @return a collection of methods, ordered in the execution order.
-   * @since 2.0
-   */
-  private static @NotNull Collection<InjectableMethod> sortMethods(@Nullable Map<String, InjectableMethod> methods) {
-    // just do nothing if the methods are empty
-    if (methods == null || methods.isEmpty()) {
-      return Collections.emptyList();
-    }
-
-    // extract the methods into a list and sort it
-    return sortMethods(methods.values());
-  }
-
-  /**
-   * Sorts the given collection elements according to the order annotation defined on the methods.
-   *
-   * @param methods the methods to sort.
-   * @return a new collection with the given elements in a sorted order.
-   * @since 2.0
-   */
-  private static @NotNull Collection<InjectableMethod> sortMethods(@NotNull Collection<InjectableMethod> methods) {
-    List<InjectableMethod> injectableMethods = new ArrayList<>(methods);
-    Collections.sort(injectableMethods);
-    return injectableMethods;
+    this.memberInTargetClass = member -> member.getDeclaringClass() == this.targetClass;
+    this.memberInInheritedClass = member -> member.getDeclaringClass() != this.targetClass;
   }
 
   /**
@@ -297,61 +129,44 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   @Override
   public void inject() {
-    this.inject(ONLY_STATIC);
+    this.inject(InjectionSetting.FLAGS_STATIC_MEMBERS);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public void inject(@NotNull MemberInjectionSettings settings) {
-    Objects.requireNonNull(settings, "settings");
-    // according to the jakarta injection rules, all fields then all methods need to get injected
-    // every static method must only be injected once
-    // supertype fields
-    if (this.injectedStaticMemberTypes.add(MemberType.INHERITED_FIELD)) {
-      this.injectStaticFields(settings, this.onlyNotThisClass);
-    }
-    // supertype methods
-    if (this.injectedStaticMemberTypes.add(MemberType.INHERITED_METHOD)) {
-      this.injectStaticMethods(settings, this.onlyNotThisClass);
-    }
-    // direct fields
-    if (this.injectedStaticMemberTypes.add(MemberType.FIELD)) {
-      this.injectStaticFields(settings, this.onlyThisClass);
-    }
-    // direct methods
-    if (this.injectedStaticMemberTypes.add(MemberType.METHOD)) {
-      this.injectStaticMethods(settings, this.onlyThisClass);
-    }
+  public void inject(long flags) {
+    this.inject(null, flags);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public void inject(@NotNull Object instance) {
-    this.inject(instance, ALL);
+  public void inject(@Nullable Object instance) {
+    this.inject(instance, InjectionSetting.FLAGS_ALL_MEMBERS);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public void inject(@NotNull Object instance, @NotNull MemberInjectionSettings settings) {
-    Objects.requireNonNull(instance, "instance");
-    Objects.requireNonNull(settings, "settings");
-    // do the static member injection first
-    this.inject(settings);
+  public void inject(@Nullable Object instance, long flags) {
+    // static fields & methods
+    this.injectStaticFields(this.memberInInheritedClass, flags);
+    this.injectStaticMethods(this.memberInInheritedClass, flags);
+    this.injectStaticFields(this.memberInTargetClass, flags);
+    this.injectStaticMethods(this.memberInTargetClass, flags);
 
-    // instance methods
-    this.injectInstanceFields(instance, settings, this.onlyNotThisClass);
-    this.injectInstanceMethods(instance, settings, this.onlyNotThisClass);
-    this.injectInstanceFields(instance, settings, this.onlyThisClass);
-    this.injectInstanceMethods(instance, settings, this.onlyThisClass);
+    // instance fields & methods
+    this.injectInstanceFields(instance, this.memberInInheritedClass, flags);
+    this.injectInstanceMethods(instance, this.memberInInheritedClass, flags);
+    this.injectInstanceFields(instance, this.memberInTargetClass, flags);
+    this.injectInstanceMethods(instance, this.memberInTargetClass, flags);
 
     // post construct listeners
-    this.executePostConstructListeners(instance, settings);
+    this.executePostConstructListeners(instance, flags);
   }
 
   /**
@@ -359,14 +174,14 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   @Override
   public void injectField(@NotNull String name) {
-    Objects.requireNonNull(name, "name");
     // try to find a static field with the given name and inject that
-    for (InjectableField injectable : this.staticFields) {
+    for (InjectableField injectable : this.injectableFields) {
       if (injectable.field.getName().equals(name)) {
         this.injectField(null, injectable);
         return; // a field name is unique
       }
     }
+
     // no such field found
     throw AerogelException.forMessage(String.format("No static field with name %s in %s", name, this.targetClass));
   }
@@ -375,23 +190,15 @@ public final class DefaultMemberInjector implements MemberInjector {
    * {@inheritDoc}
    */
   @Override
-  public void injectField(@NotNull Object instance, @NotNull String name) {
-    Objects.requireNonNull(instance, "instance");
-    Objects.requireNonNull(name, "name");
+  public void injectField(@Nullable Object instance, @NotNull String name) {
     // try to find a static field with the given name and inject that
-    for (InjectableField injectable : this.staticFields) {
-      if (injectable.field.getName().equals(name)) {
-        this.injectField(null, injectable);
-        return; // a field name is unique
-      }
-    }
-    // try to find an instance field with the given name and inject that
-    for (InjectableField injectable : this.instanceFields) {
+    for (InjectableField injectable : this.injectableFields) {
       if (injectable.field.getName().equals(name)) {
         this.injectField(instance, injectable);
         return; // a field name is unique
       }
     }
+
     // no such field found
     throw AerogelException.forMessage(String.format("No field with name %s in %s", name, this.targetClass));
   }
@@ -401,13 +208,13 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   @Override
   public @Nullable Object injectMethod(@NotNull String name, @NotNull Class<?>... parameterTypes) {
-    Objects.requireNonNull(name, "name");
     // try to find a static method with the given name and inject that
-    for (InjectableMethod injectable : this.staticMethods) {
+    for (InjectableMethod injectable : this.injectableMethods) {
       if (injectable.method.getName().equals(name) && Arrays.equals(injectable.parameterTypes, parameterTypes)) {
         return this.injectMethod(null, injectable);
       }
     }
+
     // no such method found
     throw AerogelException.forMessage(String.format(
       "No static method with name %s and parameters %s in %s",
@@ -420,21 +227,14 @@ public final class DefaultMemberInjector implements MemberInjector {
    * {@inheritDoc}
    */
   @Override
-  public @Nullable Object injectMethod(@NotNull Object instance, @NotNull String name, @NotNull Class<?>... params) {
-    Objects.requireNonNull(instance, "instance");
-    Objects.requireNonNull(name, "name");
-    // try to find a static method with the given name and inject that
-    for (InjectableMethod injectable : this.staticMethods) {
-      if (injectable.method.getName().equals(name) && Arrays.equals(injectable.parameterTypes, params)) {
-        return this.injectMethod(null, injectable);
-      }
-    }
-    // try to find an instance method with the given name and inject that
-    for (InjectableMethod injectable : this.instanceMethods) {
+  public @Nullable Object injectMethod(@Nullable Object instance, @NotNull String name, @NotNull Class<?>... params) {
+    // try to find a method with the given name and inject that
+    for (InjectableMethod injectable : this.injectableMethods) {
       if (injectable.method.getName().equals(name) && Arrays.equals(injectable.parameterTypes, params)) {
         return this.injectMethod(instance, injectable);
       }
     }
+
     // no such method found
     throw AerogelException.forMessage(String.format(
       "No method with name %s and parameters %s in %s",
@@ -446,16 +246,19 @@ public final class DefaultMemberInjector implements MemberInjector {
   /**
    * Inject all static fields which also pass the {@code preTester}.
    *
-   * @param settings  the settings of the injection.
+   * @param flags     the flags to check against.
    * @param preTester the extra tester if a field matches.
    * @throws AerogelException if the field injection fails.
    */
-  private void injectStaticFields(@NotNull MemberInjectionSettings settings, @NotNull Predicate<Member> preTester) {
+  private void injectStaticFields(@NotNull Predicate<Member> preTester, long flags) {
     // check if we need to inject all static fields
-    if (settings.injectStaticFields()) {
+    if (InjectionSetting.STATIC_FIELDS.enabled(flags)) {
       // loop and search for every field we should inject
-      for (InjectableField field : this.staticFields) {
-        if (preTester.test(field.field) && this.fieldMatches(field.field, settings, null)) {
+      for (InjectableField field : this.injectableFields) {
+        if (Modifier.isStatic(field.field.getModifiers())
+          && preTester.test(field.field)
+          && this.fieldMatches(field.field, null, flags)
+        ) {
           this.injectField(null, field);
         }
       }
@@ -466,20 +269,19 @@ public final class DefaultMemberInjector implements MemberInjector {
    * Injects all instance fields to the {@code instance} which also pass the {@code preTester}.
    *
    * @param instance  the instance to inject the fields into.
-   * @param settings  the settings of the injection.
+   * @param flags     the flags to check against.
    * @param preTester the extra tester if a field matches.
    * @throws AerogelException if the field injection fails.
    */
-  private void injectInstanceFields(
-    @NotNull Object instance,
-    @NotNull MemberInjectionSettings settings,
-    @NotNull Predicate<Member> preTester
-  ) {
+  private void injectInstanceFields(@Nullable Object instance, @NotNull Predicate<Member> preTester, long flags) {
     // check if we need (and can) to inject instance fields
-    if (settings.injectInstanceFields()) {
+    if (InjectionSetting.INSTANCE_FIELDS.enabled(flags)) {
       // loop and search for every field we should inject
-      for (InjectableField injectable : this.instanceFields) {
-        if (preTester.test(injectable.field) && this.fieldMatches(injectable.field, settings, instance)) {
+      for (InjectableField injectable : this.injectableFields) {
+        if (!Modifier.isStatic(injectable.field.getModifiers())
+          && preTester.test(injectable.field)
+          && this.fieldMatches(injectable.field, instance, flags)
+        ) {
           this.injectField(instance, injectable);
         }
       }
@@ -489,16 +291,19 @@ public final class DefaultMemberInjector implements MemberInjector {
   /**
    * Injects all static method which also pass the {@code preTester}.
    *
-   * @param settings  the settings of the injection.
+   * @param flags     the flags to check against.
    * @param preTester the extra tester if a method matches.
    * @throws AerogelException if the method injection fails.
    */
-  private void injectStaticMethods(@NotNull MemberInjectionSettings settings, @NotNull Predicate<Member> preTester) {
+  private void injectStaticMethods(@NotNull Predicate<Member> preTester, long flags) {
     // check if we need to inject all static methods
-    if (settings.injectStaticMethods()) {
+    if (InjectionSetting.STATIC_METHODS.enabled(flags)) {
       // loop and search for every method we should inject
-      for (InjectableMethod injectable : this.staticMethods) {
-        if (preTester.test(injectable.method) && this.methodMatches(injectable.method, settings)) {
+      for (InjectableMethod injectable : this.injectableMethods) {
+        if (Modifier.isStatic(injectable.method.getModifiers())
+          && preTester.test(injectable.method)
+          && this.methodMatches(injectable.method, flags)
+        ) {
           this.injectMethod(null, injectable);
         }
       }
@@ -509,20 +314,19 @@ public final class DefaultMemberInjector implements MemberInjector {
    * Injects all method which also pass the {@code preTester}.
    *
    * @param instance  the instance to inject the methods on.
-   * @param settings  the settings of the injection.
    * @param preTester the extra tester if a method matches.
+   * @param flags     the flags to check against.
    * @throws AerogelException if the method injection fails.
    */
-  private void injectInstanceMethods(
-    @NotNull Object instance,
-    @NotNull MemberInjectionSettings settings,
-    @NotNull Predicate<Member> preTester
-  ) {
+  private void injectInstanceMethods(@Nullable Object instance, @NotNull Predicate<Member> preTester, long flags) {
     // check if we need to inject instance methods
-    if (settings.injectInstanceMethods()) {
+    if (InjectionSetting.INSTANCE_METHODS.enabled(flags)) {
       // loop and search for every method we should inject
-      for (InjectableMethod injectable : this.instanceMethods) {
-        if (preTester.test(injectable.method) && this.methodMatches(injectable.method, settings)) {
+      for (InjectableMethod injectable : this.injectableMethods) {
+        if (!Modifier.isStatic(injectable.method.getModifiers())
+          && preTester.test(injectable.method)
+          && this.methodMatches(injectable.method, flags)
+        ) {
           this.injectMethod(instance, injectable);
         }
       }
@@ -533,12 +337,12 @@ public final class DefaultMemberInjector implements MemberInjector {
    * Executes all post construct listeners.
    *
    * @param instance the instance to inject the methods on.
-   * @param settings the settings of the injection.
+   * @param flags    the flags to check against.
    * @throws AerogelException if the method injection fails.
    */
-  private void executePostConstructListeners(@NotNull Object instance, @NotNull MemberInjectionSettings settings) {
+  private void executePostConstructListeners(@Nullable Object instance, long flags) {
     // check if we need to execute post construct listeners
-    if (settings.executePostConstructListeners()) {
+    if (InjectionSetting.RUN_POST_CONSTRUCT_LISTENERS.enabled(flags)) {
       // loop and search for every method we should execute
       for (InjectableMethod injectable : this.postConstructMethods) {
         this.injectMethod(instance, injectable);
@@ -556,56 +360,59 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   private @Nullable Object injectMethod(@Nullable Object instance, @NotNull InjectableMethod method) {
     try {
-      // lookup the parameters for the method injection - null means we should skip the injection
-      Object[] params = this.lookupParamInstances(method);
-      if (params != null) {
-        // invoke the method using the collected parameters
-        return MethodHandleUtil.invokeMethod(method.methodHandle, instance, params);
+      // ensure that we can call the method
+      boolean isStatic = Modifier.isStatic(method.method.getModifiers());
+      if (!isStatic && instance == null) {
+        return null;
       }
-      // return null if we didn't invoke the method
-      return null;
+
+      // lookup the parameters for the method injection and invoke the method with them
+      Object[] params = this.lookupParamInstances(method);
+      return method.invoke(instance, params);
     } catch (Throwable exception) {
-      throw AerogelException.forMessagedException("Unable to invoke method " + method.method, exception);
+      // we can ignore the error thrown by the method if the injection was optional
+      if (!method.optional) {
+        throw AerogelException.forMessagedException("Unable to invoke method " + method.method, exception);
+      }
+      // no return value known
+      return null;
     }
   }
 
   /**
    * Injects a specific field.
    *
-   * @param instance   the instance to inject the field on, can be null if the field is static.
-   * @param injectable the field to inject.
+   * @param instance the instance to inject the field on, can be null if the field is static.
+   * @param field    the field to inject.
    * @throws AerogelException if the field injection fails.
    */
-  private void injectField(@Nullable Object instance, @NotNull InjectableField injectable) {
+  private void injectField(@Nullable Object instance, @NotNull InjectableField field) {
     try {
-      Object fieldValue;
-      // check if the field is a provider
-      if (JakartaBridge.isProvider(injectable.field.getType())) {
-        BindingHolder bindingHolder = this.injector.binding(
-          ElementHelper.buildElement(injectable.field, injectable.annotations));
-        Provider<?> provider = bindingHolder.provider();
-        // check if the provider is a jakarta provider
-        if (JakartaBridge.needsProviderWrapping(injectable.field.getType())) {
-          fieldValue = JakartaBridge.bridgeJakartaProvider(provider);
-        } else {
-          fieldValue = provider;
-        }
-      } else {
-        // just needs the direct instance of the field type
-        Element fieldElement = ElementHelper.buildElement(injectable.field, injectable.annotations);
-        fieldValue = this.injector.instance(fieldElement);
+      // ensure that we can set the field value
+      boolean isStatic = Modifier.isStatic(field.field.getModifiers());
+      if (!isStatic && instance == null) {
+        return;
       }
-      // check if we got a field value - skip the set if the field is optional
-      if (fieldValue != null || !injectable.optional) {
-        // set the field using the collected parameter
-        if (instance == null) {
-          injectable.fieldSetter.invoke(fieldValue);
-        } else {
-          injectable.fieldSetter.invoke(instance, fieldValue);
-        }
+
+      // build an element for the field and resolve the associated instance
+      Element fieldElement = ElementHelper.buildElement(field.field, field.annotations);
+      Object fieldValue = this.lookupInstance(fieldElement, field.field.getType());
+
+      // check if we are required to set the field value
+      if (fieldValue == null) {
+        Preconditions.checkArgument(
+          field.optional,
+          "Unable to resolve field value, but field " + field.field + " is required");
+        return;
       }
+
+      // set the field value
+      field.setValue(instance, fieldValue);
     } catch (Throwable exception) {
-      throw AerogelException.forMessagedException("Unable to set field value", exception);
+      // if the field injection was optional we can ignore the error
+      if (!field.optional) {
+        throw AerogelException.forMessagedException("Unable to inject field value of " + field.field, exception);
+      }
     }
   }
 
@@ -615,81 +422,101 @@ public final class DefaultMemberInjector implements MemberInjector {
    * @param injectable the method to inject.
    * @return all parameters needed to invoke the method.
    */
-  private @Nullable Object[] lookupParamInstances(@NotNull InjectableMethod injectable) {
+  private @NotNull Object[] lookupParamInstances(@NotNull InjectableMethod injectable) {
     // check if we need to collect parameters at all
     if (injectable.method.getParameterCount() == 0) {
       return NO_PARAMS;
     } else {
-      Object[] paramInstances = new Object[injectable.parameters.length];
       // find for every type an instance in the parent injector
+      Object[] paramInstances = new Object[injectable.parameters.length];
       for (int i = 0; i < injectable.parameters.length; i++) {
-        // make an element from the parameter
-        Element element = ElementHelper.buildElement(injectable.parameters[i], injectable.parameterAnnotations[i]);
-        // check if the parameter is a provider
-        if (JakartaBridge.isProvider(injectable.parameters[i].getType())) {
-          // we only need the binding, not the direct instance then
-          Provider<?> provider = this.injector.binding(element).provider();
-          // check if the provider is a jakarta provider
-          if (JakartaBridge.needsProviderWrapping(injectable.parameters[i].getType())) {
-            paramInstances[i] = JakartaBridge.bridgeJakartaProvider(provider);
-          } else {
-            paramInstances[i] = provider;
-          }
-        } else {
-          // we do need the direct instance of the type
-          paramInstances[i] = this.injector.instance(element);
-          // check if the parameter is null and the method is optional - skip the method injection in that case
-          if (paramInstances[i] == null && injectable.optional) {
-            return null;
-          }
-        }
+        Parameter parameter = injectable.parameters[i];
+
+        // get an element representing the parameter and resolve the associated instance
+        Element paramElement = ElementHelper.buildElement(parameter, injectable.parameterAnnotations[i]);
+        paramInstances[i] = this.lookupInstance(paramElement, parameter.getType());
       }
+
       // return the collected instances
       return paramInstances;
     }
   }
 
   /**
+   * Looks up the instance for the given element. If the element is a provider or jakarta provider, the instance is not
+   * resolved and only the associated (wrapped) provider is returned.
+   *
+   * @param element the element of the type to get.
+   * @param rawType the raw type which is requested.
+   * @return the instance which can be used for further actions.
+   * @throws AerogelException if an exception occurs looking up an instance.
+   */
+  private @Nullable Object lookupInstance(@NotNull Element element, @NotNull Class<?> rawType) {
+    // check if the target type is a provider
+    if (JakartaBridge.isProvider(rawType)) {
+      // resolve the provider and wrap it to a jakarta provider if needed
+      Provider<?> provider = this.injector.binding(element).provider();
+      if (JakartaBridge.needsProviderWrapping(rawType)) {
+        return JakartaBridge.bridgeJakartaProvider(provider);
+      } else {
+        return provider;
+      }
+    } else {
+      // just get the instance of the element
+      return this.injector.instance(element);
+    }
+  }
+
+  /**
    * Checks if the given method matches the given injection settings.
    *
-   * @param method   the method to check.
-   * @param settings the settings to check against.
+   * @param method the method to check.
+   * @param flags  the flags to check against.
    * @return true if the method matches the settings, false otherwise.
    */
-  private boolean methodMatches(@NotNull Method method, @NotNull MemberInjectionSettings settings) {
+  private boolean methodMatches(@NotNull Method method, long flags) {
     // check if the method is private & private method injection is enabled
-    if (Modifier.isPrivate(method.getModifiers()) && !settings.injectPrivateMethods()) {
+    if (Modifier.isPrivate(method.getModifiers()) && InjectionSetting.PRIVATE_METHODS.disabled(flags)) {
       return false;
     }
-    // check if the method is inherited & inherited methods are enabled
-    return method.getDeclaringClass().equals(this.targetClass) || settings.injectInheritedMethods();
+
+    // check if the method is not inherited
+    if (method.getDeclaringClass().equals(this.targetClass)) {
+      return true;
+    }
+
+    // check if inherited methods are enabled
+    return InjectionSetting.INHERITED_METHODS.enabled(flags);
   }
 
   /**
    * Checks if the given field matches the given injection settings.
    *
-   * @param field    the field to check.
-   * @param settings the settings to check against.
-   * @param on       the instance to read the value of the field is necessary, can be null for static fields.
+   * @param field the field to check.
+   * @param on    the instance to read the value of the field is necessary, can be null for static fields.
+   * @param flags the flags to check against.
    * @return true if the field matches the settings, false otherwise.
    */
-  private boolean fieldMatches(@NotNull Field field, @NotNull MemberInjectionSettings settings, @Nullable Object on) {
+  private boolean fieldMatches(@NotNull Field field, @Nullable Object on, long flags) {
     // check if the method is private & private method injection is enabled
-    if (Modifier.isPrivate(field.getModifiers()) && !settings.injectPrivateFields()) {
+    if (Modifier.isPrivate(field.getModifiers()) && InjectionSetting.PRIVATE_FIELDS.disabled(flags)) {
       return false;
     }
+
     // check if the method is inherited & inherited methods are enabled
-    if (!field.getDeclaringClass().equals(this.targetClass) && !settings.injectInheritedFields()) {
+    if (!field.getDeclaringClass().equals(this.targetClass) && InjectionSetting.INHERITED_METHODS.disabled(flags)) {
       return false;
     }
+
     // check if the field is initialized
-    if (settings.injectOnlyUninitializedFields()) {
+    if (InjectionSetting.ONLY_UNINITIALIZED_FIELDS.enabled(flags)) {
       try {
         // tries to read the field value
         return ReflectionUtil.isUninitialized(field, on);
-      } catch (IllegalAccessException ignored) {
+      } catch (Exception ignored) {
       }
     }
+
     // fall-trough
     return true;
   }
@@ -705,6 +532,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     private final int order;
     private final Method method;
     private final boolean optional;
+    private final boolean onlyInjectOnce;
     private final Parameter[] parameters;
     private final Class<?>[] parameterTypes;
     private final Annotation[][] parameterAnnotations;
@@ -713,6 +541,9 @@ public final class DefaultMemberInjector implements MemberInjector {
 
     // precomputed hash to improve speed down the line
     private final int hashCode;
+
+    // if we injected the method at least once
+    private boolean injectedOnce;
 
     /**
      * Constructs a new injectable method based on the given {@code method}.
@@ -725,11 +556,35 @@ public final class DefaultMemberInjector implements MemberInjector {
       this.parameters = method.getParameters(); // prevents copy of these
       this.parameterTypes = method.getParameterTypes(); // prevents copy of these
       this.parameterAnnotations = method.getParameterAnnotations(); // prevents copy of these
+      this.onlyInjectOnce = Modifier.isStatic(method.getModifiers()); // only inject static methods once
       this.hashCode = this.method.hashCode() ^ Boolean.hashCode(this.optional);
       this.methodHandle = MethodHandleUtil.toGenericMethodHandle(method);
 
       Order orderAnnotation = method.getAnnotation(Order.class);
       this.order = orderAnnotation == null ? Order.DEFAULT : orderAnnotation.value();
+    }
+
+    /**
+     * Invokes the underlying method and returns the call result, unless the method can only be called once and was
+     * already injected.
+     *
+     * @param instance the instance to call the method on, can be null for static methods.
+     * @param params   the parameters to pass to the method.
+     * @return the method call result, might be null.
+     * @throws Throwable anything thrown by the underlying method.
+     */
+    public @Nullable Object invoke(@Nullable Object instance, @NotNull Object[] params) throws Throwable {
+      // check if we are allowed to inject again
+      if (!this.onlyInjectOnce || !this.injectedOnce) {
+        // mark as injected
+        this.injectedOnce = true;
+
+        // invoke the method
+        instance = Modifier.isStatic(this.method.getModifiers()) ? null : instance;
+        return MethodHandleUtil.invokeMethod(this.methodHandle, instance, params);
+      }
+      // already injected
+      return null;
     }
 
     /**
@@ -759,12 +614,15 @@ public final class DefaultMemberInjector implements MemberInjector {
 
     private final Field field;
     private final boolean optional;
+    private final boolean onlyInjectOnce;
     private final Annotation[] annotations;
 
     private final MethodHandle fieldSetter;
 
     // precomputed hash to improve speed down the line
     private final int hashCode;
+
+    private boolean injectedOnce;
 
     /**
      * Constructs a new injectable field based on the given {@code field}.
@@ -775,8 +633,31 @@ public final class DefaultMemberInjector implements MemberInjector {
       this.field = field;
       this.optional = JakartaBridge.isOptional(field);
       this.annotations = field.getDeclaredAnnotations(); // prevents copy of these
+      this.onlyInjectOnce = Modifier.isStatic(field.getModifiers()); // only inject static fields once
       this.hashCode = this.field.hashCode() ^ Boolean.hashCode(this.optional);
       this.fieldSetter = MethodHandleUtil.toGenericSetterMethodHandle(field);
+    }
+
+    /**
+     * Sets the value of the underlying field, unless the value was already set and can only be set once.
+     *
+     * @param instance the instance to set the field on, null for static fields.
+     * @param value    the value to set as the field value.
+     * @throws Throwable any issue that occurred while setting the field value.
+     */
+    public void setValue(@Nullable Object instance, @Nullable Object value) throws Throwable {
+      // check if we are allowed to inject again
+      if (!this.onlyInjectOnce || !this.injectedOnce) {
+        // mark as injected
+        this.injectedOnce = true;
+
+        // set the field value
+        if (Modifier.isStatic(this.field.getModifiers())) {
+          this.fieldSetter.invoke(value);
+        } else {
+          this.fieldSetter.invoke(instance, value);
+        }
+      }
     }
 
     /**

@@ -27,7 +27,7 @@ package dev.derklaro.aerogel.kotlin
 import dev.derklaro.aerogel.AerogelException
 import dev.derklaro.aerogel.binding.BindingHolder
 import dev.derklaro.aerogel.Injector
-import dev.derklaro.aerogel.MemberInjector
+import dev.derklaro.aerogel.member.MemberInjector
 
 /**
  * Creates or gets the instance of the specified generic type [T], the instance may be null if null was bound.

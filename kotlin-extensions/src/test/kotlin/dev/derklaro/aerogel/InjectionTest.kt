@@ -71,7 +71,7 @@ class InjectionTest {
   }
 
   @Test
-  fun `exception on val member injection request`() {
+  fun `can even inject into val member`() {
     val injector = Injector.newInjector()
     injector
       .install(
@@ -85,7 +85,7 @@ class InjectionTest {
           .toInstance("12345")
       )
 
-    Assertions.assertThrows(AerogelException::class.java) {
+    Assertions.assertDoesNotThrow {
       injector.instance<TestClass3>()
     }
   }

@@ -25,12 +25,13 @@
 package dev.derklaro.aerogel.internal.reflect;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,37 +60,44 @@ public final class ReflectionUtil {
   }
 
   /**
-   * Checks if the member is package private (has no specific access modifier)
+   * Constructs a signature hash code that is based on the method name and the hash code of all method parameter types.
    *
-   * @param member the member to check.
-   * @return {@code true} if the member is package private, {@code false} otherwise.
+   * @param method the method to get the signature hash of.
+   * @return a hash code of the method name and all parameter types.
    */
-  public static boolean isPackagePrivate(@NotNull Member member) {
-    int mod = member.getModifiers();
-    return !Modifier.isPublic(mod) && !Modifier.isProtected(mod) && !Modifier.isPrivate(mod);
+  public static int signatureHashCode(@NotNull Method method) {
+    String methodName = method.getName();
+    Class<?>[] paramTypes = method.getParameterTypes();
+
+    // hash consists of: name & each param types hash
+    int hash = methodName.hashCode();
+    for (Class<?> paramType : paramTypes) {
+      hash = hash * 31 + paramType.hashCode();
+    }
+    return hash;
   }
 
   /**
-   * Creates a short unique string for the member based on the member's visibility.
+   * Checks if the given left method overrides the given right method.
    *
-   * @param member the member to create the summary for.
-   * @return the short created visibility summary for the member.
+   * @param left  the method to check if it overrides the right method.
+   * @param right the method to check if it gets overridden by the left method.
+   * @return true if the left method overrides the right method, false otherwise.
    */
-  public static @NotNull String shortVisibilitySummary(@NotNull Member member) {
-    // check if the member is package private
-    // in this case we need to make the visibility summary unique by suffixing with the package name as the method
-    // cannot be overridden by any type outside that package
-    if (isPackagePrivate(member)) {
-      return "package-private" + member.getDeclaringClass().getPackage().getName();
+  public static boolean overrides(@NotNull Method left, @NotNull Method right) {
+    int modifiers = left.getModifiers();
+    if (Modifier.isPrivate(modifiers)) {
+      // private methods cannot be overridden
+      return false;
     }
-    // check if the method is private
-    // in this case we need to make the visibility summary unique by suffixing with the declaring class name as the
-    // method cannot be "overridden" by any type outside the declaring class
-    if (Modifier.isPrivate(member.getModifiers())) {
-      return "private" + member.getDeclaringClass().getName();
+
+    if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
+      // public and protected methods in the same class tree always override each other
+      return true;
     }
-    // the method is either public or protected - it can be overridden by any inheritance
-    return "public";
+
+    // package-private method, check if the methods share the same package
+    return Objects.equals(left.getDeclaringClass().getPackage(), right.getDeclaringClass().getPackage());
   }
 
   /**

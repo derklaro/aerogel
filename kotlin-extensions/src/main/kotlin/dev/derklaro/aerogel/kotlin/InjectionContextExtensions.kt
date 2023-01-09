@@ -29,7 +29,7 @@ import dev.derklaro.aerogel.InjectionContext
 import dev.derklaro.aerogel.InjectionContext.Builder
 
 /**
- * Resolves a provider for the given [type]. The resolve is done via the injector that is associated with this
+ * Resolves a provider for the given, inherited type. The resolve is done via the injector that is associated with this
  * context. If the root provider has an override for the given element present, a provider which represents the
  * overridden value is returned instead.
  *
@@ -37,7 +37,7 @@ import dev.derklaro.aerogel.InjectionContext.Builder
  * @author Pasqual K.
  * @since 2.0
  */
-inline fun <reified T> InjectionContext.resolveProvider(type: T): ContextualProvider<out Any> {
+inline fun <reified T> InjectionContext.resolveProvider(): ContextualProvider<out Any> {
   return this.resolveProvider(element<T>())
 }
 

@@ -25,7 +25,7 @@
 package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.MemberInjector;
+import dev.derklaro.aerogel.member.MemberInjector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
