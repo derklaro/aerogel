@@ -103,7 +103,7 @@ public enum InjectionSetting {
     InjectionSetting.INHERITED_FIELDS,
     InjectionSetting.INHERITED_METHODS);
   /**
-   * A flag that represents all members: static, instance & inherited.
+   * A flag that represents all members: static, instance and inherited.
    */
   public static final long FLAGS_ALL_MEMBERS = toFlag(
     InjectionSetting.PRIVATE_METHODS,
