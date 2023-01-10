@@ -25,7 +25,7 @@
 package dev.derklaro.aerogel.auto.internal.processing;
 
 import dev.derklaro.aerogel.auto.Factory;
-import dev.derklaro.aerogel.auto.internal.utility.TypeUtil;
+import dev.derklaro.aerogel.auto.internal.util.TypeUtil;
 import dev.derklaro.aerogel.auto.processing.AbstractAutoProcessingEntry;
 import dev.derklaro.aerogel.auto.processing.AnnotationEntryWriter;
 import java.io.DataOutputStream;

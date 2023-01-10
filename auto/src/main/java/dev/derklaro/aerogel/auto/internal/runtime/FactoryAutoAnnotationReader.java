@@ -24,7 +24,7 @@
 
 package dev.derklaro.aerogel.auto.internal.runtime;
 
-import static dev.derklaro.aerogel.auto.internal.utility.ClassLoadingUtil.loadClass;
+import static dev.derklaro.aerogel.auto.internal.util.ClassLoadingUtil.loadClass;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.auto.runtime.AbstractAutoAnnotationReader;

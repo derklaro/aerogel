@@ -25,7 +25,7 @@
 package dev.derklaro.aerogel.internal.reflect;
 
 import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.internal.utility.Preconditions;
+import dev.derklaro.aerogel.internal.util.Preconditions;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 

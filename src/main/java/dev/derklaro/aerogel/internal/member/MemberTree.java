@@ -28,7 +28,7 @@ import dev.derklaro.aerogel.PostConstruct;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
 import dev.derklaro.aerogel.internal.unsafe.UnsafeMemberAccess;
-import dev.derklaro.aerogel.internal.utility.Preconditions;
+import dev.derklaro.aerogel.internal.util.Preconditions;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -175,7 +175,7 @@ final class MemberTree {
    *
    * @return the injectable fields.
    */
-  public @NotNull List<Field> getInjectableFields() {
+  public @NotNull List<Field> injectableFields() {
     return this.injectableFields;
   }
 
@@ -184,7 +184,7 @@ final class MemberTree {
    *
    * @return the injectable methods.
    */
-  public @NotNull List<Method> getInjectableMethods() {
+  public @NotNull List<Method> injectableMethods() {
     return this.injectableMethods;
   }
 
@@ -193,7 +193,7 @@ final class MemberTree {
    *
    * @return the post construct methods.
    */
-  public @NotNull List<Method> getPostConstructMethods() {
+  public @NotNull List<Method> postConstructMethods() {
     return this.postConstructMethods;
   }
 }

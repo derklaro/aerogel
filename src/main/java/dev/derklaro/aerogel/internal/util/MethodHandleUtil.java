@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.utility;
+package dev.derklaro.aerogel.internal.util;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.internal.unsafe.UnsafeMemberAccess;

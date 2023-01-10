@@ -33,7 +33,7 @@ import dev.derklaro.aerogel.KnownValue;
 import dev.derklaro.aerogel.internal.proxy.InjectionTimeProxy;
 import dev.derklaro.aerogel.internal.proxy.ProxyMapping;
 import dev.derklaro.aerogel.internal.reflect.TypeUtil;
-import dev.derklaro.aerogel.internal.utility.Preconditions;
+import dev.derklaro.aerogel.internal.util.Preconditions;
 import dev.derklaro.aerogel.member.InjectionSetting;
 import java.lang.reflect.Type;
 import java.util.Collections;
@@ -397,7 +397,7 @@ final class DefaultInjectionContext implements InjectionContext {
 
           // unwrap the inner value
           KnownValue knownValue = (KnownValue) constructedValue;
-          this.delegate = constructedValue = knownValue.getInner();
+          this.delegate = constructedValue = knownValue.inner();
 
           // add an injection request for the value if it is the first occurrence
           if (knownValue.firstOccurrence() && constructedValue != null) {

@@ -25,8 +25,8 @@
 package dev.derklaro.aerogel.internal.proxy;
 
 import dev.derklaro.aerogel.internal.unsafe.UnsafeMemberAccess;
-import dev.derklaro.aerogel.internal.utility.NullMask;
-import dev.derklaro.aerogel.internal.utility.Preconditions;
+import dev.derklaro.aerogel.internal.util.NullMask;
+import dev.derklaro.aerogel.internal.util.Preconditions;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

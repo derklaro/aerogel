@@ -30,7 +30,6 @@ import dev.derklaro.aerogel.InjectionContext;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,8 +58,8 @@ public final class DefaultInjectionContextBuilder implements InjectionContext.Bu
     @NotNull Type constructingType,
     @NotNull ContextualProvider<?> callingProvider
   ) {
-    this.constructingType = Objects.requireNonNull(constructingType, "constructingType");
-    this.callingProvider = Objects.requireNonNull(callingProvider, "callingProvider");
+    this.constructingType = constructingType;
+    this.callingProvider = callingProvider;
   }
 
   /**
@@ -68,7 +67,6 @@ public final class DefaultInjectionContextBuilder implements InjectionContext.Bu
    */
   @Override
   public <T> InjectionContext.@NotNull Builder override(@NotNull Type type, @Nullable T instance) {
-    Objects.requireNonNull(type, "type");
     return this.override(Element.forType(type), instance);
   }
 
@@ -77,7 +75,6 @@ public final class DefaultInjectionContextBuilder implements InjectionContext.Bu
    */
   @Override
   public <T> InjectionContext.@NotNull Builder override(@NotNull Element element, @Nullable T instance) {
-    Objects.requireNonNull(element, "element");
     this.overriddenInstances.put(element, new LazyContextualProvider(instance, element));
     return this;
   }

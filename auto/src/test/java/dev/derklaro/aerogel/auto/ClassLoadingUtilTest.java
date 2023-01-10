@@ -24,7 +24,7 @@
 
 package dev.derklaro.aerogel.auto;
 
-import dev.derklaro.aerogel.auto.internal.utility.ClassLoadingUtil;
+import dev.derklaro.aerogel.auto.internal.util.ClassLoadingUtil;
 import java.util.Collection;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto.internal.utility;
+package dev.derklaro.aerogel.auto.internal.util;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.auto.Provides;

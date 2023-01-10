@@ -34,8 +34,8 @@ import dev.derklaro.aerogel.binding.BindingConstructor;
 import dev.derklaro.aerogel.binding.BindingHolder;
 import dev.derklaro.aerogel.internal.context.util.ContextInstanceResolveHelper;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
-import dev.derklaro.aerogel.internal.utility.InjectorUtil;
-import dev.derklaro.aerogel.internal.utility.MapUtil;
+import dev.derklaro.aerogel.internal.util.InjectorUtil;
+import dev.derklaro.aerogel.internal.util.MapUtil;
 import dev.derklaro.aerogel.member.MemberInjector;
 import dev.derklaro.aerogel.util.Scopes;
 import java.lang.annotation.Annotation;
@@ -44,7 +44,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.apiguardian.api.API;
@@ -143,8 +142,6 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @NotNull Injector install(@NotNull BindingConstructor constructor) {
-    Objects.requireNonNull(constructor, "constructor");
-
     // construct the binding
     BindingHolder holder = constructor.construct(this);
     return this.install(holder);
@@ -168,8 +165,6 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @NotNull Injector install(@NotNull BindingHolder bindingHolder) {
-    Objects.requireNonNull(bindingHolder, "bindingHolder");
-
     // apply the binding to this injector
     for (Element type : bindingHolder.types()) {
       this.bindings.putIfAbsent(type, bindingHolder);
@@ -182,7 +177,6 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @NotNull MemberInjector memberInjector(@NotNull Class<?> memberClazz) {
-    Objects.requireNonNull(memberClazz, "memberClazz");
     return this.cachedMemberInjectors.computeIfAbsent(memberClazz, clazz -> new DefaultMemberInjector(this, clazz));
   }
 
@@ -191,7 +185,6 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @Nullable MemberInjector fastMemberInjector(@NotNull Class<?> memberHolderClass) {
-    Objects.requireNonNull(memberHolderClass, "memberHolderClass");
     return this.cachedMemberInjectors.get(memberHolderClass);
   }
 
@@ -219,9 +212,6 @@ public final class DefaultInjector implements Injector {
     @NotNull Element element,
     @NotNull Supplier<BindingHolder> factory
   ) {
-    Objects.requireNonNull(element, "element");
-    Objects.requireNonNull(factory, "factory");
-
     // get the binding if a parent has already one
     BindingHolder holder = this.bindingOrNull(element);
     if (holder != null) {
@@ -254,7 +244,6 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @Nullable BindingHolder bindingOrNull(@NotNull Element element) {
-    Objects.requireNonNull(element, "element");
     // check if we have a cached bindingHolder
     BindingHolder bindingHolder = this.bindings.get(element);
     // check if we need a parent injector lookup - skip the parent lookup if the element is the current injector element
@@ -282,7 +271,6 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @Nullable BindingHolder fastBinding(@NotNull Element element) {
-    Objects.requireNonNull(element, "element");
     // read from the store
     return this.bindings.get(element);
   }
@@ -323,9 +311,6 @@ public final class DefaultInjector implements Injector {
     @NotNull Class<? extends Annotation> scopeAnno,
     @NotNull ScopeProvider provider
   ) {
-    Objects.requireNonNull(scopeAnno, "scopeAnnotation");
-    Objects.requireNonNull(provider, "provider");
-
     // register the scope
     this.scopes.put(scopeAnno, provider);
     return this;
@@ -336,8 +321,6 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @Nullable ScopeProvider scope(@NotNull Class<? extends Annotation> scopeAnnotation) {
-    Objects.requireNonNull(scopeAnnotation, "scopeAnnotation");
-
     // check if the scope is present locally, if not try to resolve the scope from the parent injector
     ScopeProvider scope = this.scopes.get(scopeAnnotation);
     if (scope == null && this.parent != null) {

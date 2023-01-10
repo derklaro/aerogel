@@ -22,10 +22,11 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.utility;
+package dev.derklaro.aerogel.internal.util;
 
+import dev.derklaro.aerogel.internal.reflect.TypeUtil;
 import java.util.Collection;
-import java.util.Objects;
+import java.util.StringJoiner;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,9 +41,13 @@ import org.jetbrains.annotations.Nullable;
 public final class ToStringHelper {
 
   /**
+   * The prefix prepend to the final toString value.
+   */
+  private final String prefix;
+  /**
    * The string builder to write the information of the class to.
    */
-  private final StringBuilder stringBuilder;
+  private final StringJoiner stringJoiner;
 
   /**
    * Constructs a new builder based on the given {@code instance}.
@@ -50,7 +55,8 @@ public final class ToStringHelper {
    * @param instance the instance for which the toString method result will be created.
    */
   private ToStringHelper(@NotNull Object instance) {
-    this.stringBuilder = new StringBuilder(instance.getClass().getSimpleName()).append("(");
+    this.prefix = TypeUtil.toPrettyString(instance.getClass());
+    this.stringJoiner = new StringJoiner(", ", "(", ")");
   }
 
   /**
@@ -60,7 +66,6 @@ public final class ToStringHelper {
    * @return the constructed builder.
    */
   public static @NotNull ToStringHelper create(@NotNull Object instance) {
-    Objects.requireNonNull(instance, "instance");
     return new ToStringHelper(instance);
   }
 
@@ -77,21 +82,16 @@ public final class ToStringHelper {
       return this.putField(name, "[]");
     } else {
       // join the elements of the array together
-      StringBuilder builder = new StringBuilder().append('[');
+      StringJoiner joiner = new StringJoiner(", ", "[", "]");
       for (Object entry : value) {
         // skip null objects - we don't need them in the toString value
         if (entry != null) {
-          builder.append(entry).append(", ");
+          joiner.add(entry.toString());
         }
       }
-      // check if there were more than 1 non-null element
-      if (builder.length() == 1) {
-        // no elements added to the builder - treat as an empty collection
-        return this.putField(name, "[]");
-      } else {
-        // remove the last ', ' and add the closing ']'
-        return this.putField(name, builder.delete(builder.length() - 2, builder.length()).append(']').toString());
-      }
+
+      // put the joined value
+      return this.putField(name, joiner.toString());
     }
   }
 
@@ -103,7 +103,9 @@ public final class ToStringHelper {
    * @return the same instance as used to call this method, for chaining.
    */
   public @NotNull ToStringHelper putField(@NotNull String name, @Nullable Object value) {
-    this.stringBuilder.append(name).append('=').append(value).append(", ");
+    String toStringValue = String.format("%s=%s", name, value);
+    this.stringJoiner.add(toStringValue);
+
     return this;
   }
 
@@ -114,12 +116,6 @@ public final class ToStringHelper {
    * @return the created {@code toString} method result based on this builder.
    */
   public @NotNull String toString() {
-    // remove the last comma if there is one
-    int lastFieldIndex = this.stringBuilder.lastIndexOf(",");
-    if (lastFieldIndex != -1) {
-      this.stringBuilder.delete(lastFieldIndex, this.stringBuilder.length());
-    }
-    // complete the toString generation
-    return this.stringBuilder.append(")").toString();
+    return this.prefix + this.stringJoiner.toString();
   }
 }

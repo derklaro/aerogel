@@ -25,13 +25,14 @@
 package dev.derklaro.aerogel.internal.annotation;
 
 import dev.derklaro.aerogel.AnnotationPredicate;
-import dev.derklaro.aerogel.internal.utility.Preconditions;
+import dev.derklaro.aerogel.internal.util.Preconditions;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -164,22 +165,24 @@ public final class DefaultAnnotationPredicate implements AnnotationPredicate {
     }
 
     // construct the toString value
-    StringBuilder builder = new StringBuilder("@").append(this.annotationType.getSimpleName()).append('(');
+    String prefix = String.format("@%s", this.annotationType.getSimpleName());
 
     // only append the entries if there are any
     Set<Map.Entry<String, Object>> entries = this.annotationValues.entrySet();
     if (!entries.isEmpty()) {
+      // join the values
+      StringJoiner joiner = new StringJoiner(", ", "(", ")");
       for (Map.Entry<String, Object> entry : entries) {
-        builder.append(entry.getKey()).append(" = ").append(entry.getValue()).append(", ");
+        joiner.add(String.format("%s = %s", entry.getKey(), entry.getValue()));
       }
 
-      // remove the trailing comma
-      int builderLength = builder.length();
-      builder.delete(builderLength - 2, builderLength);
+      // build the final string
+      String finalString = prefix + joiner;
+      return this.toStringCached = finalString;
+    } else {
+      // no values to append
+      String finalString = prefix + "()";
+      return this.toStringCached = finalString;
     }
-
-    // close the opening bracket and set the cached value
-    this.toStringCached = builder.append(')').toString();
-    return this.toStringCached;
   }
 }

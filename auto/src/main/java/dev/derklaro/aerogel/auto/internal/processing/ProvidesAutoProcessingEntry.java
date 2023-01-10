@@ -24,10 +24,10 @@
 
 package dev.derklaro.aerogel.auto.internal.processing;
 
-import static dev.derklaro.aerogel.auto.internal.utility.TypeUtil.typesOfAnnotationValue;
+import static dev.derklaro.aerogel.auto.internal.util.TypeUtil.typesOfAnnotationValue;
 
 import dev.derklaro.aerogel.auto.Provides;
-import dev.derklaro.aerogel.auto.internal.utility.TypeUtil;
+import dev.derklaro.aerogel.auto.internal.util.TypeUtil;
 import dev.derklaro.aerogel.auto.processing.AbstractAutoProcessingEntry;
 import dev.derklaro.aerogel.auto.processing.AnnotationEntryWriter;
 import java.io.DataOutputStream;

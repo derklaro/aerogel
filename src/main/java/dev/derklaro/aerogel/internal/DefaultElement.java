@@ -28,7 +28,7 @@ import dev.derklaro.aerogel.AnnotationPredicate;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.internal.annotation.AnnotationFactory;
 import dev.derklaro.aerogel.internal.annotation.DefaultAnnotationPredicate;
-import dev.derklaro.aerogel.internal.utility.ToStringHelper;
+import dev.derklaro.aerogel.internal.util.ToStringHelper;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
@@ -96,8 +96,6 @@ public final class DefaultElement implements Element {
    */
   @Override
   public @NotNull Element requireAnnotation(@NotNull Annotation annotation) {
-    Objects.requireNonNull(annotation, "annotation");
-
     // construct the predicate for the given annotation
     AnnotationPredicate predicate = DefaultAnnotationPredicate.forAnnotation(annotation);
 
@@ -125,9 +123,6 @@ public final class DefaultElement implements Element {
     @NotNull Class<? extends Annotation> annotationType,
     @NotNull Map<String, Object> overriddenMethodValues
   ) {
-    Objects.requireNonNull(annotationType, "annotationType");
-    Objects.requireNonNull(overriddenMethodValues, "overriddenMethodValues");
-
     // construct and require the annotation
     Annotation proxied = AnnotationFactory.generateAnnotation(annotationType, overriddenMethodValues);
     return this.requireAnnotation(proxied);

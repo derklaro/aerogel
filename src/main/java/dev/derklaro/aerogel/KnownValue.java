@@ -72,7 +72,7 @@ public final class KnownValue {
    *
    * @return the inner value of this value.
    */
-  public @Nullable Object getInner() {
+  public @Nullable Object inner() {
     return this.inner;
   }
 

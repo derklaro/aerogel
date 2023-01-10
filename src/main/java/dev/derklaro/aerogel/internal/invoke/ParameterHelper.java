@@ -30,7 +30,7 @@ import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
-import dev.derklaro.aerogel.internal.utility.ElementHelper;
+import dev.derklaro.aerogel.internal.util.ElementHelper;
 import java.lang.reflect.Parameter;
 import java.util.function.UnaryOperator;
 import org.apiguardian.api.API;

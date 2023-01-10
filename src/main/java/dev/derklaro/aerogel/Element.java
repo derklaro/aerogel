@@ -29,7 +29,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Objects;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +52,6 @@ public interface Element {
    */
   @Contract(pure = true)
   static @NotNull Element forType(@NotNull Type type) {
-    Objects.requireNonNull(type, "type");
     return new DefaultElement(type);
   }
 

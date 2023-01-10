@@ -26,7 +26,6 @@ package dev.derklaro.aerogel.internal.unsafe;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
-import java.util.Objects;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
@@ -131,8 +130,6 @@ public final class UnsafeMemberAccess {
    * @throws NullPointerException if the given accessible object is null.
    */
   private static void makeAccessible(@NotNull AccessibleObject accessibleObject, boolean ensure) {
-    Objects.requireNonNull(accessibleObject, "accessibleObject");
-
     // check if the object is already accessible, no need to do anything
     // we can ignore deprecation here as the method was deprecated because the name might be misleading,
     // but in our cases it does exactly what we want

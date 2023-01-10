@@ -31,9 +31,9 @@ import dev.derklaro.aerogel.Order;
 import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
-import dev.derklaro.aerogel.internal.utility.ElementHelper;
-import dev.derklaro.aerogel.internal.utility.MethodHandleUtil;
-import dev.derklaro.aerogel.internal.utility.Preconditions;
+import dev.derklaro.aerogel.internal.util.ElementHelper;
+import dev.derklaro.aerogel.internal.util.MethodHandleUtil;
+import dev.derklaro.aerogel.internal.util.Preconditions;
 import dev.derklaro.aerogel.member.InjectionSetting;
 import dev.derklaro.aerogel.member.MemberInjector;
 import java.lang.annotation.Annotation;
@@ -91,14 +91,14 @@ public final class DefaultMemberInjector implements MemberInjector {
     memberTree.buildTree();
 
     // move from java.lang members to injectable ones
-    this.injectableFields = memberTree.getInjectableFields().stream()
+    this.injectableFields = memberTree.injectableFields().stream()
       .map(InjectableField::new)
       .collect(Collectors.toCollection(LinkedList::new));
-    this.injectableMethods = memberTree.getInjectableMethods().stream()
+    this.injectableMethods = memberTree.injectableMethods().stream()
       .map(InjectableMethod::new)
       .sorted()
       .collect(Collectors.toCollection(LinkedList::new));
-    this.postConstructMethods = memberTree.getPostConstructMethods().stream()
+    this.postConstructMethods = memberTree.postConstructMethods().stream()
       .map(InjectableMethod::new)
       .sorted()
       .collect(Collectors.toCollection(LinkedList::new));

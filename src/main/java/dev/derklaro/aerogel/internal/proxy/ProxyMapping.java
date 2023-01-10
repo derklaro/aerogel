@@ -24,8 +24,8 @@
 
 package dev.derklaro.aerogel.internal.proxy;
 
-import dev.derklaro.aerogel.internal.utility.NullMask;
-import dev.derklaro.aerogel.internal.utility.Preconditions;
+import dev.derklaro.aerogel.internal.util.NullMask;
+import dev.derklaro.aerogel.internal.util.Preconditions;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

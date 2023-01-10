@@ -27,7 +27,6 @@ package dev.derklaro.aerogel.util;
 import dev.derklaro.aerogel.Name;
 import dev.derklaro.aerogel.internal.annotation.AnnotationFactory;
 import java.util.Collections;
-import java.util.Objects;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
@@ -51,7 +50,6 @@ public final class Qualifiers {
    * @throws NullPointerException if the given name is null.
    */
   public static @NotNull Name named(@NotNull String name) {
-    Objects.requireNonNull(name, "name");
     return AnnotationFactory.generateAnnotation(Name.class, Collections.singletonMap("value", name));
   }
 }

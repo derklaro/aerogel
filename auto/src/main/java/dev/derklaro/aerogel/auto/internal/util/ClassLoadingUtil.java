@@ -22,9 +22,9 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto.internal.utility;
+package dev.derklaro.aerogel.auto.internal.util;
 
-import dev.derklaro.aerogel.internal.utility.MapUtil;
+import dev.derklaro.aerogel.internal.util.MapUtil;
 import java.lang.reflect.Array;
 import java.util.Map;
 import org.apiguardian.api.API;

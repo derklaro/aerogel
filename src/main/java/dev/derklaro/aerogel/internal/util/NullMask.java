@@ -22,49 +22,59 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.utility;
+package dev.derklaro.aerogel.internal.util;
 
-import dev.derklaro.aerogel.AerogelException;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * A little preconditions class.
+ * Utility to mask and unmask null values.
  *
  * @author Pasqual K.
- * @since 1.0
+ * @since 2.0
  */
 @API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
-public final class Preconditions {
+public final class NullMask {
 
-  private Preconditions() {
+  /**
+   * A static object indicating that a value is null.
+   */
+  private static final Object NULL = new Object();
+
+  private NullMask() {
     throw new UnsupportedOperationException();
   }
 
   /**
-   * Checks if {@code argument} is {@code true}.
+   * Masks the given value with a null representing object if the given value is null. If the given value is present,
+   * this method returns the given value.
    *
-   * @param argument     the argument to check.
-   * @param errorMessage the error message to use if the argument is not true.
-   * @throws AerogelException if the argument is not true.
+   * @param unmasked the value to mask if needed.
+   * @return a masked value if the given value is null, the same value otherwise.
    */
-  public static void checkArgument(boolean argument, @NotNull String errorMessage) {
-    if (!argument) {
-      throw AerogelException.forMessage(errorMessage);
-    }
+  public static @NotNull Object mask(@Nullable Object unmasked) {
+    return unmasked != null ? unmasked : NULL;
   }
 
   /**
-   * Checks if {@code argument} is {@code true}.
+   * Unmasks the given object, returning null if the given object is masked. If the given object is not masked the given
+   * value is returned.
    *
-   * @param argument           the argument to check.
-   * @param errorMessageFormat the error message format to use if the argument is not true.
-   * @param args               the arguments to use to format the error message format.
-   * @throws AerogelException if the argument is not true.
+   * @param masked the value to unmask if needed.
+   * @return null if the given value is masked, the same value otherwise.
    */
-  public static void checkArgument(boolean argument, @NotNull String errorMessageFormat, Object... args) {
-    if (!argument) {
-      throw AerogelException.forMessage(String.format(errorMessageFormat, args));
-    }
+  public static @Nullable Object unmask(@NotNull Object masked) {
+    return masked == NULL ? null : masked;
+  }
+
+  /**
+   * Checks if the given object was masked.
+   *
+   * @param candidate the candidate to check.
+   * @return true if the given object is masked, false otherwise.
+   */
+  public static boolean masked(@Nullable Object candidate) {
+    return candidate == NULL;
   }
 }

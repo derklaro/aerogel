@@ -33,6 +33,7 @@ import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.StringJoiner;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
@@ -137,23 +138,22 @@ public final class AnnotationFactory {
    * @throws NullPointerException if the given annotation type or value map is null.
    */
   private static @NotNull String toString(@NotNull Class<?> type, @NotNull Map<String, Object> values) {
-    StringBuilder builder = new StringBuilder("@").append(type.getName()).append('(');
+    // build the prefix of the toString value
+    String prefix = String.format("@%s", type.getName());
+
+    // append all values
+    StringJoiner valueJoiner = new StringJoiner(", ", "(", ")");
     for (Map.Entry<String, Object> entry : values.entrySet()) {
       // deepToString as some values might be arrays - we want to catch them as well
       String stringifiedValue = Arrays.deepToString(new Object[]{entry.getValue()});
 
       // remove the brackets added by deepToString and append to the builder
       String val = stringifiedValue.substring(1, stringifiedValue.length() - 1);
-      builder.append(entry.getKey()).append('=').append(val).append(", ");
-    }
-
-    // if we appended any values remove the last trailing comma
-    if (!values.isEmpty()) {
-      builder.delete(builder.length() - 2, builder.length());
+      valueJoiner.add(String.format("%s=%s", entry.getKey(), val));
     }
 
     // append the closing bracket and convert to string
-    return builder.append(')').toString();
+    return prefix + valueJoiner;
   }
 
   /**

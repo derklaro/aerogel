@@ -24,14 +24,14 @@
 
 package dev.derklaro.aerogel.auto.internal.runtime;
 
-import static dev.derklaro.aerogel.auto.internal.utility.ClassLoadingUtil.loadClass;
+import static dev.derklaro.aerogel.auto.internal.util.ClassLoadingUtil.loadClass;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.auto.runtime.AbstractAutoAnnotationReader;
 import dev.derklaro.aerogel.binding.BindingBuilder;
 import dev.derklaro.aerogel.binding.BindingConstructor;
-import dev.derklaro.aerogel.internal.utility.ElementHelper;
+import dev.derklaro.aerogel.internal.util.ElementHelper;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Collection;

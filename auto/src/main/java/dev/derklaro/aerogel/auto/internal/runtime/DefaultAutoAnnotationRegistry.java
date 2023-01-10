@@ -24,14 +24,12 @@
 
 package dev.derklaro.aerogel.auto.internal.runtime;
 
-import static java.util.Objects.requireNonNull;
-
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.auto.runtime.AutoAnnotationReader;
 import dev.derklaro.aerogel.auto.runtime.AutoAnnotationRegistry;
 import dev.derklaro.aerogel.binding.BindingConstructor;
-import dev.derklaro.aerogel.internal.utility.MapUtil;
+import dev.derklaro.aerogel.internal.util.MapUtil;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -86,7 +84,7 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
    */
   @Override
   public @NotNull AutoAnnotationRegistry unregisterReader(@NotNull String name) {
-    this.entries.remove(requireNonNull(name, "name"));
+    this.entries.remove(name);
     return this;
   }
 
@@ -95,7 +93,6 @@ public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegist
    */
   @Override
   public @NotNull AutoAnnotationRegistry registerReader(@NotNull AutoAnnotationReader entry) {
-    requireNonNull(entry, "entry");
     // only register the entry if there is no entry yet
     this.entries.putIfAbsent(entry.name(), entry);
     return this;

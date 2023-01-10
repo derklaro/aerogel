@@ -25,7 +25,7 @@
 package dev.derklaro.aerogel.internal.annotation;
 
 import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.internal.utility.MapUtil;
+import dev.derklaro.aerogel.internal.util.MapUtil;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Collections;

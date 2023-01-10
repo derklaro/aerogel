@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.utility;
+package dev.derklaro.aerogel.internal.util;
 
 import java.util.Collections;
 import java.util.HashMap;

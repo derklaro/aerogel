@@ -35,7 +35,7 @@ import dev.derklaro.aerogel.internal.binding.defaults.BaseBindingConstructor;
 import dev.derklaro.aerogel.internal.invoke.ParameterHelper;
 import dev.derklaro.aerogel.internal.invoke.ParameterValueGetter;
 import dev.derklaro.aerogel.internal.reflect.TypeUtil;
-import dev.derklaro.aerogel.internal.utility.MethodHandleUtil;
+import dev.derklaro.aerogel.internal.util.MethodHandleUtil;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;

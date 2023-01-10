@@ -38,8 +38,8 @@ import dev.derklaro.aerogel.internal.binding.constructors.ProviderBindingConstru
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.InjectionClassLookup;
 import dev.derklaro.aerogel.internal.reflect.TypeUtil;
-import dev.derklaro.aerogel.internal.utility.ElementHelper;
-import dev.derklaro.aerogel.internal.utility.Preconditions;
+import dev.derklaro.aerogel.internal.util.ElementHelper;
+import dev.derklaro.aerogel.internal.util.Preconditions;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
