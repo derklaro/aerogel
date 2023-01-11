@@ -88,7 +88,7 @@ public final class FactoryMethodBindingConstructor extends BaseBindingConstructo
     return new FunctionalContextualProvider<>(injector, this.constructingType, this.types, (context, provider) -> {
       try {
         // get the parameter values & construct a new instance
-        Object[] paramValues = this.parameterValueGetter.resolveParamInstances(context, provider, this.types, injector);
+        Object[] paramValues = this.parameterValueGetter.resolveParamInstances(context, this.types, injector);
         return MethodHandleUtil.invokeMethod(this.factoryMethod, null, paramValues);
       } catch (PassthroughException | AerogelException passthroughException) {
         throw passthroughException;

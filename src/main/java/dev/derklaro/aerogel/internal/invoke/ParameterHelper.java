@@ -47,7 +47,7 @@ import org.jetbrains.annotations.Nullable;
 public final class ParameterHelper {
 
   private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
-  private static final ParameterValueGetter EMPTY_SUPPLIER = (__, ___, ____, _____) -> EMPTY_OBJECT_ARRAY;
+  private static final ParameterValueGetter EMPTY_SUPPLIER = (__, ___, ____) -> EMPTY_OBJECT_ARRAY;
 
   private ParameterHelper() {
     throw new UnsupportedOperationException();
@@ -79,13 +79,13 @@ public final class ParameterHelper {
       ParameterResolver resolver;
       if (JakartaBridge.isProvider(parameter.getType())) {
         // get the provider for the type & check if we need to bridge to provider as the value takes a jakarta one
-        resolver = (injector, context, provider) -> context.resolveProvider(element);
+        resolver = (injector, context) -> context.resolveProvider(element);
         if (JakartaBridge.needsProviderWrapping(parameter.getType())) {
-          resolver = resolver.and(provider -> JakartaBridge.bridgeJakartaProvider((Provider<Object>) provider));
+          resolver = resolver.then(provider -> JakartaBridge.bridgeJakartaProvider((Provider<Object>) provider));
         }
       } else {
         // we can construct the value directly from the context
-        resolver = (injector, context, provider) -> {
+        resolver = (injector, context) -> {
           ContextualProvider<?> parameterProvider = context.resolveProvider(element);
           InjectionContext parameterContext = context.enterSubcontext(
             parameterProvider,
@@ -100,28 +100,45 @@ public final class ParameterHelper {
     }
 
     // use the parameters suppliers to construct a function for all parameters
-    return (context, provider, elements, injector) -> {
+    return (context, elements, injector) -> {
       Object[] values = new Object[resolvers.length];
       for (int i = 0; i < resolvers.length; i++) {
         // get and store each value
-        Object value = resolvers[i].resolveInstance(injector, context, provider);
+        Object value = resolvers[i].resolveInstance(injector, context);
         values[i] = value;
       }
       return values;
     };
   }
 
+  /**
+   * The resolver for a single parameter.
+   *
+   * @author Pasqual K.
+   * @since 2.0
+   */
   @FunctionalInterface
   private interface ParameterResolver {
 
-    @Nullable Object resolveInstance(
-      @NotNull Injector injector,
-      @NotNull InjectionContext context,
-      @NotNull ContextualProvider<?> provider);
+    /**
+     * Resolves the instance for the associated parameter.
+     *
+     * @param injector the injector which requested the instantiation of the parent executable member.
+     * @param context  the context which is currently constructing the elements which needs the parameter instances.
+     * @return the instance to use for the associated parameter.
+     */
+    @Nullable Object resolveInstance(@NotNull Injector injector, @NotNull InjectionContext context);
 
-    default @NotNull ParameterResolver and(@NotNull UnaryOperator<Object> downstream) {
-      return (injector, context, provider) -> {
-        Object ourValue = this.resolveInstance(injector, context, provider);
+    /**
+     * Returns a new resolver which resolves the instance of this resolver and then passes the resolved instance to the
+     * given unary operator and returns the return value of the operator.
+     *
+     * @param downstream the operator to apply after resolving the instance of the associated parameter.
+     * @return a new resolver which resolves the instance of this parameter and then applies it to the downstream.
+     */
+    default @NotNull ParameterResolver then(@NotNull UnaryOperator<Object> downstream) {
+      return (injector, context) -> {
+        Object ourValue = this.resolveInstance(injector, context);
         return downstream.apply(ourValue);
       };
     }

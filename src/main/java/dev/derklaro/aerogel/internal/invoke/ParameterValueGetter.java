@@ -25,7 +25,6 @@
 package dev.derklaro.aerogel.internal.invoke;
 
 import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
@@ -56,7 +55,6 @@ public interface ParameterValueGetter {
    */
   @NotNull Object[] resolveParamInstances(
     @NotNull InjectionContext context,
-    @NotNull ContextualProvider<?> provider,
     @NotNull Element[] elements,
     @NotNull Injector injector);
 }

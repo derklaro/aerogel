@@ -84,7 +84,7 @@ public final class ConstructingBindingConstructor extends BaseBindingConstructor
     return new FunctionalContextualProvider<>(injector, this.constructingType, this.types, (context, provider) -> {
       try {
         // get the parameter values & construct a new instance
-        Object[] paramValues = this.parameterValueGetter.resolveParamInstances(context, provider, this.types, injector);
+        Object[] paramValues = this.parameterValueGetter.resolveParamInstances(context, this.types, injector);
         return MethodHandleUtil.invokeConstructor(this.targetConstructor, paramValues);
       } catch (PassthroughException | AerogelException passthroughException) {
         throw passthroughException;
