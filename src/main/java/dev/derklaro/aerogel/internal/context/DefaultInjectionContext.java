@@ -508,6 +508,12 @@ final class DefaultInjectionContext implements InjectionContext {
     // ensure that we are the root context
     Preconditions.checkArgument(this.root == this, "finishConstruction() call to non-root context");
 
+    // remove the thread-local reference to this injection context in order to ensure that each member injection will
+    // rely on a separate injection context rather than this one. This is due to the fact that the member injection
+    // process should not use this context to find out which type **got** constructed, but the type of (for example an
+    // injectable field) the member that gets injected currently
+    InjectionContextProvider.removeRootContext(this);
+
     // pre-validate all created proxies to ensure that they are all delegated
     this.validateAllProxiesAreDelegated();
 

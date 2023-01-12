@@ -97,7 +97,6 @@ public final class ContextInstanceResolveHelper {
       // in any other case, just leave the finish call up to the root creator
       if (context.rootContext()) {
         context.finishConstruction();
-        InjectionContextProvider.removeRootContext(context);
       }
 
       // return the constructed value
