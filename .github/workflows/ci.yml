@@ -29,7 +29,7 @@ jobs:
           cache: 'gradle'
 
       - name: Run build and tests
-        run: ./gradlew clean build test -x checkstyleMain -x checkstyleTest --stacktrace --no-daemon
+        run: ./gradlew clean build test -x checkstyleMain -x checkstyleTest -x spotlessCheck --stacktrace --no-daemon
 
       - name: Run code checks
         if: ${{ matrix.java == 17 }}
