@@ -84,7 +84,7 @@ public abstract class BaseBindingConstructor implements BindingConstructor {
 
     // apply the known scopes
     for (ScopeProvider scope : this.scopes) {
-      provider = scope.applyScope(this.constructingType, this.types, provider.asUpstreamContext());
+      provider = scope.applyScope(this.constructingType, this.types, provider);
     }
 
     // resolve and apply the unresolved scopes
@@ -96,7 +96,7 @@ public abstract class BaseBindingConstructor implements BindingConstructor {
       }
 
       // apply the resolved scope
-      provider = resolvedScope.applyScope(this.constructingType, this.types, provider.asUpstreamContext());
+      provider = resolvedScope.applyScope(this.constructingType, this.types, provider);
     }
 
     // build the binding

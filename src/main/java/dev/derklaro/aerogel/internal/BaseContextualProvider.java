@@ -54,8 +54,6 @@ public abstract class BaseContextualProvider<T> implements ContextualProvider<T>
   protected final Type constructingType;
   protected final Element[] trackedElements;
 
-  protected boolean hasUpstreamProvider;
-
   /**
    * Constructs a new base contextual provider instance.
    *
@@ -95,15 +93,6 @@ public abstract class BaseContextualProvider<T> implements ContextualProvider<T>
   @Override
   public @NotNull Element[] trackedElements() {
     return this.trackedElements;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull ContextualProvider<T> asUpstreamContext() {
-    this.hasUpstreamProvider = true;
-    return this;
   }
 
   /**

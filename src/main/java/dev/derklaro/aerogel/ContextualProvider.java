@@ -64,15 +64,6 @@ public interface ContextualProvider<T> extends Provider<T> {
   @NotNull Element[] trackedElements();
 
   /**
-   * Indicates to this context that it got wrapped in a downstream context. The method is free to either do nothing,
-   * change the internal state or return a new provider which should be used by the downstream provider to call this
-   * provider.
-   *
-   * @return this context wrapped for downstream use.
-   */
-  @NotNull ContextualProvider<T> asUpstreamContext();
-
-  /**
    * Creates a context builder for this provider which targets the type which this provider constructs and this
    * provider.
    *

@@ -94,14 +94,6 @@ final class LazyContextualProvider implements ContextualProvider<Object> {
    * {@inheritDoc}
    */
   @Override
-  public @NotNull ContextualProvider<Object> asUpstreamContext() {
-    throw new UnsupportedOperationException("unsupported on this provider");
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public @NotNull InjectionContext.Builder createContextBuilder() {
     throw new UnsupportedOperationException("unsupported on this provider");
   }
