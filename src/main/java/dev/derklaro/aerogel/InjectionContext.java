@@ -141,12 +141,16 @@ public interface InjectionContext {
    * <p>If the requested type was overridden a context is returned that instantly delegates the call to the overridden
    * value.
    *
-   * @param provider the provider which requested the subcontext.
-   * @param type     the type that should get constructed.
+   * @param provider          the provider which requested the subcontext.
+   * @param type              the type that should get constructed.
+   * @param associatedElement the element for which the sub-context is needed, null if unknown.
    * @return a new subcontext for the provider, might be a virtual context in case the type was proxied.
    * @throws AerogelException if an exception occurred while trying to proxy a type.
    */
-  @NotNull InjectionContext enterSubcontext(@NotNull ContextualProvider<?> provider, @NotNull Type type);
+  @NotNull InjectionContext enterSubcontext(
+    @NotNull Type type,
+    @NotNull ContextualProvider<?> provider,
+    @Nullable Element associatedElement);
 
   /**
    * Tries to resolve the instance that is represented by the underlying provider.
@@ -249,6 +253,17 @@ public interface InjectionContext {
      * @throws NullPointerException if {@code element} is null.
      */
     @NotNull <T> Builder override(@NotNull Element element, @Nullable T instance);
+
+    /**
+     * Overrides each element that matches the given element matcher with the given {@code instance}.
+     *
+     * @param elementMatcher the matcher for all elements to override.
+     * @param instance       the instance to use instead of constructing.
+     * @param <T>            the type of the overridden instance.
+     * @return the same instance of the builder as used to call the method, for chaining.
+     * @throws NullPointerException if {@code elementMatcher} is null.
+     */
+    @NotNull <T> Builder override(@NotNull ElementMatcher elementMatcher, @Nullable T instance);
 
     /**
      * Builds the injection context instance. This builder can then be re-used to override other instance or set another

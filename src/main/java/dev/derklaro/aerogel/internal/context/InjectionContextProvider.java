@@ -25,11 +25,10 @@
 package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.Map;
+import java.util.List;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -61,7 +60,7 @@ public final class InjectionContextProvider {
     @NotNull ContextualProvider<?> callingBinding,
     @NotNull Type constructingType
   ) {
-    return enterRootContext(callingBinding, constructingType, Collections.emptyMap());
+    return enterRootContext(callingBinding, constructingType, Collections.emptyList());
   }
 
   /**
@@ -75,12 +74,12 @@ public final class InjectionContextProvider {
   static @NotNull DefaultInjectionContext enterRootContext(
     @NotNull ContextualProvider<?> callingBinding,
     @NotNull Type constructingType,
-    @NotNull Map<Element, LazyContextualProvider> overriddenDirectInstances
+    @NotNull List<LazyContextualProvider> overriddenDirectInstances
   ) {
     // check if a context is already present, enter a sub context in that case
     DefaultInjectionContext currentRootContext = CURRENT_ROOT_CONTEXT.get();
     if (currentRootContext != null) {
-      return currentRootContext.enterSubcontext(callingBinding, constructingType);
+      return currentRootContext.enterSubcontext(constructingType, callingBinding, null);
     }
 
     // no context yet, construct one and set it as the root

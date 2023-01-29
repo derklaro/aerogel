@@ -26,6 +26,7 @@ package dev.derklaro.aerogel.binding;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.ScopeProvider;
@@ -34,6 +35,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
@@ -169,6 +171,20 @@ public interface BindingBuilder {
   @NotNull BindingBuilder bindAllFully(@NotNull Element... elements);
 
   /**
+   * Binds (virtually) all elements that are matching the given element matcher in this builder, and to the constructed
+   * binding constructor.
+   *
+   * <p>The given matcher will be applied with an OR operation to the existing, underlying element matcher that (for
+   * example) matches all other given elements to bind. If other operations are needed for the binding to work properly,
+   * this method should be called directly with the required matcher instead of making use of other bind methods.
+   *
+   * @param matcher the matcher to OR apply to the underlying element matcher.
+   * @return this builder, for chaining.
+   * @throws NullPointerException if the given matcher is null.
+   */
+  @NotNull BindingBuilder bindMatching(@NotNull ElementMatcher matcher);
+
+  /**
    * Applies the given scope provider as a scope to the final constructed binding holders. The order of applied scopes
    * is fifo, and applying the same scope twice will ignore the second call. Note that the resolved scopes added by this
    * method are applied before the unresolved scopes (added by {@link #scoped(Class)}).
@@ -215,7 +231,7 @@ public interface BindingBuilder {
    * the given function and return the value computed by the given function each time the underlying binding is
    * requested.
    *
-   * <p>The given function will receive the current injector of the construction context.
+   * <p>The given function will receive the injector to which the binding was installed.
    *
    * <p>Note: after calling this method all values will be copied in the constructed binding, meaning that this builder
    * can be re-used with the previously added values without accidentally leaking changes into the created binding
@@ -226,6 +242,28 @@ public interface BindingBuilder {
    * @throws NullPointerException if the given supplier is null.
    */
   @NotNull BindingConstructor toLazyInstance(@NotNull Function<Injector, Object> instanceSupplier);
+
+  /**
+   * Constructs a new binding which targets all elements and scopes added to this builder. The binding will be bound to
+   * the given function and return the contextual provider computed by the given function based on the element that was
+   * requested from the binding.
+   *
+   * <p>The given function will receive the injector to which the binding was installed and the element that was
+   * requested from the constructed binding.
+   *
+   * <p>Unless any scope was added to this binding builder, a call will be made to the underlying function each time
+   * the provider is required. If any scope was applied, the result is cached and a supplier call will only be made each
+   * time an unknown element gets requested.
+   *
+   * <p>Note: after calling this method all values will be copied in the constructed binding, meaning that this builder
+   * can be re-used with the previously added values without accidentally leaking changes into the created binding
+   * constructor.
+   *
+   * @param providerSupplier the supplier function to call when a provider is requested from the constructed holder.
+   * @return a binding constructor targeting all elements and scopes, returning the call result of the given function.
+   * @throws NullPointerException if the given supplier is null.
+   */
+  @NotNull BindingConstructor toLazyProvider(@NotNull BiFunction<Element, Injector, Provider<Object>> providerSupplier);
 
   /**
    * Constructs a new binding which targets all elements and scopes added to this builder. The binding will be bound to

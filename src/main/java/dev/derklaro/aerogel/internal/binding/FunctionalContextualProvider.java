@@ -26,7 +26,7 @@ package dev.derklaro.aerogel.internal.binding;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.internal.BaseContextualProvider;
@@ -53,16 +53,16 @@ public final class FunctionalContextualProvider<T> extends BaseContextualProvide
    *
    * @param injector         the injector associated with this provider.
    * @param constructingType the type constructed by this provider.
-   * @param trackedElements  the elements tracked by this provider.
+   * @param elementMatcher   a matcher for all elements tracked by this provider.
    * @param downstream       the downstream function to call to obtain the underlying value.
    */
   public FunctionalContextualProvider(
     @NotNull Injector injector,
     @NotNull Type constructingType,
-    @NotNull Element[] trackedElements,
+    @NotNull ElementMatcher elementMatcher,
     @NotNull BiFunction<InjectionContext, ContextualProvider<?>, T> downstream
   ) {
-    super(injector, constructingType, trackedElements);
+    super(injector, constructingType, elementMatcher);
     this.downstream = downstream;
   }
 

@@ -25,7 +25,9 @@
 package dev.derklaro.aerogel.internal.binding;
 
 import dev.derklaro.aerogel.AerogelException;
+import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.ScopeProvider;
@@ -34,6 +36,7 @@ import dev.derklaro.aerogel.binding.BindingConstructor;
 import dev.derklaro.aerogel.internal.binding.constructors.ConstructingBindingConstructor;
 import dev.derklaro.aerogel.internal.binding.constructors.FactoryMethodBindingConstructor;
 import dev.derklaro.aerogel.internal.binding.constructors.LazyInstanceBindingConstructor;
+import dev.derklaro.aerogel.internal.binding.constructors.LazyProviderBindingConstructor;
 import dev.derklaro.aerogel.internal.binding.constructors.ProviderBindingConstructor;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.reflect.InjectionClassLookup;
@@ -48,6 +51,7 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -63,9 +67,12 @@ import org.jetbrains.annotations.Nullable;
 @API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.*")
 public final class DefaultBindingBuilder implements BindingBuilder {
 
-  private final Set<Element> bindings = new LinkedHashSet<>();
+  private static final ElementMatcher DENYING_MATCHER = element -> false;
+
   private final Set<ScopeProvider> scopes = new LinkedHashSet<>();
   private final Set<Class<? extends Annotation>> unresolvedScopes = new LinkedHashSet<>();
+
+  private ElementMatcher elementMatcher = DENYING_MATCHER;
 
   /**
    * {@inheritDoc}
@@ -99,8 +106,7 @@ public final class DefaultBindingBuilder implements BindingBuilder {
    */
   @Override
   public @NotNull BindingBuilder bind(@NotNull Element element) {
-    this.bindings.add(element);
-    return this;
+    return this.bindMatching(ElementMatcher.matchesOne(element));
   }
 
   /**
@@ -167,6 +173,15 @@ public final class DefaultBindingBuilder implements BindingBuilder {
    * {@inheritDoc}
    */
   @Override
+  public @NotNull BindingBuilder bindMatching(@NotNull ElementMatcher matcher) {
+    this.elementMatcher = this.elementMatcher.or(matcher);
+    return this;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public @NotNull BindingBuilder scoped(@NotNull ScopeProvider provider) {
     this.scopes.add(provider);
     return this;
@@ -186,8 +201,8 @@ public final class DefaultBindingBuilder implements BindingBuilder {
    */
   @Override
   public @NotNull BindingConstructor toInstance(@Nullable Object instance) {
-    if (instance == null || !this.bindings.isEmpty()) {
-      return this.toProvider(Provider.immediate(instance));
+    if (instance == null) {
+      return this.toProvider(Provider.immediate(null));
     } else {
       return this.toProvider(instance.getClass(), Provider.immediate(instance));
     }
@@ -199,12 +214,28 @@ public final class DefaultBindingBuilder implements BindingBuilder {
   @Override
   public @NotNull BindingConstructor toLazyInstance(@NotNull Function<Injector, Object> instanceSupplier) {
     // copy over all elements from this builder to allow further uses
-    Set<Element> elements = new LinkedHashSet<>(this.bindings);
+    ElementMatcher elementMatcher = this.validateElementMatcher();
     Set<ScopeProvider> scopes = new LinkedHashSet<>(this.scopes);
     Set<Class<? extends Annotation>> unresolvedScopes = new LinkedHashSet<>(this.unresolvedScopes);
 
     // build the factory
-    return new LazyInstanceBindingConstructor(elements, scopes, unresolvedScopes, instanceSupplier);
+    return new LazyInstanceBindingConstructor(elementMatcher, scopes, unresolvedScopes, instanceSupplier);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull BindingConstructor toLazyProvider(
+    @NotNull BiFunction<Element, Injector, Provider<Object>> providerSupplier
+  ) {
+    // copy over all elements from this builder to allow further uses
+    ElementMatcher elementMatcher = this.validateElementMatcher();
+    Set<ScopeProvider> scopes = new LinkedHashSet<>(this.scopes);
+    Set<Class<? extends Annotation>> unresolvedScopes = new LinkedHashSet<>(this.unresolvedScopes);
+
+    // build the factory
+    return new LazyProviderBindingConstructor(elementMatcher, scopes, unresolvedScopes, providerSupplier);
   }
 
   /**
@@ -213,12 +244,12 @@ public final class DefaultBindingBuilder implements BindingBuilder {
   @Override
   public @NotNull BindingConstructor toProvider(@NotNull Provider<Object> provider) {
     // copy over all elements from this builder to allow further uses
-    Set<Element> elements = new LinkedHashSet<>(this.bindings);
+    ElementMatcher elementMatcher = this.validateElementMatcher();
     Set<ScopeProvider> scopes = new LinkedHashSet<>(this.scopes);
     Set<Class<? extends Annotation>> unresolvedScopes = new LinkedHashSet<>(this.unresolvedScopes);
 
     // build the factory
-    return new ProviderBindingConstructor(elements, scopes, unresolvedScopes, provider);
+    return new ProviderBindingConstructor(elementMatcher, scopes, unresolvedScopes, provider);
   }
 
   /**
@@ -230,12 +261,12 @@ public final class DefaultBindingBuilder implements BindingBuilder {
     this.bindFully(type);
 
     // copy over all elements from this builder to allow further uses
-    Set<Element> elements = new LinkedHashSet<>(this.bindings);
+    ElementMatcher elementMatcher = this.validateElementMatcher();
     Set<ScopeProvider> scopes = new LinkedHashSet<>(this.scopes);
     Set<Class<? extends Annotation>> unresolvedScopes = new LinkedHashSet<>(this.unresolvedScopes);
 
     // build the factory
-    return new ProviderBindingConstructor(elements, scopes, unresolvedScopes, provider);
+    return new ProviderBindingConstructor(elementMatcher, scopes, unresolvedScopes, provider);
   }
 
   /**
@@ -257,12 +288,12 @@ public final class DefaultBindingBuilder implements BindingBuilder {
     this.bindFully(constructor.getDeclaringClass());
 
     // copy over all elements from this builder to allow further uses
-    Set<Element> elements = new LinkedHashSet<>(this.bindings);
+    ElementMatcher elementMatcher = this.validateElementMatcher();
     Set<ScopeProvider> scopes = new LinkedHashSet<>(this.scopes);
     Set<Class<? extends Annotation>> unresolvedScopes = new LinkedHashSet<>(this.unresolvedScopes);
 
     // build the factory
-    return new ConstructingBindingConstructor(elements, scopes, unresolvedScopes, constructor);
+    return new ConstructingBindingConstructor(elementMatcher, scopes, unresolvedScopes, constructor);
   }
 
   /**
@@ -306,12 +337,12 @@ public final class DefaultBindingBuilder implements BindingBuilder {
     }
 
     // copy over all elements from this builder to allow further uses
-    Set<Element> elements = new LinkedHashSet<>(this.bindings);
+    ElementMatcher elementMatcher = this.validateElementMatcher();
     Set<ScopeProvider> scopes = new LinkedHashSet<>(this.scopes);
     Set<Class<? extends Annotation>> unresolvedScopes = new LinkedHashSet<>(this.unresolvedScopes);
 
     // build the factory
-    return new FactoryMethodBindingConstructor(elements, scopes, unresolvedScopes, factoryMethod);
+    return new FactoryMethodBindingConstructor(elementMatcher, scopes, unresolvedScopes, factoryMethod);
   }
 
   /**
@@ -340,5 +371,16 @@ public final class DefaultBindingBuilder implements BindingBuilder {
     // unable to resolve
     throw AerogelException.forMessage(
       "Unable to resolve factory method " + name + " in class " + clazz + " with params " + Arrays.toString(params));
+  }
+
+  /**
+   * Validates that the element matcher constructed by this binding builder actually has elements to check for.
+   *
+   * @return the underlying element matcher of this builder if elements were applied to it.
+   * @throws AerogelException if no elements were applied to the underlying matcher.
+   */
+  private @NotNull ElementMatcher validateElementMatcher() {
+    Preconditions.checkArgument(this.elementMatcher != DENYING_MATCHER, "No elements to match given");
+    return this.elementMatcher;
   }
 }

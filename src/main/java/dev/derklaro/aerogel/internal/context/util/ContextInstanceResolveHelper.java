@@ -26,6 +26,7 @@ package dev.derklaro.aerogel.internal.context.util;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
+import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.binding.BindingHolder;
 import dev.derklaro.aerogel.internal.PassthroughException;
@@ -53,13 +54,13 @@ public final class ContextInstanceResolveHelper {
    * injection context is present on the current thread, a subcontext of the root is created to resolve the value, in
    * all other cases a new context is created and set.
    *
-   * @param requestedType the type requested for injection.
+   * @param element       the requested element for which the provider should provide the value.
    * @param bindingHolder the binding that is associated with the given requested type.
    * @return the resolved instance of the given type.
    * @throws AerogelException if an exception occurs while resolving the instance.
    */
-  public static @Nullable Object resolveInstance(@NotNull Type requestedType, @NotNull BindingHolder bindingHolder) {
-    return resolveInstance(requestedType, bindingHolder.provider());
+  public static @Nullable Object resolveInstance(@NotNull Element element, @NotNull BindingHolder bindingHolder) {
+    return resolveInstance(element.componentType(), bindingHolder.provider(element));
   }
 
   /**

@@ -26,7 +26,7 @@ package dev.derklaro.aerogel.internal;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.internal.context.util.ContextInstanceResolveHelper;
@@ -52,23 +52,23 @@ public abstract class BaseContextualProvider<T> implements ContextualProvider<T>
 
   protected final Injector injector;
   protected final Type constructingType;
-  protected final Element[] trackedElements;
+  protected final ElementMatcher elementMatcher;
 
   /**
    * Constructs a new base contextual provider instance.
    *
    * @param injector         the injector associated with this provider.
    * @param constructingType the type constructed by this provider.
-   * @param trackedElements  the tracked elements of this provider.
+   * @param elementMatcher   a matcher for all elements tracked by this provider.
    */
   protected BaseContextualProvider(
     @NotNull Injector injector,
     @NotNull Type constructingType,
-    @NotNull Element[] trackedElements
+    @NotNull ElementMatcher elementMatcher
   ) {
     this.injector = injector;
     this.constructingType = constructingType;
-    this.trackedElements = trackedElements;
+    this.elementMatcher = elementMatcher;
   }
 
   /**
@@ -91,8 +91,8 @@ public abstract class BaseContextualProvider<T> implements ContextualProvider<T>
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Element[] trackedElements() {
-    return this.trackedElements;
+  public @NotNull ElementMatcher elementMatcher() {
+    return this.elementMatcher;
   }
 
   /**

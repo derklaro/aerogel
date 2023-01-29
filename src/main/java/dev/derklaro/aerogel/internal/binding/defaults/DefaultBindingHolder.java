@@ -26,7 +26,7 @@ package dev.derklaro.aerogel.internal.binding.defaults;
 
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.InjectionContext;
+import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.BindingHolder;
 import org.apiguardian.api.API;
@@ -42,23 +42,23 @@ import org.jetbrains.annotations.NotNull;
 final class DefaultBindingHolder implements BindingHolder {
 
   private final Injector injector;
-  private final Element[] types;
+  private final ElementMatcher elementMatcher;
   private final ContextualProvider<Object> provider;
 
   /**
    * Constructs a new default binding holder instance.
    *
-   * @param injector the injector associated with the binding.
-   * @param types    the types handled by this holder.
-   * @param provider the provider to use to obtain the underlying value.
+   * @param injector       the injector associated with the binding.
+   * @param elementMatcher the matcher for the elements supported by this binding.
+   * @param provider       the provider to use to obtain the underlying value.
    */
   public DefaultBindingHolder(
     @NotNull Injector injector,
-    @NotNull Element[] types,
+    @NotNull ElementMatcher elementMatcher,
     @NotNull ContextualProvider<Object> provider
   ) {
     this.injector = injector;
-    this.types = types;
+    this.elementMatcher = elementMatcher;
     this.provider = provider;
   }
 
@@ -74,23 +74,15 @@ final class DefaultBindingHolder implements BindingHolder {
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Element[] types() {
-    return this.types;
+  public @NotNull ElementMatcher elementMatcher() {
+    return this.elementMatcher;
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public @NotNull ContextualProvider<Object> provider() {
+  public @NotNull ContextualProvider<Object> provider(@NotNull Element requestedElement) {
     return this.provider;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull InjectionContext.Builder createContextBuilder() {
-    return this.provider.createContextBuilder();
   }
 }

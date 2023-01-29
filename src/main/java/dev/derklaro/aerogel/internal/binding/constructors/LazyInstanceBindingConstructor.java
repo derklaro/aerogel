@@ -25,7 +25,7 @@
 package dev.derklaro.aerogel.internal.binding.constructors;
 
 import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.ScopeProvider;
 import dev.derklaro.aerogel.internal.binding.FunctionalContextualProvider;
@@ -50,18 +50,18 @@ public final class LazyInstanceBindingConstructor extends BaseBindingConstructor
   /**
    * Constructs a new lazy instance binding constructor.
    *
-   * @param types            the types which all underlying binding holders should target.
+   * @param elementMatcher   a matcher for all elements that are supported by this constructor.
    * @param scopes           the resolved scopes to apply when creating a binding holder.
    * @param unresolvedScopes the unresolved scopes to resolve and apply when creating a binding holder.
    * @param valueSupplier    the lazy function to call to obtain a new instance.
    */
   public LazyInstanceBindingConstructor(
-    @NotNull Set<Element> types,
+    @NotNull ElementMatcher elementMatcher,
     @NotNull Set<ScopeProvider> scopes,
     @NotNull Set<Class<? extends Annotation>> unresolvedScopes,
     @NotNull Function<Injector, Object> valueSupplier
   ) {
-    super(types, Object.class, scopes, unresolvedScopes); // tood
+    super(Object.class, elementMatcher, scopes, unresolvedScopes);
     this.valueSupplier = valueSupplier;
   }
 
@@ -73,7 +73,7 @@ public final class LazyInstanceBindingConstructor extends BaseBindingConstructor
     return new FunctionalContextualProvider<>(
       injector,
       this.constructingType,
-      this.types,
+      this.elementMatcher,
       (context, provider) -> this.valueSupplier.apply(injector));
   }
 }

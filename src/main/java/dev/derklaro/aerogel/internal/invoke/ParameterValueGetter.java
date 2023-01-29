@@ -25,7 +25,6 @@
 package dev.derklaro.aerogel.internal.invoke;
 
 import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import org.apiguardian.api.API;
@@ -47,14 +46,10 @@ public interface ParameterValueGetter {
    * injection context.
    *
    * @param context  the context which is currently constructing the elements which needs the parameter instances.
-   * @param elements the elements which are representing the return value of the executable element.
    * @param injector the injector which requested the instantiation of the parent executable member.
    * @return the param instances to invoke the executable element, in order.
    * @throws NullPointerException if the given context, elements or injector is null.
    * @throws AerogelException     if an issue occurred while looking up the parameter instances.
    */
-  @NotNull Object[] resolveParamInstances(
-    @NotNull InjectionContext context,
-    @NotNull Element[] elements,
-    @NotNull Injector injector);
+  @NotNull Object[] resolveParamInstances(@NotNull InjectionContext context, @NotNull Injector injector);
 }

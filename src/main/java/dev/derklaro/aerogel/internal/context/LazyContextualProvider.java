@@ -26,7 +26,7 @@ package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import java.lang.reflect.Type;
@@ -45,25 +45,22 @@ import org.jetbrains.annotations.Nullable;
 final class LazyContextualProvider implements ContextualProvider<Object> {
 
   private final Object boundInstance;
-
-  private final Type constructingType;
-  private final Element[] trackedElements;
+  private final ElementMatcher elementMatcher;
 
   Injector injector;
 
   /**
    * Constructs a new contextual provider which can get the injector lazily set.
    *
-   * @param boundInstance the instance this provider should return.
-   * @param boundElement  the element to which this provider is bound.
+   * @param boundInstance  the instance this provider should return.
+   * @param elementMatcher a matcher for the elements supported by this provider.
    */
   public LazyContextualProvider(
     @Nullable Object boundInstance,
-    @NotNull Element boundElement
+    @NotNull ElementMatcher elementMatcher
   ) {
     this.boundInstance = boundInstance;
-    this.constructingType = boundElement.componentType();
-    this.trackedElements = new Element[]{boundElement};
+    this.elementMatcher = elementMatcher;
   }
 
   /**
@@ -79,15 +76,15 @@ final class LazyContextualProvider implements ContextualProvider<Object> {
    */
   @Override
   public @NotNull Type constructingType() {
-    return this.constructingType;
+    throw new UnsupportedOperationException("unsupported on this provider");
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Element[] trackedElements() {
-    return this.trackedElements;
+  public @NotNull ElementMatcher elementMatcher() {
+    return this.elementMatcher;
   }
 
   /**

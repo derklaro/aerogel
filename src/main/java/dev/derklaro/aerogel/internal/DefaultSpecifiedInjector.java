@@ -40,8 +40,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.apiguardian.api.API;
@@ -61,7 +62,7 @@ import org.jetbrains.annotations.UnmodifiableView;
 public final class DefaultSpecifiedInjector implements SpecifiedInjector {
 
   private final Injector parent;
-  private final Map<Element, BindingHolder> specificBindings;
+  private final Collection<BindingHolder> specificBindings;
   private final Map<Class<?>, MemberInjector> cachedMemberInjectors;
 
   /**
@@ -72,9 +73,9 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    */
   public DefaultSpecifiedInjector(@NotNull Injector parent) {
     this.parent = parent;
-    this.specificBindings = MapUtil.newConcurrentMap();
+    this.specificBindings = new ConcurrentLinkedQueue<>();
     this.cachedMemberInjectors = MapUtil.newConcurrentMap();
-    this.specificBindings.put(InjectorUtil.INJECTOR_ELEMENT, InjectorUtil.INJECTOR_BINDING_CONSTRUCTOR.construct(this));
+    this.specificBindings.add(InjectorUtil.INJECTOR_BINDING_CONSTRUCTOR.construct(this));
   }
 
   /**
@@ -148,7 +149,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
   @Override
   public @NotNull BindingHolder binding(@NotNull Element element) {
     // get from the local injector if given
-    BindingHolder known = this.specificBindings.get(element);
+    BindingHolder known = this.findSpecifiedBinding(element);
     if (known != null) {
       return known;
     }
@@ -166,7 +167,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
     @NotNull Supplier<BindingHolder> factory
   ) {
     // get from the local injector or from the parent
-    BindingHolder known = this.specificBindings.get(element);
+    BindingHolder known = this.findSpecifiedBinding(element);
     return known != null ? known : this.parent.bindingOr(element, factory);
   }
 
@@ -176,7 +177,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
   @Override
   public @Nullable BindingHolder bindingOrNull(@NotNull Element element) {
     // get from the local injector or from the parent
-    BindingHolder known = this.specificBindings.get(element);
+    BindingHolder known = this.findSpecifiedBinding(element);
     return known != null ? known : this.parent.bindingOrNull(element);
   }
 
@@ -186,7 +187,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
   @Override
   public @Nullable BindingHolder fastBinding(@NotNull Element element) {
     // get from the local injector or from the parent
-    BindingHolder known = this.specificBindings.get(element);
+    BindingHolder known = this.findSpecifiedBinding(element);
     return known != null ? known : this.parent.fastBinding(element);
   }
 
@@ -195,7 +196,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    */
   @Override
   public @UnmodifiableView @NotNull Collection<BindingHolder> bindings() {
-    return Collections.unmodifiableCollection(this.specificBindings.values());
+    return Collections.unmodifiableCollection(this.specificBindings);
   }
 
   /**
@@ -204,7 +205,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
   @Override
   public @Unmodifiable @NotNull Collection<BindingHolder> allBindings() {
     // the resulting collection
-    Collection<BindingHolder> bindings = new HashSet<>(this.specificBindings.values());
+    Collection<BindingHolder> bindings = new LinkedList<>(this.specificBindings);
     // walk down the parent chain - add all of their bindings as well
     Injector target = this.parent;
     do {
@@ -306,7 +307,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
   @SuppressWarnings("unchecked")
   public <T> @UnknownNullability T instance(@NotNull Element element) {
     BindingHolder binding = this.binding(element);
-    return (T) ContextInstanceResolveHelper.resolveInstance(element.componentType(), binding);
+    return (T) ContextInstanceResolveHelper.resolveInstance(element, binding);
   }
 
   /**
@@ -316,9 +317,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
   public @NotNull SpecifiedInjector installSpecified(@NotNull BindingConstructor constructor) {
     // construct the binding from the constructor & register it
     BindingHolder constructed = constructor.construct(this);
-    for (Element type : constructed.types()) {
-      this.specificBindings.putIfAbsent(type, constructed);
-    }
+    this.specificBindings.add(constructed);
 
     // for chaining
     return this;
@@ -339,7 +338,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    */
   @Override
   public boolean removeBindings(@NotNull Predicate<BindingHolder> filter) {
-    return this.specificBindings.values().removeIf(filter);
+    return this.specificBindings.removeIf(filter);
   }
 
   /**
@@ -348,5 +347,23 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
   @Override
   public boolean removeConstructedBindings() {
     return this.parent.removeBindings(binding -> binding.injector() == DefaultSpecifiedInjector.this);
+  }
+
+  /**
+   * Tries to find a specified bindings added to this injector which matches the given element.
+   *
+   * @param element the element to find a binding for.
+   * @return the binding that matches the given element, null if no such binding is added to this injector.
+   */
+  private @Nullable BindingHolder findSpecifiedBinding(@NotNull Element element) {
+    // find a registered binding that matches the given element
+    for (BindingHolder binding : this.specificBindings) {
+      if (binding.elementMatcher().test(element)) {
+        return binding;
+      }
+    }
+
+    // no such binding registered
+    return null;
   }
 }

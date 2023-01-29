@@ -26,7 +26,7 @@ package dev.derklaro.aerogel.internal.binding.defaults;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.ScopeProvider;
 import dev.derklaro.aerogel.binding.BindingConstructor;
@@ -48,27 +48,27 @@ import org.jetbrains.annotations.NotNull;
 @API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.binding.*")
 public abstract class BaseBindingConstructor implements BindingConstructor {
 
-  private static final Element[] EMPTY_ELEMENT_ARRAY = new Element[0];
-
-  protected final Element[] types;
   protected final Type constructingType;
+  protected final ElementMatcher elementMatcher;
+
   protected final Set<ScopeProvider> scopes;
   protected final Set<Class<? extends Annotation>> unresolvedScopes;
 
   /**
    * Constructs a new base binding constructor.
    *
-   * @param types            the types which all underlying binding holders should target.
+   * @param constructingType the type that gets constructed by bindings produced by this constructor.
+   * @param matcher          a matcher for all elements that are supported by this constructor.
    * @param scopes           the resolved scopes to apply when creating a binding holder.
    * @param unresolvedScopes the unresolved scopes to resolve and apply when creating a binding holder.
    */
   public BaseBindingConstructor(
-    @NotNull Set<Element> types,
     @NotNull Type constructingType,
+    @NotNull ElementMatcher matcher,
     @NotNull Set<ScopeProvider> scopes,
     @NotNull Set<Class<? extends Annotation>> unresolvedScopes
   ) {
-    this.types = types.toArray(EMPTY_ELEMENT_ARRAY);
+    this.elementMatcher = matcher;
     this.constructingType = constructingType;
     this.scopes = scopes;
     this.unresolvedScopes = unresolvedScopes;
@@ -79,12 +79,29 @@ public abstract class BaseBindingConstructor implements BindingConstructor {
    */
   @Override
   public @NotNull BindingHolder construct(@NotNull Injector injector) throws AerogelException {
-    // build the base provider
+    // build the base provider & apply the scopes to it
     ContextualProvider<Object> provider = this.constructProvider(injector);
+    ContextualProvider<Object> scopedProvider = this.applyScopes(injector, provider);
 
+    // build the binding
+    return new DefaultBindingHolder(injector, this.elementMatcher, scopedProvider);
+  }
+
+  /**
+   * Applies all scopes that are known to this constructor to the given provider.
+   *
+   * @param injector the injector that tries to build the binding.
+   * @param provider the provider to apply the scopes to.
+   * @return a provider that has all added scopes applied.
+   * @throws NullPointerException if the given injector or provider is null.
+   */
+  protected @NotNull ContextualProvider<Object> applyScopes(
+    @NotNull Injector injector,
+    @NotNull ContextualProvider<Object> provider
+  ) {
     // apply the known scopes
     for (ScopeProvider scope : this.scopes) {
-      provider = scope.applyScope(this.constructingType, this.types, provider);
+      provider = scope.applyScope(this.constructingType, this.elementMatcher, provider);
     }
 
     // resolve and apply the unresolved scopes
@@ -96,11 +113,10 @@ public abstract class BaseBindingConstructor implements BindingConstructor {
       }
 
       // apply the resolved scope
-      provider = resolvedScope.applyScope(this.constructingType, this.types, provider);
+      provider = resolvedScope.applyScope(this.constructingType, this.elementMatcher, provider);
     }
 
-    // build the binding
-    return new DefaultBindingHolder(injector, this.types, provider);
+    return provider;
   }
 
   /**

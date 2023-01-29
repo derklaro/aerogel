@@ -57,11 +57,11 @@ public interface ContextualProvider<T> extends Provider<T> {
   @NotNull Type constructingType();
 
   /**
-   * The elements that the constructed value of this provider represents.
+   * Get a matcher for the elements which are tracked by this provider.
    *
-   * @return the tracked elements of this provider.
+   * @return a matcher for all elements tracked by this provider.
    */
-  @NotNull Element[] trackedElements();
+  @NotNull ElementMatcher elementMatcher();
 
   /**
    * Creates a context builder for this provider which targets the type which this provider constructs and this

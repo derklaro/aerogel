@@ -26,10 +26,11 @@ package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.InjectionContext;
 import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.List;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -43,7 +44,7 @@ import org.jetbrains.annotations.Nullable;
 @API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
 public final class DefaultInjectionContextBuilder implements InjectionContext.Builder {
 
-  private final Map<Element, LazyContextualProvider> overriddenInstances = new HashMap<>();
+  private final List<LazyContextualProvider> overriddenInstances = new LinkedList<>();
 
   private final Type constructingType;
   private final ContextualProvider<?> callingProvider;
@@ -75,7 +76,16 @@ public final class DefaultInjectionContextBuilder implements InjectionContext.Bu
    */
   @Override
   public <T> InjectionContext.@NotNull Builder override(@NotNull Element element, @Nullable T instance) {
-    this.overriddenInstances.put(element, new LazyContextualProvider(instance, element));
+    ElementMatcher elementMatcher = ElementMatcher.matchesOne(element);
+    return this.override(elementMatcher, instance);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public <T> InjectionContext.@NotNull Builder override(@NotNull ElementMatcher elementMatcher, @Nullable T instance) {
+    this.overriddenInstances.add(new LazyContextualProvider(instance, elementMatcher));
     return this;
   }
 

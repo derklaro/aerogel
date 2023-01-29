@@ -25,7 +25,7 @@
 package dev.derklaro.aerogel.internal.binding.constructors;
 
 import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.ScopeProvider;
@@ -50,18 +50,18 @@ public final class ProviderBindingConstructor extends BaseBindingConstructor {
   /**
    * Constructs a new provider binding constructor.
    *
-   * @param types            the types which all underlying binding holders should target.
+   * @param elementMatcher   a matcher for all elements that are supported by this constructor.
    * @param scopes           the resolved scopes to apply when creating a binding holder.
    * @param unresolvedScopes the unresolved scopes to resolve and apply when creating a binding holder.
    * @param provider         the provider to use when obtaining a new instance.
    */
   public ProviderBindingConstructor(
-    @NotNull Set<Element> types,
+    @NotNull ElementMatcher elementMatcher,
     @NotNull Set<ScopeProvider> scopes,
     @NotNull Set<Class<? extends Annotation>> unresolvedScopes,
     @NotNull Provider<Object> provider
   ) {
-    super(types, Object.class, scopes, unresolvedScopes);
+    super(Object.class, elementMatcher, scopes, unresolvedScopes);
     this.provider = provider;
   }
 
@@ -70,13 +70,17 @@ public final class ProviderBindingConstructor extends BaseBindingConstructor {
    */
   @Override
   protected @NotNull ContextualProvider<Object> constructProvider(@NotNull Injector injector) {
-    return new FunctionalContextualProvider<>(injector, this.constructingType, this.types, (context, provider) -> {
-      // check if our wrapped provider is a contextual provider
-      if (this.provider instanceof ContextualProvider) {
-        return ((ContextualProvider<Object>) this.provider).get(context);
-      } else {
-        return this.provider.get();
-      }
-    });
+    return new FunctionalContextualProvider<>(
+      injector,
+      this.constructingType,
+      this.elementMatcher,
+      (context, provider) -> {
+        // check if our wrapped provider is a contextual provider
+        if (this.provider instanceof ContextualProvider) {
+          return ((ContextualProvider<Object>) this.provider).get(context);
+        } else {
+          return this.provider.get();
+        }
+      });
   }
 }

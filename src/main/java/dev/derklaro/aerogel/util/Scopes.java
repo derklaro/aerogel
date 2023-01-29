@@ -26,7 +26,7 @@ package dev.derklaro.aerogel.util;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.KnownValue;
 import dev.derklaro.aerogel.ScopeProvider;
@@ -69,15 +69,15 @@ public final class Scopes {
      * Constructs a new singleton contextual provider instance.
      *
      * @param constructingType the type constructed by the given downstream provider.
-     * @param trackedElements  the elements tracked by the upstream provider.
+     * @param elementMatcher   a matcher for all elements tracked by the upstream provider.
      * @param downstream       the provider which is wrapped by this scope.
      */
     public SingletonContextualProvider(
       @NotNull Type constructingType,
-      @NotNull Element[] trackedElements,
+      @NotNull ElementMatcher elementMatcher,
       @NotNull ContextualProvider<Object> downstream
     ) {
-      super(downstream.injector(), constructingType, trackedElements);
+      super(downstream.injector(), constructingType, elementMatcher);
       this.downstream = downstream;
     }
 

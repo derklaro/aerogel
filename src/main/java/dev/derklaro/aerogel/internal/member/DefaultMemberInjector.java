@@ -455,7 +455,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     // check if the target type is a provider
     if (JakartaBridge.isProvider(rawType)) {
       // resolve the provider and wrap it to a jakarta provider if needed
-      Provider<?> provider = this.injector.binding(element).provider();
+      Provider<?> provider = this.injector.binding(element).provider(element);
       if (JakartaBridge.needsProviderWrapping(rawType)) {
         return JakartaBridge.bridgeJakartaProvider(provider);
       } else {

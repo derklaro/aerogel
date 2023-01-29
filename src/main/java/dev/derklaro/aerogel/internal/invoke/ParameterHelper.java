@@ -47,7 +47,7 @@ import org.jetbrains.annotations.Nullable;
 public final class ParameterHelper {
 
   private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
-  private static final ParameterValueGetter EMPTY_SUPPLIER = (__, ___, ____) -> EMPTY_OBJECT_ARRAY;
+  private static final ParameterValueGetter EMPTY_SUPPLIER = (__, ____) -> EMPTY_OBJECT_ARRAY;
 
   private ParameterHelper() {
     throw new UnsupportedOperationException();
@@ -88,8 +88,9 @@ public final class ParameterHelper {
         resolver = (injector, context) -> {
           ContextualProvider<?> parameterProvider = context.resolveProvider(element);
           InjectionContext parameterContext = context.enterSubcontext(
+            parameter.getParameterizedType(),
             parameterProvider,
-            parameter.getParameterizedType());
+            element);
 
           return parameterContext.resolveInstance();
         };
@@ -100,7 +101,7 @@ public final class ParameterHelper {
     }
 
     // use the parameters suppliers to construct a function for all parameters
-    return (context, elements, injector) -> {
+    return (context, injector) -> {
       Object[] values = new Object[resolvers.length];
       for (int i = 0; i < resolvers.length; i++) {
         // get and store each value

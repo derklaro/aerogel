@@ -43,7 +43,9 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.apiguardian.api.API;
@@ -63,7 +65,7 @@ import org.jetbrains.annotations.UnmodifiableView;
 public final class DefaultInjector implements Injector {
 
   private final Injector parent;
-  private final Map<Element, BindingHolder> bindings;
+  private final Collection<BindingHolder> bindings;
   private final Map<Class<?>, MemberInjector> cachedMemberInjectors;
   private final Map<Class<? extends Annotation>, ScopeProvider> scopes;
 
@@ -77,7 +79,7 @@ public final class DefaultInjector implements Injector {
    */
   public DefaultInjector(@Nullable Injector parent) {
     this.parent = parent;
-    this.bindings = MapUtil.newConcurrentMap();
+    this.bindings = new ConcurrentLinkedQueue<>();
     this.cachedMemberInjectors = MapUtil.newConcurrentMap();
     this.scopes = MapUtil.newConcurrentMap();
     this.injectorBinding = InjectorUtil.INJECTOR_BINDING_CONSTRUCTOR.construct(this);
@@ -134,7 +136,7 @@ public final class DefaultInjector implements Injector {
   @SuppressWarnings("unchecked")
   public <T> T instance(@NotNull Element element) {
     BindingHolder bindingHolder = this.binding(element);
-    return (T) ContextInstanceResolveHelper.resolveInstance(element.componentType(), bindingHolder);
+    return (T) ContextInstanceResolveHelper.resolveInstance(element, bindingHolder);
   }
 
   /**
@@ -166,9 +168,7 @@ public final class DefaultInjector implements Injector {
   @Override
   public @NotNull Injector install(@NotNull BindingHolder bindingHolder) {
     // apply the binding to this injector
-    for (Element type : bindingHolder.types()) {
-      this.bindings.putIfAbsent(type, bindingHolder);
-    }
+    this.bindings.add(bindingHolder);
     return this;
   }
 
@@ -216,7 +216,7 @@ public final class DefaultInjector implements Injector {
     BindingHolder holder = this.bindingOrNull(element);
     if (holder != null) {
       // cache locally to prevent further deep lookups
-      this.bindings.putIfAbsent(element, holder);
+      this.bindings.add(holder);
       return holder;
     }
 
@@ -231,12 +231,10 @@ public final class DefaultInjector implements Injector {
         "Element " + element + " has special properties, unable to make a runtime binding for it");
     }
 
-    // construct a binding and store it, use putIfAbsent to prevent issues when concurrently accessed
+    // construct a binding, store & return it
     BindingHolder constructed = factory.get();
-    BindingHolder present = this.bindings.putIfAbsent(element, constructed);
-
-    // return the constructed or old binding holder
-    return present != null ? present : constructed;
+    this.bindings.add(constructed);
+    return constructed;
   }
 
   /**
@@ -245,7 +243,7 @@ public final class DefaultInjector implements Injector {
   @Override
   public @Nullable BindingHolder bindingOrNull(@NotNull Element element) {
     // check if we have a cached bindingHolder
-    BindingHolder bindingHolder = this.bindings.get(element);
+    BindingHolder bindingHolder = this.fastBinding(element);
     // check if we need a parent injector lookup - skip the parent lookup if the element is the current injector element
     // in this case we always want to inject this injector, not the parent
     if (bindingHolder == null && this.parent != null && !InjectorUtil.INJECTOR_ELEMENT.equals(element)) {
@@ -271,8 +269,15 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @Nullable BindingHolder fastBinding(@NotNull Element element) {
-    // read from the store
-    return this.bindings.get(element);
+    // find a registered binding that matches the given element
+    for (BindingHolder binding : this.bindings) {
+      if (binding.elementMatcher().test(element)) {
+        return binding;
+      }
+    }
+
+    // no such binding registered
+    return null;
   }
 
   /**
@@ -280,7 +285,7 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @UnmodifiableView @NotNull Collection<BindingHolder> bindings() {
-    return Collections.unmodifiableCollection(this.bindings.values());
+    return Collections.unmodifiableCollection(this.bindings);
   }
 
   /**
@@ -289,7 +294,7 @@ public final class DefaultInjector implements Injector {
   @Override
   public @UnmodifiableView @NotNull Collection<BindingHolder> allBindings() {
     // the resulting collection
-    Collection<BindingHolder> bindings = new HashSet<>(this.bindings.values());
+    Collection<BindingHolder> bindings = new LinkedList<>(this.bindings);
     // check if this injector has a parent
     if (this.parent != null) {
       // walk down the parent chain - add all of their bindings as well
@@ -371,6 +376,6 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public boolean removeBindings(@NotNull Predicate<BindingHolder> filter) {
-    return this.bindings.values().removeIf(filter);
+    return this.bindings.removeIf(filter);
   }
 }

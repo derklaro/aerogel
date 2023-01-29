@@ -37,11 +37,9 @@ import dev.derklaro.aerogel.internal.util.Preconditions;
 import dev.derklaro.aerogel.member.InjectionSetting;
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -98,10 +96,10 @@ final class DefaultInjectionContext implements InjectionContext {
    */
   private final List<ContextualProxy> knownProxies;
   /**
-   * Holds all mappings of overridden instances for the current context tree, note that this map is only present on the
+   * Holds all mappings of overridden instances for the current context tree, note that this list is only present on the
    * root context, in all other cases modifying the map will result in an exception.
    */
-  private final Map<Element, LazyContextualProvider> overriddenDirectInstances;
+  private final List<LazyContextualProvider> overriddenDirectInstances;
   /**
    * Holds all member injection requests that were made somewhere in the tree. Note that this collection is only
    * writeable in a root context, in all other cases modifying the collection will result in an exception.
@@ -156,7 +154,7 @@ final class DefaultInjectionContext implements InjectionContext {
   public DefaultInjectionContext(
     @NotNull ContextualProvider<?> callingBinding,
     @NotNull Type constructingType,
-    @NotNull Map<Element, LazyContextualProvider> overriddenDirectInstances
+    @NotNull List<LazyContextualProvider> overriddenDirectInstances
   ) {
     this.root = this;
     this.callingBinding = callingBinding;
@@ -165,7 +163,7 @@ final class DefaultInjectionContext implements InjectionContext {
     // initialize to real fields as this is the root context
     this.knownProxies = new LinkedList<>();
     this.requestedMemberInjections = new LinkedHashSet<>();
-    this.overriddenDirectInstances = new HashMap<>(overriddenDirectInstances);
+    this.overriddenDirectInstances = new LinkedList<>(overriddenDirectInstances);
   }
 
   /**
@@ -187,7 +185,7 @@ final class DefaultInjectionContext implements InjectionContext {
     // just use the empty variants as we're not the root
     this.knownProxies = Collections.emptyList();
     this.requestedMemberInjections = Collections.emptySet();
-    this.overriddenDirectInstances = Collections.emptyMap();
+    this.overriddenDirectInstances = Collections.emptyList();
   }
 
   /**
@@ -215,7 +213,7 @@ final class DefaultInjectionContext implements InjectionContext {
     Injector currentInjector = this.callingBinding.injector();
 
     // check if the element is overridden
-    LazyContextualProvider provider = this.root.overriddenDirectInstances.get(element);
+    LazyContextualProvider provider = this.findOverriddenProvider(element);
     if (provider != null) {
       // set the injector instance to the current injector
       provider.injector = currentInjector;
@@ -223,7 +221,7 @@ final class DefaultInjectionContext implements InjectionContext {
     }
 
     // not overridden - resolve from the injector
-    return currentInjector.binding(element).provider();
+    return currentInjector.binding(element).provider(element);
   }
 
   /**
@@ -255,14 +253,13 @@ final class DefaultInjectionContext implements InjectionContext {
    */
   @Override
   public @NotNull DefaultInjectionContext enterSubcontext(
+    @NotNull Type constructingType,
     @NotNull ContextualProvider<?> callingBinding,
-    @NotNull Type constructingType
+    @Nullable Element associatedElement
   ) {
-    // check if the root context has an overridden value available for one
-    // of the elements that the given binding is constructing
-    Element[] constructingElements = callingBinding.trackedElements();
-    for (Element constructingElement : constructingElements) {
-      LazyContextualProvider overriddenProvider = this.root.overriddenDirectInstances.get(constructingElement);
+    // check if the root context has an overridden value available if the associated element is known
+    if (associatedElement != null) {
+      LazyContextualProvider overriddenProvider = this.findOverriddenProvider(associatedElement);
       if (overriddenProvider != null) {
         // create a sub context which just returns the given instance
         DefaultInjectionContext subcontext = new DefaultInjectionContext(this.root, callingBinding, constructingType);
@@ -709,6 +706,27 @@ final class DefaultInjectionContext implements InjectionContext {
           "Construction finish requested but there were " + proxiesWithoutDelegate + " proxies without a delegate");
       }
     }
+  }
+
+  /**
+   * Tries to resolve an overridden provider for the given element.
+   *
+   * @param element the element to get the provider for.
+   * @return the overridden provider, or null if no provider override is registered that matches the given element.
+   */
+  private @Nullable LazyContextualProvider findOverriddenProvider(@NotNull Element element) {
+    // try to resolve a provider which constructs a value that matches one provider
+    List<LazyContextualProvider> overriddenProviders = this.root.overriddenDirectInstances;
+    if (!overriddenProviders.isEmpty()) {
+      for (LazyContextualProvider overriddenProvider : overriddenProviders) {
+        if (overriddenProvider.elementMatcher().test(element)) {
+          return overriddenProvider;
+        }
+      }
+    }
+
+    // no matching provider found
+    return null;
   }
 
   /**

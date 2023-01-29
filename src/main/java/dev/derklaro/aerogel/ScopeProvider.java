@@ -48,12 +48,12 @@ public interface ScopeProvider {
    * method should never return a scope which isn't interacting with the given downstream provider.
    *
    * @param constructingType the type constructed by the given downstream provider.
-   * @param trackedElements  the elements which are tracked by the given downstream provider.
+   * @param elementMatcher   a matcher for all elements which are tracked by the given downstream provider.
    * @param downstream       the last constructed provider, might either be the root or a scoped provider.
    * @return a wrapped provider which applies the current scope, or the same provider if no scoping is required.
    */
   @NotNull ContextualProvider<Object> applyScope(
     @NotNull Type constructingType,
-    @NotNull Element[] trackedElements,
+    @NotNull ElementMatcher elementMatcher,
     @NotNull ContextualProvider<Object> downstream);
 }

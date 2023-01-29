@@ -26,7 +26,7 @@ package dev.derklaro.aerogel.internal.binding.constructors;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.ScopeProvider;
 import dev.derklaro.aerogel.internal.PassthroughException;
@@ -59,18 +59,18 @@ public final class FactoryMethodBindingConstructor extends BaseBindingConstructo
   /**
    * Constructs a new factory method binding constructor.
    *
-   * @param types            the types which all underlying binding holders should target.
+   * @param elementMatcher   a matcher for all elements that are supported by this constructor.
    * @param scopes           the resolved scopes to apply when creating a binding holder.
    * @param unresolvedScopes the unresolved scopes to resolve and apply when creating a binding holder.
    * @param factoryMethod    the factory method to use to create new instances.
    */
   public FactoryMethodBindingConstructor(
-    @NotNull Set<Element> types,
+    @NotNull ElementMatcher elementMatcher,
     @NotNull Set<ScopeProvider> scopes,
     @NotNull Set<Class<? extends Annotation>> unresolvedScopes,
     @NotNull Method factoryMethod
   ) {
-    super(types, factoryMethod.getGenericReturnType(), scopes, unresolvedScopes);
+    super(factoryMethod.getGenericReturnType(), elementMatcher, scopes, unresolvedScopes);
 
     // set the raw method for debug
     this.rawMethod = factoryMethod;
@@ -85,19 +85,23 @@ public final class FactoryMethodBindingConstructor extends BaseBindingConstructo
    */
   @Override
   protected @NotNull ContextualProvider<Object> constructProvider(@NotNull Injector injector) {
-    return new FunctionalContextualProvider<>(injector, this.constructingType, this.types, (context, provider) -> {
-      try {
-        // get the parameter values & construct a new instance
-        Object[] paramValues = this.parameterValueGetter.resolveParamInstances(context, this.types, injector);
-        return MethodHandleUtil.invokeMethod(this.factoryMethod, null, paramValues);
-      } catch (PassthroughException | AerogelException passthroughException) {
-        throw passthroughException;
-      } catch (Throwable throwable) {
-        // unexpected, explode
-        throw AerogelException.forMessagedException(
-          "Unable to construct requested value using factory method " + this.rawMethod,
-          throwable);
-      }
-    });
+    return new FunctionalContextualProvider<>(
+      injector,
+      this.constructingType,
+      this.elementMatcher,
+      (context, provider) -> {
+        try {
+          // get the parameter values & construct a new instance
+          Object[] paramValues = this.parameterValueGetter.resolveParamInstances(context, injector);
+          return MethodHandleUtil.invokeMethod(this.factoryMethod, null, paramValues);
+        } catch (PassthroughException | AerogelException passthroughException) {
+          throw passthroughException;
+        } catch (Throwable throwable) {
+          // unexpected, explode
+          throw AerogelException.forMessagedException(
+            "Unable to construct requested value using factory method " + this.rawMethod,
+            throwable);
+        }
+      });
   }
 }
