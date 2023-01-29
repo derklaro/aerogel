@@ -86,7 +86,9 @@ class InjectionTest {
       )
 
     Assertions.assertDoesNotThrow {
-      injector.instance<TestClass3>()
+      val testClassInstance = injector.instance<TestClass3>()
+      Assertions.assertNotNull(testClassInstance!!.aField2)
+      Assertions.assertNotNull(testClassInstance.dependingOnTest)
     }
   }
 }
@@ -100,7 +102,10 @@ class TestClass2 @Inject constructor(@Name("Hello there") val theHelloThereStrin
   var aField: TestClass? = null
 }
 
-class TestClass3 @Inject constructor(@Name("Hello there") val theHelloThereString: String) {
+class TestClass3 {
   @Inject
   val aField2: TestClass? = null
+
+  @Inject
+  lateinit var dependingOnTest: DependingOnTest
 }
