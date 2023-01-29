@@ -22,56 +22,93 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.binding;
+package dev.derklaro.aerogel.internal.provider;
 
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.internal.BaseContextualProvider;
+import dev.derklaro.aerogel.internal.context.util.ContextInstanceResolveHelper;
 import java.lang.reflect.Type;
-import java.util.function.BiFunction;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A contextual provider implementation which uses a function to obtain the underlying value.
+ * An abstract implementation of a contextual provider which simplifies the use of providers for downstream api
+ * consumers. This provider implementation ensures that:
+ * <ol>
+ *   <li>calls to the {@link #get()} method are always executed within an injection context.
+ *   <li>no calls to construct done are made when this provider is wrapped by a downstream provider.
+ * </ol>
  *
  * @param <T> the type constructed by this provider.
  * @author Pasqual K.
  * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.binding.*")
-public final class FunctionalContextualProvider<T> extends BaseContextualProvider<T> {
+@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.*")
+public abstract class BaseContextualProvider<T> implements ContextualProvider<T> {
 
-  private final BiFunction<InjectionContext, ContextualProvider<?>, T> downstream;
+  protected final Injector injector;
+  protected final Type constructingType;
+  protected final ElementMatcher elementMatcher;
 
   /**
-   * Constructs a new functional contextual provider instance.
+   * Constructs a new base contextual provider instance.
    *
    * @param injector         the injector associated with this provider.
    * @param constructingType the type constructed by this provider.
    * @param elementMatcher   a matcher for all elements tracked by this provider.
-   * @param downstream       the downstream function to call to obtain the underlying value.
    */
-  public FunctionalContextualProvider(
+  protected BaseContextualProvider(
     @NotNull Injector injector,
     @NotNull Type constructingType,
-    @NotNull ElementMatcher elementMatcher,
-    @NotNull BiFunction<InjectionContext, ContextualProvider<?>, T> downstream
+    @NotNull ElementMatcher elementMatcher
   ) {
-    super(injector, constructingType, elementMatcher);
-    this.downstream = downstream;
+    this.injector = injector;
+    this.constructingType = constructingType;
+    this.elementMatcher = elementMatcher;
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public @Nullable T get(@NotNull InjectionContext context) throws AerogelException {
-    // get the value from the provided downstream function
-    return this.downstream.apply(context, this);
+  public @NotNull Injector injector() {
+    return this.injector;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull Type constructingType() {
+    return this.constructingType;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull ElementMatcher elementMatcher() {
+    return this.elementMatcher;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull InjectionContext.Builder createContextBuilder() {
+    return InjectionContext.builder(this.constructingType, this);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @SuppressWarnings("unchecked")
+  public @Nullable T get() throws AerogelException {
+    return (T) ContextInstanceResolveHelper.resolveInstance(this.constructingType, this);
   }
 }

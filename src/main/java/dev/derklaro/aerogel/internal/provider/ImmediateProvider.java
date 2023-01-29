@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal;
+package dev.derklaro.aerogel.internal.provider;
 
 import dev.derklaro.aerogel.Provider;
 import org.apiguardian.api.API;

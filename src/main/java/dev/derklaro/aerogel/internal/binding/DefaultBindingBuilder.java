@@ -25,7 +25,6 @@
 package dev.derklaro.aerogel.internal.binding;
 
 import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.Injector;

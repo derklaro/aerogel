@@ -30,7 +30,7 @@ import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.KnownValue;
 import dev.derklaro.aerogel.ScopeProvider;
-import dev.derklaro.aerogel.internal.BaseContextualProvider;
+import dev.derklaro.aerogel.internal.provider.BaseContextualProvider;
 import java.lang.reflect.Type;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apiguardian.api.API;
