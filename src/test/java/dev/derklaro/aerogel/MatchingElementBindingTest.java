@@ -31,10 +31,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Type;
+import java.util.AbstractMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.AssertionFailedError;
 
 public class MatchingElementBindingTest {
 
@@ -43,9 +45,9 @@ public class MatchingElementBindingTest {
     Injector injector = Injector.newInjector();
 
     // some default instances for validation
-    Map<Type, Object> registeredInstances = new IdentityHashMap<>();
-    registeredInstances.put(int.class, 1234);
-    registeredInstances.put(String.class, "Hello World!");
+    Map<Type, Map.Entry<String, Object>> registeredInstances = new IdentityHashMap<>();
+    registeredInstances.put(int.class, new AbstractMap.SimpleImmutableEntry<>("bing", 1234));
+    registeredInstances.put(String.class, new AbstractMap.SimpleImmutableEntry<>("world", "Hello World!"));
 
     // register a lazy provider binding
     BindingConstructor bindingConstructor = BindingBuilder.create()
@@ -59,22 +61,60 @@ public class MatchingElementBindingTest {
           return false;
         }
       })
-      .toLazyProvider((element, $) -> () -> registeredInstances.get(element.componentType()));
+      .toLazyProvider((element, $) -> () -> {
+        // get the predicate for the RegisteredInstance annotation
+        AnnotationPredicate registeredInstance = element.requiredAnnotations().stream()
+          .filter(predicate -> predicate.annotationType().equals(RegisteredInstance.class))
+          .findFirst()
+          .orElseThrow(() -> new AssertionFailedError("Missing annotation predicate that must be present"));
+
+        // extract & validate the name value
+        Object nameAsObject = registeredInstance.annotationValues().get("value");
+        Assertions.assertNotNull(nameAsObject);
+        String name = Assertions.assertInstanceOf(String.class, nameAsObject);
+
+        // get the registered instance for the type & validate the given name
+        Map.Entry<String, Object> instanceEntry = registeredInstances.get(element.componentType());
+        if (instanceEntry != null && instanceEntry.getKey().equals(name)) {
+          // matches, return the instance
+          return instanceEntry.getValue();
+        } else {
+          // doesn't match, return nothing
+          return null;
+        }
+      });
     injector.install(bindingConstructor);
 
-    // build elements that are requesting the needed annotation
-    Element intElement = Element.forType(int.class).requireAnnotation(RegisteredInstance.class);
-    Element stringElement = Element.forType(String.class).requireAnnotation(RegisteredInstance.class);
-
-    // check if the instances are correct
-    Assertions.assertEquals(1234, injector.<Integer>instance(intElement));
-    Assertions.assertEquals("Hello World!", injector.instance(stringElement));
-    Assertions.assertNull(injector.instance(Element.forType(long.class).requireAnnotation(RegisteredInstance.class)));
+    // inject an example class
+    TestingClass testingClass = injector.instance(TestingClass.class);
+    Assertions.assertEquals(1234, testingClass.bingInt);
+    Assertions.assertEquals("Hello World!", testingClass.worldString);
+    Assertions.assertNull(testingClass.googleString);
   }
 
+  @Qualifier
   @Target(ElementType.PARAMETER)
   @Retention(RetentionPolicy.RUNTIME)
-  private @interface RegisteredInstance {
+  public @interface RegisteredInstance {
 
+    String value();
+  }
+
+  private static final class TestingClass {
+
+    private final int bingInt;
+    private final String worldString;
+    private final String googleString;
+
+    @Inject
+    public TestingClass(
+      @RegisteredInstance("bing") int bingInt,
+      @RegisteredInstance("world") String worldString,
+      @RegisteredInstance("google") String googleString
+    ) {
+      this.bingInt = bingInt;
+      this.worldString = worldString;
+      this.googleString = googleString;
+    }
   }
 }

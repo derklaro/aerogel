@@ -25,9 +25,11 @@
 package dev.derklaro.aerogel;
 
 import java.lang.annotation.Annotation;
+import java.util.Map;
 import java.util.function.Predicate;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Allows to compare an annotation from element against this holder. This may be done in different ways. By using...
@@ -62,4 +64,14 @@ public interface AnnotationPredicate extends Predicate<Object> {
    * @return the type of annotation this predicate is handling.
    */
   @NotNull Class<? extends Annotation> annotationType();
+
+  /**
+   * Get the resolved annotation values mapped to their key (the method name defined in the annotation class). In order
+   * to match an annotation with this predicate, the values of the given annotation must match with these values.
+   *
+   * @return the key-value mapping of the underlying annotation to check against.
+   */
+  @Unmodifiable
+  @API(status = API.Status.EXPERIMENTAL, since = "2.1.0")
+  @NotNull Map<String, Object> annotationValues();
 }

@@ -37,6 +37,7 @@ import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * The default implementation of an annotation predicate.
@@ -129,6 +130,15 @@ public final class DefaultAnnotationPredicate implements AnnotationPredicate {
   @Override
   public @NotNull Class<? extends Annotation> annotationType() {
     return this.annotationType;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  @Unmodifiable
+  public @NotNull Map<String, Object> annotationValues() {
+    return this.annotationValues;
   }
 
   /**
