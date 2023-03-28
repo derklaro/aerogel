@@ -22,6 +22,9 @@
  * THE SOFTWARE.
  */
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
   alias(libs.plugins.kotlinJvm)
   alias(libs.plugins.kotlinDokka)
@@ -35,6 +38,12 @@ dependencies {
 
 tasks.getByName<org.gradle.jvm.tasks.Jar>("javadocJar") {
   from(tasks.getByName("dokkaJavadoc"))
+}
+
+tasks.withType<KotlinCompile> {
+  compilerOptions {
+    jvmTarget.set(JvmTarget.JVM_1_8)
+  }
 }
 
 configurePublishing("kotlin", true)
