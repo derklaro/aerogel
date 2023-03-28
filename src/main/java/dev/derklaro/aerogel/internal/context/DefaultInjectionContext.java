@@ -394,7 +394,7 @@ final class DefaultInjectionContext implements InjectionContext {
 
           // unwrap the inner value
           KnownValue knownValue = (KnownValue) constructedValue;
-          this.delegate = constructedValue = knownValue.inner();
+          this.delegate = constructedValue = KnownValue.unwrap(knownValue);
 
           // add an injection request for the value if it is the first occurrence
           if (knownValue.firstOccurrence() && constructedValue != null) {

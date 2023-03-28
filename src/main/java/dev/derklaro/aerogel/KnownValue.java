@@ -68,6 +68,26 @@ public final class KnownValue {
   }
 
   /**
+   * Unwraps the deepest inner value possible of the given known value. This means that if the given known value
+   * contains a known value as the inner value, that value is unwrapped and so on.
+   *
+   * @param value the known value to unwrap.
+   * @return the deepest non-known-value inside the given known value.
+   * @throws NullPointerException if the given value is null.
+   * @since 2.1.0
+   */
+  public static Object unwrap(@NotNull KnownValue value) {
+    Object inner = value.inner();
+    if (inner instanceof KnownValue) {
+      while (inner instanceof KnownValue) {
+        KnownValue innerValue = (KnownValue) inner;
+        inner = innerValue.inner();
+      }
+    }
+    return inner;
+  }
+
+  /**
    * Unwraps the inner value stored in this value.
    *
    * @return the inner value of this value.
