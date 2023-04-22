@@ -1,8 +1,8 @@
 name: "CI"
 
 on:
-  - push
-  - pull_request
+  push:
+  pull_request:
 
 concurrency:
   cancel-in-progress: true
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '8', '11', '17' ]
+        java: [ '11', '17' ]
     name: ${{ matrix.java }}
 
     steps:
@@ -29,8 +29,4 @@ jobs:
           cache: 'gradle'
 
       - name: Run build and tests
-        run: ./gradlew clean build test -x checkstyleMain -x checkstyleTest -x spotlessCheck --stacktrace --no-daemon
-
-      - name: Run code checks
-        if: ${{ matrix.java == 17 }}
-        run: ./gradlew checkstyleMain checkstyleTest spotlessCheck --stacktrace --no-daemon
+        run: ./gradlew clean build test --stacktrace --no-daemon
