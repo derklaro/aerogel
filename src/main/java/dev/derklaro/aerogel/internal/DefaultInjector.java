@@ -212,17 +212,15 @@ public final class DefaultInjector implements Injector {
     @NotNull Element element,
     @NotNull Supplier<BindingHolder> factory
   ) {
-    // get the binding if a parent has already one
-    BindingHolder holder = this.bindingOrNull(element);
-    if (holder != null) {
-      // cache locally to prevent further deep lookups
-      this.bindings.add(holder);
-      return holder;
-    }
-
     // check if the element is of the type Injector - return the current injector for it
     if (InjectorUtil.INJECTOR_ELEMENT.equals(element)) {
       return this.injectorBinding;
+    }
+
+    // get the binding from the injector tree
+    BindingHolder holder = this.bindingOrNull(element);
+    if (holder != null) {
+      return holder;
     }
 
     // check if the element has special parameters - in this case we will strictly not mock the element
@@ -231,7 +229,7 @@ public final class DefaultInjector implements Injector {
         "Element " + element + " has special properties, unable to make a runtime binding for it");
     }
 
-    // construct a binding, store & return it
+    // construct a runtime binding, store & return it
     BindingHolder constructed = factory.get();
     this.bindings.add(constructed);
     return constructed;
@@ -358,7 +356,6 @@ public final class DefaultInjector implements Injector {
   @Unmodifiable
   public @NotNull Collection<ScopeProvider> scopes() {
     Collection<ScopeProvider> scopes = new HashSet<>(this.scopes.values());
-    // check if this injector has a parent
     if (this.parent != null) {
       // walk down the parent chain - add all of their scopes as well
       Injector target = this.parent;
