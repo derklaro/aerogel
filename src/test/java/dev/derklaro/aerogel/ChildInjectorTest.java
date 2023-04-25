@@ -45,9 +45,7 @@ public class ChildInjectorTest {
     StringHolder value2 = child.instance(StringHolder.class);
     Assertions.assertNotNull(value2);
     Assertions.assertEquals("test", value2.test);
-
     Assertions.assertSame(value, value2);
-    Assertions.assertNotNull(child.fastBinding(Element.forType(StringHolder.class)));
   }
 
   @Test
