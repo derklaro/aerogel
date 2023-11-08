@@ -32,7 +32,7 @@ import dev.derklaro.aerogel.KnownValue;
 import dev.derklaro.aerogel.ScopeProvider;
 import dev.derklaro.aerogel.internal.provider.BaseContextualProvider;
 import java.lang.reflect.Type;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,8 +62,11 @@ public final class Scopes {
   @API(status = API.Status.INTERNAL, since = "2.0")
   private static final class SingletonContextualProvider extends BaseContextualProvider<Object> {
 
+    private static final AtomicReferenceFieldUpdater<SingletonContextualProvider, KnownValue> CONSTRUCTED_VALUE_UPDATER =
+      AtomicReferenceFieldUpdater.newUpdater(SingletonContextualProvider.class, KnownValue.class, "constructedValue");
+
     private final ContextualProvider<Object> downstream;
-    private final AtomicReference<KnownValue> reference = new AtomicReference<>();
+    private volatile KnownValue constructedValue;
 
     /**
      * Constructs a new singleton contextual provider instance.
@@ -87,7 +90,7 @@ public final class Scopes {
     @Override
     public @Nullable Object get(@NotNull InjectionContext context) throws AerogelException {
       // check if the value was already constructed
-      KnownValue knownValue = this.reference.get();
+      KnownValue knownValue = this.constructedValue;
       if (knownValue != null) {
         return knownValue;
       }
@@ -95,13 +98,12 @@ public final class Scopes {
       // construct the value using the downstream provider & wrap it in a value store request
       Object value = this.downstream.get(context);
       KnownValue firstOccurrence = KnownValue.of(value);
-      if (this.reference.compareAndSet(null, firstOccurrence.asSecondOccurrence())) {
+      if (CONSTRUCTED_VALUE_UPDATER.compareAndSet(this, null, firstOccurrence.asSecondOccurrence())) {
         return firstOccurrence;
       }
 
       // the value was provided while we were doing our stuff, return the old value
-      knownValue = this.reference.get();
-      return knownValue;
+      return this.constructedValue;
     }
   }
 }
