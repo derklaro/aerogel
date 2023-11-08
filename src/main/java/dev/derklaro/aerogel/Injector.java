@@ -39,7 +39,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jetbrains.annotations.UnmodifiableView;
 
 /**
  * The main part of aerogel. The injector keeps track of all known bindings and shared them with their child injectors.
@@ -231,7 +230,7 @@ public interface Injector {
    *
    * @return all bindings which are constructed for this injector.
    */
-  @UnmodifiableView
+  @Unmodifiable
   @NotNull Collection<BindingHolder> bindings();
 
   /**

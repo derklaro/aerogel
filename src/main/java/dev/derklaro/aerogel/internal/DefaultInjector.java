@@ -40,12 +40,11 @@ import dev.derklaro.aerogel.member.MemberInjector;
 import dev.derklaro.aerogel.util.Scopes;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.apiguardian.api.API;
@@ -53,7 +52,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jetbrains.annotations.UnmodifiableView;
 
 /**
  * The default implementation of an injector. See {@link Injector#newInjector()}.
@@ -64,8 +62,10 @@ import org.jetbrains.annotations.UnmodifiableView;
 @API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
 public final class DefaultInjector implements Injector {
 
+  // for trusted injector access
+  final InjectorBindingCollection bindings;
+
   private final Injector parent;
-  private final Collection<BindingHolder> bindings;
   private final Map<Class<?>, MemberInjector> cachedMemberInjectors;
   private final Map<Class<? extends Annotation>, ScopeProvider> scopes;
 
@@ -79,7 +79,7 @@ public final class DefaultInjector implements Injector {
    */
   public DefaultInjector(@Nullable Injector parent) {
     this.parent = parent;
-    this.bindings = new ConcurrentLinkedQueue<>();
+    this.bindings = new InjectorBindingCollection();
     this.cachedMemberInjectors = MapUtil.newConcurrentMap();
     this.scopes = MapUtil.newConcurrentMap();
     this.injectorBinding = InjectorUtil.INJECTOR_BINDING_CONSTRUCTOR.construct(this);
@@ -154,11 +154,13 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @NotNull Injector install(@NotNull Iterable<BindingConstructor> constructors) {
-    // install all constructors
-    for (BindingConstructor constructor : constructors) {
-      this.install(constructor);
-    }
-    // for chaining
+    // allows a write operation to the underlying collection with only a single lock operation
+    this.bindings.withTrustedWriteAccess(bindingList -> {
+      for (BindingConstructor constructor : constructors) {
+        bindingList.add(constructor.construct(this));
+      }
+    });
+
     return this;
   }
 
@@ -167,8 +169,7 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @NotNull Injector install(@NotNull BindingHolder bindingHolder) {
-    // apply the binding to this injector
-    this.bindings.add(bindingHolder);
+    this.bindings.registerBinding(bindingHolder);
     return this;
   }
 
@@ -231,7 +232,7 @@ public final class DefaultInjector implements Injector {
 
     // construct a runtime binding, store & return it
     BindingHolder constructed = factory.get();
-    this.bindings.add(constructed);
+    this.bindings.registerBinding(constructed);
     return constructed;
   }
 
@@ -240,41 +241,32 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public @Nullable BindingHolder bindingOrNull(@NotNull Element element) {
-    // check if we have a cached bindingHolder
+    // check if the element is of the type Injector - return the current injector for it
+    if (InjectorUtil.INJECTOR_ELEMENT.equals(element)) {
+      return this.injectorBinding;
+    }
+
+    // try to resolve the element directly from this injector
     BindingHolder bindingHolder = this.fastBinding(element);
-    // check if we need a parent injector lookup - skip the parent lookup if the element is the current injector element
-    // in this case we always want to inject this injector, not the parent
-    if (bindingHolder == null && this.parent != null && !InjectorUtil.INJECTOR_ELEMENT.equals(element)) {
-      // check if one of the parents has a cached bindingHolder
+    if (bindingHolder != null) {
+      return bindingHolder;
+    }
+
+    // try to resolve the binding from one of the parent injectors
+    if (this.parent != null) {
       Injector injector = this.parent;
       do {
         // get a cached bindingHolder from the parent injector
         bindingHolder = injector.fastBinding(element);
         if (bindingHolder != null) {
-          // found one!
           return bindingHolder;
         }
+
         // check the parent injector of the injector
         injector = injector.parent();
       } while (injector != null);
     }
-    // no bindingHolder cached
-    return bindingHolder;
-  }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @Nullable BindingHolder fastBinding(@NotNull Element element) {
-    // find a registered binding that matches the given element
-    for (BindingHolder binding : this.bindings) {
-      if (binding.elementMatcher().test(element)) {
-        return binding;
-      }
-    }
-
-    // no such binding registered
     return null;
   }
 
@@ -282,27 +274,29 @@ public final class DefaultInjector implements Injector {
    * {@inheritDoc}
    */
   @Override
-  public @UnmodifiableView @NotNull Collection<BindingHolder> bindings() {
-    return Collections.unmodifiableCollection(this.bindings);
+  public @Nullable BindingHolder fastBinding(@NotNull Element element) {
+    return this.bindings.findBinding(element);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public @UnmodifiableView @NotNull Collection<BindingHolder> allBindings() {
-    // the resulting collection
-    Collection<BindingHolder> bindings = new LinkedList<>(this.bindings);
-    // check if this injector has a parent
-    if (this.parent != null) {
-      // walk down the parent chain - add all of their bindings as well
-      Injector target = this.parent;
-      do {
-        // add all bindings to the result
-        bindings.addAll(target.bindings());
-      } while ((target = target.parent()) != null);
-    }
-    // the return value should be unmodifiable
+  public @Unmodifiable @NotNull Collection<BindingHolder> bindings() {
+    return this.bindings.allBindings();
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @Unmodifiable @NotNull Collection<BindingHolder> allBindings() {
+    // copy the bindings of this injector
+    Collection<BindingHolder> bindings = new ArrayList<>();
+    this.bindings.trustedBindingsCopyInto(bindings);
+
+    // register all bindings from the parent injectors
+    InjectorBindingCollection.copyBindingsFromParents(this.parent, bindings);
     return Collections.unmodifiableCollection(bindings);
   }
 
@@ -337,7 +331,6 @@ public final class DefaultInjector implements Injector {
       } while ((injector = injector.parent()) != null);
     }
 
-    // return the resolved scope
     return scope;
   }
 
@@ -358,13 +351,9 @@ public final class DefaultInjector implements Injector {
     Collection<ScopeProvider> scopes = new HashSet<>(this.scopes.values());
     if (this.parent != null) {
       // walk down the parent chain - add all of their scopes as well
-      Injector target = this.parent;
-      do {
-        scopes.addAll(target.scopes());
-      } while ((target = target.parent()) != null);
+      scopes.addAll(this.parent.scopes());
     }
 
-    // the return value should be unmodifiable
     return Collections.unmodifiableCollection(scopes);
   }
 
@@ -373,6 +362,6 @@ public final class DefaultInjector implements Injector {
    */
   @Override
   public boolean removeBindings(@NotNull Predicate<BindingHolder> filter) {
-    return this.bindings.removeIf(filter);
+    return this.bindings.removeMatchingBindings(filter);
   }
 }

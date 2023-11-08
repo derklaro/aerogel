@@ -38,11 +38,10 @@ import dev.derklaro.aerogel.internal.util.MapUtil;
 import dev.derklaro.aerogel.member.MemberInjector;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import org.apiguardian.api.API;
@@ -50,7 +49,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jetbrains.annotations.UnmodifiableView;
 
 /**
  * The default implementation of a specified injector.
@@ -61,8 +59,10 @@ import org.jetbrains.annotations.UnmodifiableView;
 @API(status = API.Status.EXPERIMENTAL, since = "2.0")
 public final class DefaultSpecifiedInjector implements SpecifiedInjector {
 
+  // for trusted injector access
+  final InjectorBindingCollection specificBindings;
+
   private final Injector parent;
-  private final Collection<BindingHolder> specificBindings;
   private final Map<Class<?>, MemberInjector> cachedMemberInjectors;
 
   /**
@@ -73,9 +73,9 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    */
   public DefaultSpecifiedInjector(@NotNull Injector parent) {
     this.parent = parent;
-    this.specificBindings = new ConcurrentLinkedQueue<>();
+    this.specificBindings = new InjectorBindingCollection();
     this.cachedMemberInjectors = MapUtil.newConcurrentMap();
-    this.specificBindings.add(InjectorUtil.INJECTOR_BINDING_CONSTRUCTOR.construct(this));
+    this.specificBindings.registerBinding(InjectorUtil.INJECTOR_BINDING_CONSTRUCTOR.construct(this));
   }
 
   /**
@@ -195,8 +195,8 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    * {@inheritDoc}
    */
   @Override
-  public @UnmodifiableView @NotNull Collection<BindingHolder> bindings() {
-    return Collections.unmodifiableCollection(this.specificBindings);
+  public @Unmodifiable @NotNull Collection<BindingHolder> bindings() {
+    return this.specificBindings.allBindings();
   }
 
   /**
@@ -204,15 +204,12 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    */
   @Override
   public @Unmodifiable @NotNull Collection<BindingHolder> allBindings() {
-    // the resulting collection
-    Collection<BindingHolder> bindings = new LinkedList<>(this.specificBindings);
-    // walk down the parent chain - add all of their bindings as well
-    Injector target = this.parent;
-    do {
-      // add all bindings to the result
-      bindings.addAll(target.bindings());
-    } while ((target = target.parent()) != null);
-    // the return value should be unmodifiable
+    // copy the bindings of this injector
+    Collection<BindingHolder> bindings = new ArrayList<>();
+    this.specificBindings.trustedBindingsCopyInto(bindings);
+
+    // register all bindings from the parent injectors
+    InjectorBindingCollection.copyBindingsFromParents(this.parent, bindings);
     return Collections.unmodifiableCollection(bindings);
   }
 
@@ -317,7 +314,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
   public @NotNull SpecifiedInjector installSpecified(@NotNull BindingConstructor constructor) {
     // construct the binding from the constructor & register it
     BindingHolder constructed = constructor.construct(this);
-    this.specificBindings.add(constructed);
+    this.specificBindings.registerBinding(constructed);
 
     // for chaining
     return this;
@@ -328,8 +325,13 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    */
   @Override
   public @NotNull SpecifiedInjector installSpecified(@NotNull Iterable<BindingConstructor> constructors) {
-    // install all bindings
-    constructors.forEach(this::installSpecified);
+    // allows a write operation to the underlying collection with only a single lock operation
+    this.specificBindings.withTrustedWriteAccess(bindingList -> {
+      for (BindingConstructor constructor : constructors) {
+        bindingList.add(constructor.construct(this));
+      }
+    });
+
     return this;
   }
 
@@ -338,7 +340,7 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    */
   @Override
   public boolean removeBindings(@NotNull Predicate<BindingHolder> filter) {
-    return this.specificBindings.removeIf(filter);
+    return this.specificBindings.removeMatchingBindings(filter);
   }
 
   /**
@@ -356,14 +358,6 @@ public final class DefaultSpecifiedInjector implements SpecifiedInjector {
    * @return the binding that matches the given element, null if no such binding is added to this injector.
    */
   private @Nullable BindingHolder findSpecifiedBinding(@NotNull Element element) {
-    // find a registered binding that matches the given element
-    for (BindingHolder binding : this.specificBindings) {
-      if (binding.elementMatcher().test(element)) {
-        return binding;
-      }
-    }
-
-    // no such binding registered
-    return null;
+    return this.specificBindings.findBinding(element);
   }
 }
