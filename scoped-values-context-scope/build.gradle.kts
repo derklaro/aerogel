@@ -22,30 +22,20 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.kotlin
+description = "Extension for aerogel that uses scoped values for injection context scopes"
 
-import dev.derklaro.aerogel.ContextualProvider
-import dev.derklaro.aerogel.context.InjectionContext
-import dev.derklaro.aerogel.context.InjectionContext.Builder
-
-/**
- * Resolves a provider for the given, inherited type. The resolve is done via the injector that is associated with this
- * context. If the root provider has an override for the given element present, a provider which represents the
- * overridden value is returned instead.
- *
- * @see InjectionContext.resolveProvider
- * @author Pasqual K.
- * @since 2.0
- */
-inline fun <reified T> InjectionContext.resolveProvider(): ContextualProvider<out Any> {
-  return this.resolveProvider(element<T>())
+dependencies {
+  api(projects.aerogel)
 }
 
-/**
- * Overrides the given generic element [T] with the provided [value].
- *
- * @see Builder.override
- * @author Pasqual K.
- * @since 1.0
- */
-inline fun <reified T> Builder.override(value: T?): Builder = this.override(element<T>(), value)
+tasks.withType<Test> {
+  jvmArgs = listOf("--enable-preview")
+}
+
+tasks.withType<JavaCompile> {
+  sourceCompatibility = JavaVersion.VERSION_21.toString()
+  targetCompatibility = JavaVersion.VERSION_21.toString()
+
+  options.compilerArgs.add("-Xlint:-preview")
+  options.compilerArgs.add("--enable-preview")
+}

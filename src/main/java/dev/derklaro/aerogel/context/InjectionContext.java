@@ -22,10 +22,14 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel;
+package dev.derklaro.aerogel.context;
 
+import dev.derklaro.aerogel.AerogelException;
+import dev.derklaro.aerogel.ContextualProvider;
+import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.ElementMatcher;
+import dev.derklaro.aerogel.KnownValue;
 import dev.derklaro.aerogel.internal.context.DefaultInjectionContextBuilder;
-import dev.derklaro.aerogel.internal.context.InjectionContextProvider;
 import java.lang.reflect.Type;
 import java.util.function.BiConsumer;
 import org.apiguardian.api.API;
@@ -60,15 +64,6 @@ import org.jetbrains.annotations.Nullable;
  */
 @API(status = API.Status.STABLE, since = "1.0")
 public interface InjectionContext {
-
-  /**
-   * Get the current root context which is used on the current thread. If no context is used this method returns null.
-   *
-   * @return the current root context used on the caller thread, null if none.
-   */
-  static @Nullable InjectionContext currentRootContext() {
-    return InjectionContextProvider.currentRootContext();
-  }
 
   /**
    * Constructs a new builder for an {@link InjectionContext}.
@@ -200,6 +195,16 @@ public interface InjectionContext {
   void finishConstruction();
 
   /**
+   * Get if this context is marked as obsolete. This method only returns true when called on a root context after the
+   * construction of the current value was finished.
+   *
+   * @return true if this is a root injection context and the construction was finished, false otherwise.
+   * @since 3.0
+   */
+  @API(status = API.Status.STABLE, since = "3.0")
+  boolean obsolete();
+
+  /**
    * Get if this context is virtual. A virtual context is inserted into the tree but might be removed at a later step.
    * This might for example be the case for a proxied type.
    *
@@ -278,12 +283,9 @@ public interface InjectionContext {
      * Builds the injection context instance. This builder can then be re-used to override other instance or set another
      * injector and rebuild the context.
      *
-     * <p>The context constructed by this method will be set at the thread-local injection context. Note that this
-     * method might return a subcontext if there is already a thread-local root context present.
-     *
-     * @return the injection context in the current thread-local situation, might be a subcontext.
+     * @return an injection context scope to execute actions using the constructed context scope.
      */
     @Contract(pure = true)
-    @NotNull InjectionContext enterLocal();
+    @NotNull InjectionContextScope enterScope();
   }
 }

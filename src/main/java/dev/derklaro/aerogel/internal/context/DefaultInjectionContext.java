@@ -27,9 +27,10 @@ package dev.derklaro.aerogel.internal.context;
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.KnownValue;
+import dev.derklaro.aerogel.context.InjectionContext;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
 import dev.derklaro.aerogel.internal.proxy.InjectionTimeProxy;
 import dev.derklaro.aerogel.internal.proxy.ProxyMapping;
 import dev.derklaro.aerogel.internal.reflect.TypeUtil;
@@ -54,7 +55,7 @@ import org.jetbrains.annotations.Nullable;
  * @since 2.0
  */
 @API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.context")
-final class DefaultInjectionContext implements InjectionContext {
+public final class DefaultInjectionContext implements InjectionContext {
 
   private static final MemberInjectionRequest[] EMPTY_MEMBER_REQUEST_ARRAY = new MemberInjectionRequest[0];
 
@@ -91,6 +92,11 @@ final class DefaultInjectionContext implements InjectionContext {
   private final ContextualProvider<?> callingBinding;
 
   /**
+   * The context provider that tracks this scope, null if no provider is responsible for this scope.
+   */
+  private final InjectionContextProvider contextProvider;
+
+  /**
    * All proxies that were created somewhere in the tree. Note that this collection is only writeable in a root context,
    * in all other cases modifying the collection will result in an exception.
    */
@@ -106,6 +112,10 @@ final class DefaultInjectionContext implements InjectionContext {
    */
   private final Set<MemberInjectionRequest> requestedMemberInjections;
 
+  /**
+   * Set to true on the root context of a construction tree if finishConstruction was called.
+   */
+  private boolean obsolete = false;
   /**
    * Indicates that this context is just a virtual context and should be skipped for any operation. While the leaf is
    * present in the tree, any checks made based on virtual nodes might be faulty as they are inserted to break circular
@@ -154,11 +164,13 @@ final class DefaultInjectionContext implements InjectionContext {
   public DefaultInjectionContext(
     @NotNull ContextualProvider<?> callingBinding,
     @NotNull Type constructingType,
-    @NotNull List<LazyContextualProvider> overriddenDirectInstances
+    @NotNull List<LazyContextualProvider> overriddenDirectInstances,
+    @Nullable InjectionContextProvider contextProvider
   ) {
     this.root = this;
     this.callingBinding = callingBinding;
     this.constructingType = constructingType;
+    this.contextProvider = contextProvider;
 
     // initialize to real fields as this is the root context
     this.knownProxies = new LinkedList<>();
@@ -181,6 +193,7 @@ final class DefaultInjectionContext implements InjectionContext {
     this.root = root;
     this.callingBinding = callingBinding;
     this.constructingType = constructingType;
+    this.contextProvider = null;
 
     // just use the empty variants as we're not the root
     this.knownProxies = Collections.emptyList();
@@ -509,7 +522,10 @@ final class DefaultInjectionContext implements InjectionContext {
     // rely on a separate injection context rather than this one. This is due to the fact that the member injection
     // process should not use this context to find out which type **got** constructed, but the type of (for example an
     // injectable field) the member that gets injected currently
-    InjectionContextProvider.removeRootContext(this);
+    this.obsolete = true;
+    if (this.contextProvider != null) {
+      this.contextProvider.removeContextScope(this);
+    }
 
     // pre-validate all created proxies to ensure that they are all delegated
     this.validateAllProxiesAreDelegated();
@@ -535,6 +551,14 @@ final class DefaultInjectionContext implements InjectionContext {
         this.validateAllProxiesAreDelegated();
       }
     }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean obsolete() {
+    return this.obsolete;
   }
 
   /**

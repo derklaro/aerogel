@@ -27,7 +27,9 @@ package dev.derklaro.aerogel.internal.context;
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.ElementMatcher;
-import dev.derklaro.aerogel.InjectionContext;
+import dev.derklaro.aerogel.context.InjectionContext;
+import dev.derklaro.aerogel.context.InjectionContextScope;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
 import java.lang.reflect.Type;
 import java.util.LinkedList;
 import java.util.List;
@@ -94,15 +96,15 @@ public final class DefaultInjectionContextBuilder implements InjectionContext.Bu
    */
   @Override
   public @NotNull InjectionContext build() {
-    return new DefaultInjectionContext(this.callingProvider, this.constructingType, this.overriddenInstances);
+    return new DefaultInjectionContext(this.callingProvider, this.constructingType, this.overriddenInstances, null);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public @NotNull InjectionContext enterLocal() {
-    return InjectionContextProvider.enterRootContext(
+  public @NotNull InjectionContextScope enterScope() {
+    return InjectionContextProvider.provider().enterContextScope(
       this.callingProvider,
       this.constructingType,
       this.overriddenInstances);

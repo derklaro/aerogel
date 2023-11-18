@@ -25,8 +25,8 @@
 package dev.derklaro.aerogel.internal.invoke;
 
 import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.context.InjectionContext;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 

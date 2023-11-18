@@ -27,8 +27,8 @@ package dev.derklaro.aerogel.internal.context;
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.ElementMatcher;
-import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.context.InjectionContext;
 import java.lang.reflect.Type;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -42,7 +42,7 @@ import org.jetbrains.annotations.Nullable;
  * @since 2.0
  */
 @API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.context")
-final class LazyContextualProvider implements ContextualProvider<Object> {
+public final class LazyContextualProvider implements ContextualProvider<Object> {
 
   private final Object boundInstance;
   private final ElementMatcher elementMatcher;

@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.context.InjectionContext;
 import java.lang.reflect.Type;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;

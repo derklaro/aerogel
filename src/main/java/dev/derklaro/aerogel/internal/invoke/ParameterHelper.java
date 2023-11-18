@@ -26,9 +26,9 @@ package dev.derklaro.aerogel.internal.invoke;
 
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.InjectionContext;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.Provider;
+import dev.derklaro.aerogel.context.InjectionContext;
 import dev.derklaro.aerogel.internal.jakarta.JakartaBridge;
 import dev.derklaro.aerogel.internal.util.ElementHelper;
 import java.lang.reflect.Parameter;
