@@ -38,6 +38,8 @@ import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -98,6 +100,7 @@ public final class LazyProviderBindingConstructor extends BaseBindingConstructor
   private final class LazyBindingHolder implements BindingHolder {
 
     private final Injector injector;
+    private final Lock cacheLock = new ReentrantLock();
     private final Map<Element, ContextualProvider<Object>> providerCache;
 
     /**
@@ -131,7 +134,8 @@ public final class LazyProviderBindingConstructor extends BaseBindingConstructor
      */
     @Override
     public @NotNull ContextualProvider<Object> provider(@NotNull Element requestedElement) {
-      synchronized (this) {
+      this.cacheLock.lock();
+      try {
         // we cannot use double check locking here, as each call to the map might
         // remove elements (that were expunged)
         ContextualProvider<Object> provider = this.providerCache.get(requestedElement);
@@ -148,6 +152,8 @@ public final class LazyProviderBindingConstructor extends BaseBindingConstructor
 
         // return the constructed provider
         return provider;
+      } finally {
+        this.cacheLock.unlock();
       }
     }
 
