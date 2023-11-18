@@ -1,5 +1,22 @@
 {
   "extends": [
-    "config:base"
-  ]
+    "config:base",
+    ":rebaseStalePrs"
+  ],
+  "labels": [
+    "t: dependencies"
+  ],
+  "vulnerabilityAlerts": {
+    "addLabels": [
+      "t: security"
+    ],
+    "assignees": [
+      "@derklaro"
+    ]
+  },
+  "prHourlyLimit": 10,
+  "rebaseLabel": "s: rebase",
+  "stopUpdatingLabel": "s: stop updates",
+  "commitMessagePrefix": "chore: ",
+  "commitMessageAction": "update"
 }
