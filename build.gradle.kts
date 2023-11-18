@@ -113,7 +113,7 @@ allprojects {
   }
 
   extensions.configure<CheckstyleExtension> {
-    toolVersion = "10.9.3"
+    toolVersion = rootProject.libs.versions.checkstyleTools.get()
   }
 }
 
