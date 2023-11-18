@@ -32,7 +32,8 @@ import dev.derklaro.aerogel.KnownValue;
 import dev.derklaro.aerogel.ScopeProvider;
 import dev.derklaro.aerogel.internal.provider.BaseContextualProvider;
 import java.lang.reflect.Type;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,11 +63,10 @@ public final class Scopes {
   @API(status = API.Status.INTERNAL, since = "2.0")
   private static final class SingletonContextualProvider extends BaseContextualProvider<Object> {
 
-    private static final AtomicReferenceFieldUpdater<SingletonContextualProvider, KnownValue> CONSTRUCTED_VALUE_UPDATER =
-      AtomicReferenceFieldUpdater.newUpdater(SingletonContextualProvider.class, KnownValue.class, "constructedValue");
-
     private final ContextualProvider<Object> downstream;
+
     private volatile KnownValue constructedValue;
+    private Lock constructionLock = new ReentrantLock();
 
     /**
      * Constructs a new singleton contextual provider instance.
@@ -95,14 +95,31 @@ public final class Scopes {
         return knownValue;
       }
 
-      // construct the value using the downstream provider & wrap it in a value store request
-      Object value = this.downstream.get(context);
-      KnownValue firstOccurrence = KnownValue.of(value);
-      if (CONSTRUCTED_VALUE_UPDATER.compareAndSet(this, null, firstOccurrence.asSecondOccurrence())) {
-        return firstOccurrence;
+      Lock lock = this.constructionLock;
+      if (lock != null) {
+        lock.lock();
+        try {
+          // double checked-locking: verify if the value was constructed first
+          if (this.constructedValue != null) {
+            return this.constructedValue;
+          }
+
+          // construct the value using the downstream provider & wrap it in a value store request
+          Object value = this.downstream.get(context);
+          KnownValue firstOccurrence = KnownValue.of(value);
+
+          // set the constructed value and remove the reference to the lock
+          this.constructedValue = firstOccurrence.asSecondOccurrence();
+          this.constructionLock = null;
+
+          return firstOccurrence;
+        } finally {
+          lock.unlock();
+        }
       }
 
-      // the value was provided while we were doing our stuff, return the old value
+      // this should never be reachable, but at this point (if the lock is null)
+      // then the constructed value must be present, therefore we can just return it
       return this.constructedValue;
     }
   }
