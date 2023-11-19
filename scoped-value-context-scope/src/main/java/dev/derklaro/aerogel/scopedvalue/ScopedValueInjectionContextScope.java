@@ -73,13 +73,13 @@ final class ScopedValueInjectionContextScope implements InjectionContextScope {
   @Override
   public <T> @UnknownNullability T executeScoped(@NotNull Supplier<T> operation) {
     InjectionContextScope currentScope = this.scopeScopedValue.orElse(null);
-    if (currentScope == null || currentScope == this || currentScope.context().obsolete()) {
+    if (currentScope == null || currentScope.context().obsolete()) {
       // there is either no context currently bound or the current bound snapshot is obsolete
       // we're using our own carrier with the mapping to our context for further actions
       return this.carrier.get(operation);
     } else {
-      // the current context is still valid, use the parent carrier for further calls
-      return currentScope.executeScoped(operation);
+      // the current scope is still valid, use that one
+      return operation.get();
     }
   }
 
