@@ -29,6 +29,7 @@ import dev.derklaro.aerogel.context.InjectionContextScope;
 import java.util.function.Supplier;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
 
 /**
@@ -70,13 +71,15 @@ final class ThreadLocalInjectionContextScope implements InjectionContextScope {
    */
   @Override
   public <T> @UnknownNullability T executeScoped(@NotNull Supplier<T> operation) {
-    // check if there is no context set yet, use our context as the thread-local variable in that case
     InjectionContextScope currentScope = this.scopeThreadLocal.get();
     if (currentScope == null || currentScope.context().obsolete()) {
-      this.scopeThreadLocal.set(this);
+      // there is either no context currently bound or the current bound snapshot is obsolete
+      // we're using our own context for further actions
+      return this.forceExecuteScoped(operation, currentScope);
+    } else {
+      // the current scope is still valid, use that one
+      return operation.get();
     }
-
-    return operation.get();
   }
 
   /**
@@ -84,13 +87,28 @@ final class ThreadLocalInjectionContextScope implements InjectionContextScope {
    */
   @Override
   public <T> @UnknownNullability T forceExecuteScoped(@NotNull Supplier<T> operation) {
-    InjectionContextScope previousScope = this.scopeThreadLocal.get();
+    InjectionContextScope currentScope = this.scopeThreadLocal.get();
+    return this.forceExecuteScoped(operation, currentScope);
+  }
+
+  /**
+   * Overrides the current thread local with this scope, resetting the thread-local to the old scope. If the old scope
+   * is null, then the value is removed from the thread-local.
+   *
+   * @param operation the operation to execute after the thread-local was set to this scope.
+   * @param cs        the current scope that should be reset to after executing the given operation.
+   * @param <T>       the type of result returned by the given operation.
+   * @return the result of the given operation.
+   */
+  private <T> @Nullable T forceExecuteScoped(@NotNull Supplier<T> operation, @Nullable InjectionContextScope cs) {
     try {
+      // update the thread local to use this scope, then call the given operation
       this.scopeThreadLocal.set(this);
       return operation.get();
     } finally {
-      if (previousScope != null) {
-        this.scopeThreadLocal.set(previousScope);
+      // reset to the previous scope if present, else remove the mapping to the current scope
+      if (cs != null) {
+        this.scopeThreadLocal.set(cs);
       } else {
         this.scopeThreadLocal.remove();
       }

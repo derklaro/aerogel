@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel.context;
 
-import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
 import java.util.function.Supplier;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -33,10 +32,6 @@ import org.jetbrains.annotations.UnknownNullability;
 
 /**
  * A scope of an injection context returned by a context provider.
- * <p>
- * Note: while this class is marked as internal, you can override it and implement your own unsupported scope handling.
- * To do this, just create your own context provider implementation and register it into the service provider
- * interface.
  *
  * @author Pasqual K.
  * @since 3.0

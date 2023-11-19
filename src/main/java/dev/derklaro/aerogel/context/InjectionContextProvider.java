@@ -22,12 +22,11 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.context.scope;
+package dev.derklaro.aerogel.context;
 
 import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.context.InjectionContext;
-import dev.derklaro.aerogel.context.InjectionContextScope;
-import dev.derklaro.aerogel.internal.context.LazyContextualProvider;
+import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextProviderHolder;
 import java.lang.reflect.Type;
 import java.util.List;
 import org.apiguardian.api.API;
@@ -36,15 +35,11 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A provider for injection context scopes.
- * <p>
- * Note: while this class is marked as internal, you can override it and implement your own unsupported scope handling.
- * To do this, just create your own context provider implementation and register it into the service provider
- * interface.
  *
  * @author Pasqual K.
  * @since 3.0
  */
-@API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.*")
+@API(status = API.Status.STABLE, since = "3.0")
 public interface InjectionContextProvider {
 
   /**
@@ -57,26 +52,6 @@ public interface InjectionContextProvider {
   }
 
   /**
-   * Removes the current context scope, if possible. If the underlying scope handling does not allow for removal of the
-   * current context, this method does nothing and just returns false.
-   *
-   * @return true if the underlying context existed and was removed, false otherwise.
-   */
-  default boolean removeContextScope() {
-    return this.removeContextScope(null);
-  }
-
-  /**
-   * Removes the current context scope, if its wrapped context matches the given one and removal is possible. If the
-   * underlying scope handling does not allow for removal of the current context, this method does nothing and just
-   * returns false.
-   *
-   * @param expectedContext the context that is expected, can be null to indicate that no context is expected.
-   * @return true if the underlying context existed and was removed, false otherwise.
-   */
-  boolean removeContextScope(@Nullable InjectionContext expectedContext);
-
-  /**
    * Get the current injection context scope, if any is bound in the current context.
    *
    * @return the current injection context scope, if any is bound in the current context.
@@ -86,13 +61,15 @@ public interface InjectionContextProvider {
   /**
    * Enters a new subcontext or a new root context in the current execution scope.
    *
-   * @param callingBinding            the binding to create the context for.
-   * @param constructingType          the type that gets constructed by the new context.
-   * @param overriddenDirectInstances the overridden instances which are directly available.
+   * @param callingBinding    the binding to create the context for.
+   * @param constructingType  the type that gets constructed by the new context.
+   * @param overrides         the overridden instances which are directly available.
+   * @param associatedElement the element for which the context is needed, null if unknown.
    * @return a subcontext or new root context for the given parameters.
    */
   @NotNull InjectionContextScope enterContextScope(
     @NotNull ContextualProvider<?> callingBinding,
     @NotNull Type constructingType,
-    @NotNull List<LazyContextualProvider> overriddenDirectInstances);
+    @NotNull List<LazyContextualProvider> overrides,
+    @Nullable Element associatedElement);
 }

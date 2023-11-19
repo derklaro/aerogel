@@ -29,9 +29,9 @@ import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.binding.BindingHolder;
 import dev.derklaro.aerogel.context.InjectionContext;
+import dev.derklaro.aerogel.context.InjectionContextProvider;
 import dev.derklaro.aerogel.context.InjectionContextScope;
 import dev.derklaro.aerogel.internal.PassthroughException;
-import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import org.apiguardian.api.API;
@@ -62,7 +62,13 @@ public final class ContextInstanceResolveHelper {
    * @throws AerogelException if an exception occurs while resolving the instance.
    */
   public static @Nullable Object resolveInstance(@NotNull Element element, @NotNull BindingHolder bindingHolder) {
-    return resolveInstance(element.componentType(), bindingHolder.provider(element));
+    // enter the injection context
+    InjectionContextScope scope = InjectionContextProvider.provider().enterContextScope(
+      bindingHolder.provider(element),
+      element.componentType(),
+      Collections.emptyList(),
+      element);
+    return resolveInstanceScoped(scope);
   }
 
   /**
@@ -80,7 +86,8 @@ public final class ContextInstanceResolveHelper {
     InjectionContextScope scope = InjectionContextProvider.provider().enterContextScope(
       provider,
       requestedType,
-      Collections.emptyList());
+      Collections.emptyList(),
+      null);
     return resolveInstanceScoped(scope);
   }
 
@@ -109,15 +116,6 @@ public final class ContextInstanceResolveHelper {
         // return the constructed value
         return result;
       } catch (Exception exception) {
-        // force remove the root context, leave the context open in any other case
-        // some downstream providers might handle the thrown exception gracefully and
-        // resume the construction which just failed
-        // we just remove this scope from the singleton global context provider, although
-        // the context might be registered in a different provider, oh well...
-        if (context.rootContext()) {
-          InjectionContextProvider.provider().removeContextScope(context);
-        }
-
         // don't re-wrap wrapped or pass-through exceptions
         PassthroughException.rethrow(exception);
 

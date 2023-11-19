@@ -22,8 +22,13 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel;
+package dev.derklaro.scopedvalue;
 
+import dev.derklaro.aerogel.ContextualProvider;
+import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.Inject;
+import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.Name;
 import dev.derklaro.aerogel.binding.BindingBuilder;
 import dev.derklaro.aerogel.context.InjectionContext;
 import dev.derklaro.aerogel.context.InjectionContextScope;
@@ -32,7 +37,7 @@ import dev.derklaro.aerogel.util.Qualifiers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class ContextKeptInScopeTest {
+public class ScopedValueContextKeptInScopeTest {
 
   @Test
   void contextKeptDuringScopedOperations() {

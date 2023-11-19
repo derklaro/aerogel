@@ -28,10 +28,11 @@ import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.context.InjectionContext;
+import dev.derklaro.aerogel.context.InjectionContextProvider;
 import dev.derklaro.aerogel.context.InjectionContextScope;
-import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
+import dev.derklaro.aerogel.context.LazyContextualProvider;
 import java.lang.reflect.Type;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -46,10 +47,11 @@ import org.jetbrains.annotations.Nullable;
 @API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
 public final class DefaultInjectionContextBuilder implements InjectionContext.Builder {
 
-  private final List<LazyContextualProvider> overriddenInstances = new LinkedList<>();
+  static final LazyContextualProvider[] EMPTY_OVERRIDES = new LazyContextualProvider[0];
 
   private final Type constructingType;
   private final ContextualProvider<?> callingProvider;
+  private final List<LazyContextualProvider> overrides = new ArrayList<>();
 
   /**
    * Constructs a new injection context builder.
@@ -87,7 +89,15 @@ public final class DefaultInjectionContextBuilder implements InjectionContext.Bu
    */
   @Override
   public <T> InjectionContext.@NotNull Builder override(@NotNull ElementMatcher elementMatcher, @Nullable T instance) {
-    this.overriddenInstances.add(new LazyContextualProvider(instance, elementMatcher));
+    return this.override(new DefaultLazyContextualProvider(null, instance, elementMatcher));
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public InjectionContext.@NotNull Builder override(@NotNull LazyContextualProvider provider) {
+    this.overrides.add(provider);
     return this;
   }
 
@@ -96,7 +106,8 @@ public final class DefaultInjectionContextBuilder implements InjectionContext.Bu
    */
   @Override
   public @NotNull InjectionContext build() {
-    return new DefaultInjectionContext(this.callingProvider, this.constructingType, this.overriddenInstances, null);
+    LazyContextualProvider[] overrides = this.overrides.toArray(EMPTY_OVERRIDES);
+    return new DefaultInjectionContext(this.callingProvider, this.constructingType, overrides, null);
   }
 
   /**
@@ -107,6 +118,7 @@ public final class DefaultInjectionContextBuilder implements InjectionContext.Bu
     return InjectionContextProvider.provider().enterContextScope(
       this.callingProvider,
       this.constructingType,
-      this.overriddenInstances);
+      this.overrides,
+      null);
   }
 }

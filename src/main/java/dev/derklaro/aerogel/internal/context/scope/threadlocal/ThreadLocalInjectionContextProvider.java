@@ -25,11 +25,12 @@
 package dev.derklaro.aerogel.internal.context.scope.threadlocal;
 
 import dev.derklaro.aerogel.ContextualProvider;
+import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.context.InjectionContext;
+import dev.derklaro.aerogel.context.InjectionContextProvider;
 import dev.derklaro.aerogel.context.InjectionContextScope;
+import dev.derklaro.aerogel.context.LazyContextualProvider;
 import dev.derklaro.aerogel.internal.context.DefaultInjectionContext;
-import dev.derklaro.aerogel.internal.context.LazyContextualProvider;
-import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
 import java.lang.reflect.Type;
 import java.util.List;
 import org.apiguardian.api.API;
@@ -51,32 +52,6 @@ public final class ThreadLocalInjectionContextProvider implements InjectionConte
    * {@inheritDoc}
    */
   @Override
-  public boolean removeContextScope(@Nullable InjectionContext expectedContext) {
-    // just remove the local context if there is no context we're expecting
-    if (expectedContext == null) {
-      this.scopeThreadLocal.remove();
-      return true;
-    }
-
-    // check if there is a current context, if not we can just return
-    InjectionContextScope currentScope = this.scopeThreadLocal.get();
-    if (currentScope == null) {
-      return true;
-    }
-
-    // if the current context is the expected, remove the context
-    if (currentScope.context() == expectedContext) {
-      this.scopeThreadLocal.remove();
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public @Nullable InjectionContextScope currentScope() {
     return this.scopeThreadLocal.get();
   }
@@ -88,19 +63,31 @@ public final class ThreadLocalInjectionContextProvider implements InjectionConte
   public @NotNull InjectionContextScope enterContextScope(
     @NotNull ContextualProvider<?> callingBinding,
     @NotNull Type constructingType,
-    @NotNull List<LazyContextualProvider> overriddenDirectInstances
+    @NotNull List<LazyContextualProvider> overrides,
+    @Nullable Element associatedElement
   ) {
     InjectionContextScope currentScope = this.scopeThreadLocal.get();
-    if (currentScope != null && !currentScope.context().obsolete()) {
-      // we're already in a root context, enter a subcontext of that one
-      InjectionContext subcontext = currentScope.context().enterSubcontext(constructingType, callingBinding, null);
-      return new ThreadLocalInjectionContextScope(subcontext, this.scopeThreadLocal);
+    if (currentScope != null) {
+      if (currentScope.context().obsolete()) {
+        // the current root context is obsolete, copy the necessary information from it into a new root context
+        InjectionContext context = currentScope.context().copyAsRoot(
+          callingBinding,
+          constructingType,
+          overrides,
+          associatedElement,
+          this);
+        return new ThreadLocalInjectionContextScope(context, this.scopeThreadLocal);
+      } else {
+        // we're already in an existing root context, enter a subcontext of that one
+        InjectionContext subcontext = currentScope.context().enterSubcontext(constructingType, callingBinding, null);
+        return new ThreadLocalInjectionContextScope(subcontext, this.scopeThreadLocal);
+      }
     } else {
       // no context yet, construct a new root context
       InjectionContext context = new DefaultInjectionContext(
         callingBinding,
         constructingType,
-        overriddenDirectInstances,
+        overrides,
         this);
       return new ThreadLocalInjectionContextScope(context, this.scopeThreadLocal);
     }

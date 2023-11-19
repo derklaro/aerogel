@@ -25,40 +25,43 @@
 package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.context.InjectionContext;
+import dev.derklaro.aerogel.context.LazyContextualProvider;
+import dev.derklaro.aerogel.internal.util.Preconditions;
 import java.lang.reflect.Type;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A contextual provider which gets the injector instance lazily injected into it. For internal use during constructing
- * of instances only!
+ * A default implementation of a lazy contextual provider.
  *
  * @author Pasqual K.
- * @since 2.0
+ * @since 3.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.context")
-public final class LazyContextualProvider implements ContextualProvider<Object> {
+@API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.internal.context")
+final class DefaultLazyContextualProvider implements LazyContextualProvider {
+
+  private final Injector boundInjector;
 
   private final Object boundInstance;
   private final ElementMatcher elementMatcher;
 
-  Injector injector;
-
   /**
-   * Constructs a new contextual provider which can get the injector lazily set.
+   * Constructs a new lazy contextual provider instance.
    *
-   * @param boundInstance  the instance this provider should return.
-   * @param elementMatcher a matcher for the elements supported by this provider.
+   * @param boundInjector  the injector to which this provider is bound, can be null.
+   * @param boundInstance  the instance to which this provider is bound, can be null.
+   * @param elementMatcher the matcher for the elements that can be injected from this provider.
    */
-  public LazyContextualProvider(
+  public DefaultLazyContextualProvider(
+    @Nullable Injector boundInjector,
     @Nullable Object boundInstance,
     @NotNull ElementMatcher elementMatcher
   ) {
+    this.boundInjector = boundInjector;
     this.boundInstance = boundInstance;
     this.elementMatcher = elementMatcher;
   }
@@ -68,7 +71,8 @@ public final class LazyContextualProvider implements ContextualProvider<Object> 
    */
   @Override
   public @NotNull Injector injector() {
-    return this.injector;
+    Preconditions.checkArgument(this.boundInjector != null, "no injector was bound to lazy provider yet");
+    return this.boundInjector;
   }
 
   /**
@@ -76,7 +80,7 @@ public final class LazyContextualProvider implements ContextualProvider<Object> 
    */
   @Override
   public @NotNull Type constructingType() {
-    throw new UnsupportedOperationException("unsupported on this provider");
+    throw new UnsupportedOperationException("unsupported on lazy provider");
   }
 
   /**
@@ -91,8 +95,8 @@ public final class LazyContextualProvider implements ContextualProvider<Object> 
    * {@inheritDoc}
    */
   @Override
-  public @NotNull InjectionContext.Builder createContextBuilder() {
-    throw new UnsupportedOperationException("unsupported on this provider");
+  public @Nullable Object get(@NotNull InjectionContext context) throws AerogelException {
+    return this.boundInstance;
   }
 
   /**
@@ -107,7 +111,19 @@ public final class LazyContextualProvider implements ContextualProvider<Object> 
    * {@inheritDoc}
    */
   @Override
-  public @Nullable Object get(@NotNull InjectionContext context) throws AerogelException {
-    return this.boundInstance;
+  public boolean injectorBound() {
+    return this.boundInjector != null;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull LazyContextualProvider withInjector(@NotNull Injector injector) {
+    if (injector == this.boundInjector) {
+      return this;
+    } else {
+      return new DefaultLazyContextualProvider(injector, this.boundInstance, this.elementMatcher);
+    }
   }
 }

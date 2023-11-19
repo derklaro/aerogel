@@ -27,43 +27,65 @@ package dev.derklaro.aerogel.scopedvalue;
 import dev.derklaro.aerogel.context.InjectionContext;
 import dev.derklaro.aerogel.context.InjectionContextScope;
 import java.util.function.Supplier;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.UnknownNullability;
 
+/**
+ * A context scope that uses scope value carries to set the scope during injection.
+ *
+ * @author Pasqual K.
+ * @since 3.0
+ */
+@API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.scopedvalue")
 final class ScopedValueInjectionContextScope implements InjectionContextScope {
 
-  final ScopedValue.Carrier carrier;
-
   private final InjectionContext context;
-  private final ScopedValue<ScopedValueInjectionContextScope> scopeScopedValue;
+  private final ScopedValue.Carrier carrier;
+  private final ScopedValue<InjectionContextScope> scopeScopedValue;
 
+  /**
+   * Constructs a new injection context scope for the given context and scoped value.
+   *
+   * @param context          the context that is bound to this scope.
+   * @param scopeScopedValue the scoped value for the injection scopes.
+   */
   public ScopedValueInjectionContextScope(
     @NotNull InjectionContext context,
-    @NotNull ScopedValue<ScopedValueInjectionContextScope> scopeScopedValue
+    @NotNull ScopedValue<InjectionContextScope> scopeScopedValue
   ) {
     this.context = context;
     this.scopeScopedValue = scopeScopedValue;
     this.carrier = ScopedValue.where(scopeScopedValue, this);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull InjectionContext context() {
     return this.context;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public <T> @UnknownNullability T executeScoped(@NotNull Supplier<T> operation) {
-    ScopedValueInjectionContextScope currentContext = this.scopeScopedValue.orElse(null);
-    if (currentContext == null || currentContext.context().obsolete()) {
+    InjectionContextScope currentScope = this.scopeScopedValue.orElse(null);
+    if (currentScope == null || currentScope == this || currentScope.context().obsolete()) {
       // there is either no context currently bound or the current bound snapshot is obsolete
       // we're using our own carrier with the mapping to our context for further actions
       return this.carrier.get(operation);
     } else {
       // the current context is still valid, use the parent carrier for further calls
-      return currentContext.carrier.get(operation);
+      return currentScope.executeScoped(operation);
     }
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public <T> @UnknownNullability T forceExecuteScoped(@NotNull Supplier<T> operation) {
     return this.carrier.get(operation);

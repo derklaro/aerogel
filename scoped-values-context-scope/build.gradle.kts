@@ -39,3 +39,10 @@ tasks.withType<JavaCompile> {
   options.compilerArgs.add("-Xlint:-preview")
   options.compilerArgs.add("--enable-preview")
 }
+
+extensions.configure<JavaPluginExtension> {
+  toolchain {
+    vendor = JvmVendorSpec.AZUL
+    languageVersion = JavaLanguageVersion.of(21)
+  }
+}

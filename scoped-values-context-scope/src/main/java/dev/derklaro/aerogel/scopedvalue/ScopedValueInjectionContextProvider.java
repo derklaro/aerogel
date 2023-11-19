@@ -25,48 +25,69 @@
 package dev.derklaro.aerogel.scopedvalue;
 
 import dev.derklaro.aerogel.ContextualProvider;
+import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.context.InjectionContext;
+import dev.derklaro.aerogel.context.InjectionContextProvider;
 import dev.derklaro.aerogel.context.InjectionContextScope;
+import dev.derklaro.aerogel.context.LazyContextualProvider;
 import dev.derklaro.aerogel.internal.context.DefaultInjectionContext;
-import dev.derklaro.aerogel.internal.context.LazyContextualProvider;
-import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
 import java.lang.reflect.Type;
 import java.util.List;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * An injection context provider that uses scoped values.
+ *
+ * @author Pasqual K.
+ * @since 3.0
+ */
+@API(status = API.Status.INTERNAL, since = "3.0")
 public final class ScopedValueInjectionContextProvider implements InjectionContextProvider {
 
-  private final ScopedValue<ScopedValueInjectionContextScope> scopeScopedValue = ScopedValue.newInstance();
+  private final ScopedValue<InjectionContextScope> scopeScopedValue = ScopedValue.newInstance();
 
-  @Override
-  public boolean removeContextScope(@Nullable InjectionContext expectedContext) {
-    // no-op: the scope is automatically removed once the calls are done
-    return true;
-  }
-
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @Nullable InjectionContextScope currentScope() {
     return this.scopeScopedValue.orElse(null);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull InjectionContextScope enterContextScope(
     @NotNull ContextualProvider<?> callingBinding,
     @NotNull Type constructingType,
-    @NotNull List<LazyContextualProvider> overriddenDirectInstances
+    @NotNull List<LazyContextualProvider> overrides,
+    @Nullable Element associatedElement
   ) {
-    ScopedValueInjectionContextScope currentScope = this.scopeScopedValue.orElse(null);
-    if (currentScope != null && !currentScope.context().obsolete()) {
-      // we're already in a root context, enter a subcontext of that one
-      InjectionContext subcontext = currentScope.context().enterSubcontext(constructingType, callingBinding, null);
-      return new ScopedValueInjectionContextScope(subcontext, this.scopeScopedValue);
+    InjectionContextScope currentScope = this.scopeScopedValue.orElse(null);
+    if (currentScope != null) {
+      if (currentScope.context().obsolete()) {
+        // the current root context is obsolete, copy the necessary information from it into a new root context
+        InjectionContext context = currentScope.context().copyAsRoot(
+          callingBinding,
+          constructingType,
+          overrides,
+          associatedElement,
+          this);
+        return new ScopedValueInjectionContextScope(context, this.scopeScopedValue);
+      } else {
+        // we're already in an existing root context, enter a subcontext of that one
+        InjectionContext subcontext = currentScope.context().enterSubcontext(constructingType, callingBinding, null);
+        return new ScopedValueInjectionContextScope(subcontext, this.scopeScopedValue);
+      }
     } else {
       // no context yet, construct a new root context
       InjectionContext context = new DefaultInjectionContext(
         callingBinding,
         constructingType,
-        overriddenDirectInstances,
+        overrides,
         this);
       return new ScopedValueInjectionContextScope(context, this.scopeScopedValue);
     }

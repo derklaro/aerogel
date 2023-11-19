@@ -31,8 +31,10 @@ import dev.derklaro.aerogel.ElementMatcher;
 import dev.derklaro.aerogel.KnownValue;
 import dev.derklaro.aerogel.internal.context.DefaultInjectionContextBuilder;
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.function.BiConsumer;
 import org.apiguardian.api.API;
+import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -125,6 +127,28 @@ public interface InjectionContext {
    * @return the root context of the current tree.
    */
   @NotNull InjectionContext root();
+
+  /**
+   * Copies this injection context as a new root injection context, while merging shared values (such as overrides). If
+   * the associated element is given and the current context has an override for the given element, the returned context
+   * will be delegated to the overridden value directly.
+   *
+   * @param callingBinding    the binding that requested this context.
+   * @param constructingType  the type constructed by this context.
+   * @param overrides         the overridden instances whose delegates are present immediately.
+   * @param associatedElement the element for which the context is needed, null if unknown.
+   * @param contextProvider   the context provider that tracks the newly created injection context.
+   * @return a new root context which has merged information from this context and the given parameters.
+   * @since 3.0
+   */
+  @CheckReturnValue
+  @API(status = API.Status.STABLE, since = "3.0")
+  @NotNull InjectionContext copyAsRoot(
+    @NotNull ContextualProvider<?> callingBinding,
+    @NotNull Type constructingType,
+    @NotNull List<LazyContextualProvider> overrides,
+    @Nullable Element associatedElement,
+    @Nullable InjectionContextProvider contextProvider);
 
   /**
    * Enters a subcontext for the provider. If the provider was already encountered in the current tree, this context
@@ -269,6 +293,16 @@ public interface InjectionContext {
      * @throws NullPointerException if {@code elementMatcher} is null.
      */
     @NotNull <T> Builder override(@NotNull ElementMatcher elementMatcher, @Nullable T instance);
+
+    /**
+     * Registers an override for the elements matching the given contextual provider.
+     *
+     * @param provider the provider to use for overriding a value.
+     * @return the same instance of the builder as used to call the method, for chaining.
+     * @since 3.0
+     */
+    @API(status = API.Status.STABLE, since = "3.0")
+    @NotNull Builder override(@NotNull LazyContextualProvider provider);
 
     /**
      * Builds the injection context instance. This builder can then be re-used to override other instance or set another

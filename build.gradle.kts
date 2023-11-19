@@ -69,9 +69,12 @@ allprojects {
   tasks.withType<JavaCompile>().configureEach {
     sourceCompatibility = JavaVersion.VERSION_1_8.toString()
     targetCompatibility = JavaVersion.VERSION_1_8.toString()
-    // options
+
     options.encoding = "UTF-8"
     options.isIncremental = true
+
+    options.compilerArgs.add("-Xlint:-preview")
+    options.compilerArgs.add("-Xlint:-options")
   }
 
   tasks.withType<Checkstyle>().configureEach {
