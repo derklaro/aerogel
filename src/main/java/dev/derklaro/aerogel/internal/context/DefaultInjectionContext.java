@@ -41,7 +41,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -199,7 +199,7 @@ public final class DefaultInjectionContext implements InjectionContext {
 
     // initialize to real fields as this is the root context
     this.knownProxies = new ArrayList<>();
-    this.requestedMemberInjections = new HashSet<>();
+    this.requestedMemberInjections = new LinkedHashSet<>();
     this.overrides = overrides;
   }
 
