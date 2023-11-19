@@ -37,7 +37,7 @@ plugins {
 }
 
 rootProject.name = "aerogel"
-include("auto", "kotlin-extensions", "scoped-values-context-scope")
+include("auto", "kotlin-extensions", "scoped-value-context-scope")
 
 // prefixes each subproject with 'aerogel-'
 rootProject.children.forEach {
