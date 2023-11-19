@@ -40,9 +40,17 @@ tasks.withType<JavaCompile> {
   options.compilerArgs.add("--enable-preview")
 }
 
+tasks.withType<Javadoc> {
+  val options = options as? StandardJavadocDocletOptions ?: return@withType
+  options.addStringOption("-release", "21")
+  options.addBooleanOption("-enable-preview", true)
+}
+
 extensions.configure<JavaPluginExtension> {
   toolchain {
     vendor = JvmVendorSpec.AZUL
     languageVersion = JavaLanguageVersion.of(21)
   }
 }
+
+configurePublishing("java", true)
