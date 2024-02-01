@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,28 +22,28 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel;
+package dev.derklaro.aerogel.type;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
+import jakarta.inject.Qualifier;
+import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import org.apiguardian.api.API;
+import org.jetbrains.annotations.NotNull;
 
-/**
- * Annotate every class or factory method you only want one instance to be created of and then reused. The instance will
- * be saved in one {@link Injector} which means creating multiple, non-associated {@link Injector}s may still result in
- * duplicate construction or factory method calls.
- *
- * @author Pasqual K.
- * @since 1.0
- */
-@Scope
-@Documented
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
-@API(status = API.Status.STABLE, since = "1.0")
-public @interface Singleton {
+@API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.type")
+final class AnnotationUtil {
 
+  public static boolean hasProperties(@NotNull Class<? extends Annotation> annotationType) {
+    return annotationType.getDeclaredMethods().length > 0;
+  }
+
+  public static boolean isRuntimeRetained(@NotNull Class<? extends Annotation> annotationType) {
+    Retention retention = annotationType.getAnnotation(Retention.class);
+    return retention != null && retention.value() == RetentionPolicy.RUNTIME;
+  }
+
+  public static boolean isQualifierAnnotation(@NotNull Class<? extends Annotation> annotationType) {
+    return annotationType.isAnnotationPresent(Qualifier.class);
+  }
 }

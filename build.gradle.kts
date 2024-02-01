@@ -49,12 +49,12 @@ allprojects {
 
   dependencies {
     // exposed dependencies
+    "api"(rootProject.libs.geantyref)
     "api"(rootProject.libs.jakartaInjectApi)
     "compileOnlyApi"(rootProject.libs.apiGuardian)
     "compileOnlyApi"(rootProject.libs.annotations)
 
     // testing
-    "testImplementation"(rootProject.libs.geantyref)
     "testImplementation"(rootProject.libs.bundles.junit)
     "testImplementation"(rootProject.libs.jakartaInjectTck)
   }
