@@ -25,12 +25,11 @@
 package dev.derklaro.aerogel.type;
 
 import dev.derklaro.aerogel.internal.util.Preconditions;
-import io.leangen.geantyref.GenericTypeReflector;
 import io.leangen.geantyref.TypeToken;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Type;
 import java.util.Objects;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -39,6 +38,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  *
  */
+@API(status = API.Status.STABLE, since = "3.0")
 public final class BindingKey<T> {
 
   private final int hash;
@@ -46,15 +46,19 @@ public final class BindingKey<T> {
   private final Type type;
   private final AnnotationMatcher annotationMatcher;
 
-  private BindingKey(@NotNull AnnotatedType annotatedType) {
-    this.type = annotatedType.getType();
+  @SuppressWarnings("unused") // leave my unused parameters alone!
+  private BindingKey(@NotNull Type type, @Nullable AnnotationMatcher matcher, Void unused) {
+    this.type = type;
+    this.annotationMatcher = matcher;
+    this.hash = Objects.hash(this.type, this.annotationMatcher);
+  }
 
-    Annotation[] typeAnnotations = annotatedType.getAnnotations();
-    if (typeAnnotations.length == 0) {
+  private BindingKey(@NotNull Type type, @NotNull Annotation[] annotations) {
+    if (annotations == null || annotations.length == 0) {
       this.annotationMatcher = null;
     } else {
       AnnotationMatcher matcher = null;
-      for (Annotation annotation : typeAnnotations) {
+      for (Annotation annotation : annotations) {
         Class<? extends Annotation> annotationType = annotation.annotationType();
         if (AnnotationUtil.isRuntimeRetained(annotationType) && AnnotationUtil.isQualifierAnnotation(annotationType)) {
           AnnotationMatcher matcherForAnnotation = AnnotationMatcher.matchingStrategyFor(annotation);
@@ -65,36 +69,41 @@ public final class BindingKey<T> {
       this.annotationMatcher = matcher;
     }
 
-    this.hash = Objects.hash(this.type, this.annotationMatcher);
-  }
-
-  private BindingKey(@NotNull Type type, @Nullable AnnotationMatcher annotationMatcher) {
     this.type = type;
-    this.annotationMatcher = annotationMatcher;
     this.hash = Objects.hash(this.type, this.annotationMatcher);
-  }
-
-  @Contract(value = "_ -> new", pure = true)
-  public static @NotNull <T> BindingKey<T> of(@NotNull AnnotatedType type) {
-    AnnotatedType canonicalized = GenericTypeReflector.toCanonical(type);
-    return new BindingKey<>(canonicalized);
   }
 
   @Contract(value = "_ -> new", pure = true)
   public static @NotNull <T> BindingKey<T> of(@NotNull Type type) {
-    AnnotatedType annotated = GenericTypeReflector.annotate(type);
-    return of(annotated);
+    return new BindingKey<>(type, null);
   }
 
   @Contract(value = "_ -> new", pure = true)
   public static @NotNull <T> BindingKey<T> of(@NotNull Class<? extends T> type) {
-    AnnotatedType annotated = GenericTypeReflector.annotate(type);
-    return of(annotated);
+    return new BindingKey<>(type, null);
   }
 
   @Contract(value = "_ -> new", pure = true)
-  public static @NotNull <T> BindingKey<T> of(@NotNull TypeToken<T> typeToken) {
-    return of(typeToken.getAnnotatedType());
+  public static @NotNull <T> BindingKey<T> of(@NotNull TypeToken<? extends T> typeToken) {
+    return of(typeToken.getType());
+  }
+
+  @Contract(value = "_, _ -> new", pure = true)
+  public static @NotNull <T> BindingKey<T> of(@NotNull Type type, @NotNull Annotation[] annotations) {
+    return new BindingKey<>(type, annotations);
+  }
+
+  @Contract(value = "_, _ -> new", pure = true)
+  public static @NotNull <T> BindingKey<T> of(@NotNull Class<? extends T> type, @NotNull Annotation[] annotations) {
+    return new BindingKey<>(type, annotations);
+  }
+
+  @Contract(value = "_, _ -> new", pure = true)
+  public static @NotNull <T> BindingKey<T> of(
+    @NotNull TypeToken<? extends T> typeToken,
+    @NotNull Annotation[] annotations
+  ) {
+    return of(typeToken.getType(), annotations);
   }
 
   @CheckReturnValue
@@ -111,7 +120,12 @@ public final class BindingKey<T> {
 
   @CheckReturnValue
   public @NotNull BindingKey<T> withoutAnnotations() {
-    return new BindingKey<>(this.type, null);
+    return new BindingKey<>(this.type, null, null);
+  }
+
+  @CheckReturnValue
+  public @NotNull BindingKey<T> withAnnotations(@NotNull Annotation[] annotation) {
+    return new BindingKey<>(this.type, annotation);
   }
 
   @CheckReturnValue
@@ -125,7 +139,7 @@ public final class BindingKey<T> {
 
     AnnotationMatcher matcher = AnnotationMatcher.forMatchingInstance(annotation);
     AnnotationMatcher newFullMatcher = combineMatchers(this.annotationMatcher, matcher);
-    return new BindingKey<>(this.type, newFullMatcher);
+    return new BindingKey<>(this.type, newFullMatcher, null);
   }
 
   @CheckReturnValue
@@ -139,30 +153,22 @@ public final class BindingKey<T> {
 
     AnnotationMatcher matcher = AnnotationMatcher.forMatchingType(annotationType);
     AnnotationMatcher newFullMatcher = combineMatchers(this.annotationMatcher, matcher);
-    return new BindingKey<>(this.type, newFullMatcher);
-  }
-
-  @CheckReturnValue
-  public @NotNull <R> BindingKey<R> withType(@NotNull AnnotatedType type) {
-    AnnotatedType canonicalized = GenericTypeReflector.toCanonical(type);
-    return new BindingKey<>(canonicalized.getType(), this.annotationMatcher);
+    return new BindingKey<>(this.type, newFullMatcher, null);
   }
 
   @CheckReturnValue
   public @NotNull <R> BindingKey<R> withType(@NotNull Type type) {
-    AnnotatedType annotated = GenericTypeReflector.annotate(type);
-    return this.withType(annotated);
+    return new BindingKey<>(type, this.annotationMatcher, null);
   }
 
   @CheckReturnValue
   public @NotNull <R> BindingKey<R> withType(@NotNull Class<? extends R> type) {
-    AnnotatedType annotated = GenericTypeReflector.annotate(type);
-    return this.withType(annotated);
+    return new BindingKey<>(type, this.annotationMatcher, null);
   }
 
   @CheckReturnValue
   public @NotNull <R> BindingKey<R> withType(@NotNull TypeToken<R> typeToken) {
-    return this.withType(typeToken.getAnnotatedType());
+    return this.withType(typeToken.getType());
   }
 
   /**
