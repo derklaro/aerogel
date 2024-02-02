@@ -51,15 +51,12 @@ public final class BindingKey<T> {
 
     Annotation[] typeAnnotations = annotatedType.getAnnotations();
     if (typeAnnotations.length == 0) {
-      // no annotations, just use the static empty array
       this.annotationMatcher = null;
     } else {
-      // convert each annotation to a matcher
       AnnotationMatcher matcher = null;
       for (Annotation annotation : typeAnnotations) {
         Class<? extends Annotation> annotationType = annotation.annotationType();
         if (AnnotationUtil.isRuntimeRetained(annotationType) && AnnotationUtil.isQualifierAnnotation(annotationType)) {
-          // construct or combine the current annotation matcher
           AnnotationMatcher matcherForAnnotation = AnnotationMatcher.matchingStrategyFor(annotation);
           matcher = combineMatchers(matcher, matcherForAnnotation);
         }
@@ -183,7 +180,7 @@ public final class BindingKey<T> {
   public boolean equals(@Nullable Object obj) {
     if (obj instanceof BindingKey<?>) {
       BindingKey<?> other = (BindingKey<?>) obj;
-      return other.type.equals(this.type) && other.annotationMatcher.equals(this.annotationMatcher);
+      return other.type.equals(this.type) && Objects.equals(other.annotationMatcher, this.annotationMatcher);
     }
 
     return false;
