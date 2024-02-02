@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.type;
+package dev.derklaro.aerogel.binding.key;
 
 import java.lang.annotation.Annotation;
 import org.apiguardian.api.API;

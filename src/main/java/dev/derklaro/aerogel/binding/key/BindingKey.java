@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.type;
+package dev.derklaro.aerogel.binding.key;
 
 import dev.derklaro.aerogel.internal.util.Preconditions;
 import io.leangen.geantyref.TypeToken;

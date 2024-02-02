@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.type;
+package dev.derklaro.aerogel.binding.key;
 
 import jakarta.inject.Qualifier;
 import java.lang.annotation.Annotation;
