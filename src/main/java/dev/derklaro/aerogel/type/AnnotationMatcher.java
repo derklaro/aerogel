@@ -64,6 +64,26 @@ interface AnnotationMatcher {
   }
 
   /**
+   * Constructs an annotation matcher that best matches the given annotation. If the annotation has no properties, this
+   * method just returns a matcher for the annotation type. If properties are preset on the annotation, the returned
+   * matcher will respect those.
+   *
+   * @param annotation the annotation to get the best fitting strategy for.
+   * @return an annotation matcher to properly match the given annotation.
+   */
+  @Contract(value = "_ -> new", pure = true)
+  static @NotNull AnnotationMatcher matchingStrategyFor(@NotNull Annotation annotation) {
+    Class<? extends Annotation> annotationType = annotation.annotationType();
+    if (AnnotationUtil.hasProperties(annotationType)) {
+      // annotation has properties, include them when matching
+      return forMatchingInstance(annotation);
+    } else {
+      // annotation has no properties, just matching for the type is fine
+      return forMatchingType(annotationType);
+    }
+  }
+
+  /**
    * Validates that the given annotation matches the stategy of this matcher implementation.
    *
    * @param annotation the annoation to validate.

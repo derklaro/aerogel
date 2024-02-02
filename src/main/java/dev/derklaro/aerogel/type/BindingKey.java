@@ -29,7 +29,6 @@ import io.leangen.geantyref.GenericTypeReflector;
 import io.leangen.geantyref.TypeToken;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Objects;
 import org.jetbrains.annotations.CheckReturnValue;
@@ -60,17 +59,8 @@ public final class BindingKey<T> {
       for (Annotation annotation : typeAnnotations) {
         Class<? extends Annotation> annotationType = annotation.annotationType();
         if (AnnotationUtil.isRuntimeRetained(annotationType) && AnnotationUtil.isQualifierAnnotation(annotationType)) {
-          AnnotationMatcher matcherForAnnotation;
-          Method[] properties = annotationType.getDeclaredMethods();
-          if (properties.length == 0) {
-            // annotation has no methods, type comparison is good enough
-            matcherForAnnotation = AnnotationMatcher.forMatchingType(annotationType);
-          } else {
-            // annotation has methods, we need to respect those
-            matcherForAnnotation = AnnotationMatcher.forMatchingInstance(annotation);
-          }
-
           // construct or combine the current annotation matcher
+          AnnotationMatcher matcherForAnnotation = AnnotationMatcher.matchingStrategyFor(annotation);
           matcher = combineMatchers(matcher, matcherForAnnotation);
         }
       }

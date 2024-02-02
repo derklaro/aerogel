@@ -31,18 +31,49 @@ import java.lang.annotation.RetentionPolicy;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Collection of utility methods to work with annotations.
+ *
+ * @author Pasqual Koschmieder
+ * @since 3.0
+ */
 @API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.type")
 final class AnnotationUtil {
 
+  /**
+   * Checks if the given annotation type has any properties (= any method declared). See JLS chapter 9.6.1 for method
+   * declaration restrictions for annotations.
+   *
+   * @param annotationType the annotation type to check for properties.
+   * @return true if the given annotation has properties, false otherwise.
+   */
   public static boolean hasProperties(@NotNull Class<? extends Annotation> annotationType) {
+    // no other checks needed, no other methods than property declarations are allowed
+    // see JLS chapter 9: https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html#jls-9.6.1
     return annotationType.getDeclaredMethods().length > 0;
   }
 
+  /**
+   * Checks if the given annotation type is retained in runtime. This is validated by checking the retention policy that
+   * is directly defined on the annotation type.
+   *
+   * @param annotationType the annotation type to check for runtime retention.
+   * @return true if the given annotation type is retained at runtime, false otherwise.
+   * @see Retention
+   */
   public static boolean isRuntimeRetained(@NotNull Class<? extends Annotation> annotationType) {
-    Retention retention = annotationType.getAnnotation(Retention.class);
+    Retention retention = annotationType.getDeclaredAnnotation(Retention.class);
     return retention != null && retention.value() == RetentionPolicy.RUNTIME;
   }
 
+  /**
+   * Checks if the given annotation is a qualifier annotation. This is done by checking if the jakarta.Qualifier
+   * annotation is present on the annotation type.
+   *
+   * @param annotationType the annotation type to check for qualifier status.
+   * @return true if the given annotation is a qualifier, false otherwise.
+   * @see Qualifier
+   */
   public static boolean isQualifierAnnotation(@NotNull Class<? extends Annotation> annotationType) {
     return annotationType.isAnnotationPresent(Qualifier.class);
   }
