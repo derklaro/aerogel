@@ -13,7 +13,7 @@ annotations = "24.1.0"
 jakartaInject = "2.0.1"
 
 # testing
-junit = "5.10.1"
+junit = "5.10.2"
 lombok = "1.18.30"
 javapoet = "1.13.0"
 geantyref = "1.3.14"
