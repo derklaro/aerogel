@@ -22,20 +22,8 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.binding.desc;
+package dev.derklaro.aerogel.binding.builder;
 
-import java.lang.reflect.Type;
-import org.jetbrains.annotations.NotNull;
+public interface BindingBuilder {
 
-public interface ParameterDescriptor extends AnnotatedDescriptor, MemberDescriptor<ExecutableDescriptor> {
-
-  boolean vararg();
-
-  boolean realNameKnown();
-
-  @NotNull
-  Class<?> type();
-
-  @NotNull
-  Type genericType();
 }

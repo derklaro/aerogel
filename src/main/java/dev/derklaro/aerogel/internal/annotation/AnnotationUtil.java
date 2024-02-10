@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.binding.key;
+package dev.derklaro.aerogel.internal.annotation;
 
 import jakarta.inject.Qualifier;
 import java.lang.annotation.Annotation;
@@ -37,8 +37,8 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual Koschmieder
  * @since 3.0
  */
-@API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.type")
-final class AnnotationUtil {
+@API(status = API.Status.INTERNAL, since = "3.0")
+public final class AnnotationUtil {
 
   /**
    * Checks if the given annotation type has any properties (= any method declared). See JLS chapter 9.6.1 for method
@@ -54,16 +54,16 @@ final class AnnotationUtil {
   }
 
   /**
-   * Checks if the given annotation type is retained in runtime. This is validated by checking the retention policy that
-   * is directly defined on the annotation type.
+   * Get the retention policy of the given annotation type. If the retention is not explicitly specified via @Retention
+   * on the annotation type, the default CLASS retention is returned.
    *
-   * @param annotationType the annotation type to check for runtime retention.
-   * @return true if the given annotation type is retained at runtime, false otherwise.
+   * @param annotationType the annotation type to get the retention policy of.
+   * @return the retention policy of the given annotation.
    * @see Retention
    */
-  public static boolean isRuntimeRetained(@NotNull Class<? extends Annotation> annotationType) {
+  public static @NotNull RetentionPolicy extractRetention(@NotNull Class<? extends Annotation> annotationType) {
     Retention retention = annotationType.getDeclaredAnnotation(Retention.class);
-    return retention != null && retention.value() == RetentionPolicy.RUNTIME;
+    return retention != null ? retention.value() : RetentionPolicy.CLASS;
   }
 
   /**

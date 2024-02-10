@@ -24,9 +24,9 @@
 
 package dev.derklaro.aerogel.binding.key;
 
+import dev.derklaro.aerogel.internal.annotation.AnnotationUtil;
 import java.lang.annotation.Annotation;
 import org.apiguardian.api.API;
-import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -109,80 +109,6 @@ interface AnnotationMatcher {
   @Override
   @NotNull
   String toString();
-
-  /**
-   * Combines this and the given other annotation matcher with a logical AND operation.
-   *
-   * @param other the other matcher to combine.
-   * @return a new matcher combining this and the given other matcher.
-   */
-  @CheckReturnValue
-  default @NotNull AnnotationMatcher and(@NotNull AnnotationMatcher other) {
-    return new CombinedAnnotationMatcher(this, other);
-  }
-
-  /**
-   * An annotation matcher that combines two other annotation matchers using an AND operation.
-   *
-   * @author Pasqual Koschmieder
-   * @since 3.0
-   */
-  @API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.type")
-  final class CombinedAnnotationMatcher implements AnnotationMatcher {
-
-    private final AnnotationMatcher left;
-    private final AnnotationMatcher right;
-
-    /**
-     * Constructs a new combined annotation matcher instance.
-     *
-     * @param left  the first matcher.
-     * @param right the other matcher.
-     */
-    private CombinedAnnotationMatcher(@NotNull AnnotationMatcher left, @NotNull AnnotationMatcher right) {
-      this.left = left;
-      this.right = right;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean test(@NotNull Annotation annotation) {
-      return this.left.test(annotation) && this.right.test(annotation);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-      int leftHash = this.left.hashCode();
-      int rightHash = this.right.hashCode();
-      return leftHash ^ rightHash;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean equals(@Nullable Object obj) {
-      if (obj instanceof CombinedAnnotationMatcher) {
-        CombinedAnnotationMatcher other = (CombinedAnnotationMatcher) obj;
-        return other.left.equals(this.left) && other.right.equals(this.right);
-      }
-
-      return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public @NotNull String toString() {
-      return this.left + " && " + this.right;
-    }
-  }
 
   /**
    * Annotation matcher implementation that just validates that the type of the annotation matches the given one.

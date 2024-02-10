@@ -28,7 +28,7 @@ import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.ElementMatcher;
-import dev.derklaro.aerogel.KnownValue;
+import dev.derklaro.aerogel.scope.KnownValue;
 import dev.derklaro.aerogel.internal.context.DefaultInjectionContextBuilder;
 import java.lang.reflect.Type;
 import java.util.List;

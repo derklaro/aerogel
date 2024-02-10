@@ -27,7 +27,7 @@ package dev.derklaro.aerogel.util;
 import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.ElementMatcher;
-import dev.derklaro.aerogel.KnownValue;
+import dev.derklaro.aerogel.scope.KnownValue;
 import dev.derklaro.aerogel.ScopeProvider;
 import dev.derklaro.aerogel.context.InjectionContext;
 import dev.derklaro.aerogel.internal.provider.BaseContextualProvider;

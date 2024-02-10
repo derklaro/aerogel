@@ -26,6 +26,7 @@ package dev.derklaro.aerogel;
 
 import dev.derklaro.aerogel.binding.BindingBuilder;
 import dev.derklaro.aerogel.binding.BindingConstructor;
+import dev.derklaro.aerogel.scope.KnownValue;
 import dev.derklaro.aerogel.util.Scopes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

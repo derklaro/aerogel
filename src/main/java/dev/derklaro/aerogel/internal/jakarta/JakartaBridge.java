@@ -27,7 +27,7 @@ package dev.derklaro.aerogel.internal.jakarta;
 import dev.derklaro.aerogel.Inject;
 import dev.derklaro.aerogel.Provider;
 import dev.derklaro.aerogel.Qualifier;
-import dev.derklaro.aerogel.Scope;
+import dev.derklaro.aerogel.ScopeApplier;
 import dev.derklaro.aerogel.util.Qualifiers;
 import jakarta.inject.Named;
 import java.lang.annotation.Annotation;
@@ -89,7 +89,7 @@ public final class JakartaBridge {
    */
   public static boolean isScopeAnnotation(@NotNull Annotation annotation) {
     Class<? extends Annotation> type = annotation.annotationType();
-    return type.isAnnotationPresent(Scope.class) || type.isAnnotationPresent(jakarta.inject.Scope.class);
+    return type.isAnnotationPresent(ScopeApplier.class) || type.isAnnotationPresent(jakarta.inject.Scope.class);
   }
 
   /**

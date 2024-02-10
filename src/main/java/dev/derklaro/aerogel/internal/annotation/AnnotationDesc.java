@@ -83,19 +83,15 @@ public final class AnnotationDesc {
     this.annotationType = annotationType;
   }
 
-  public static @Nullable AnnotationDesc of(@NotNull Class<? extends Annotation> annotationType) {
-    if (annotationType.isAnnotationPresent(Qualifier.class)) {
-      AnnotationDesc cached = CACHE.get(annotationType);
-      if (cached != null) {
-        return cached;
-      }
-
-      AnnotationDesc desc = new AnnotationDesc(annotationType);
-      cached = CACHE.putIfAbsent(annotationType, desc);
-      return cached != null ? cached : desc;
+  public static @NotNull AnnotationDesc of(@NotNull Class<? extends Annotation> annotationType) {
+    AnnotationDesc cached = CACHE.get(annotationType);
+    if (cached != null) {
+      return cached;
     }
 
-    return null;
+    AnnotationDesc desc = new AnnotationDesc(annotationType);
+    cached = CACHE.putIfAbsent(annotationType, desc);
+    return cached != null ? cached : desc;
   }
 
   public boolean scope() {

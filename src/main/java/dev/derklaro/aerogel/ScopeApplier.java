@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,32 +22,37 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.binding;
+package dev.derklaro.aerogel;
 
-import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.binding.key.BindingKey;
+import jakarta.inject.Provider;
 import org.apiguardian.api.API;
+import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Represents a not yet constructed binding which can be bound to any constructor either by invoking
- * {@link #construct(Injector)} directly using the {@link Injector} to which the binding should get bound or by using
- * {@link Injector#install(BindingConstructor)} or {@link Injector#install(Iterable)}.
+ * A scope that can be applied to a provider. A scope can be used to inject a state into a provider. Default bindings
+ * are created without a scope, therefore instances created by providers are create-and-forget. Once the current
+ * injection context ends, the constructed instance will no longer by known by the injector. A scope can be used to
+ * define a longer lifetime for those instances.
  *
- * @author Pasqual K.
- * @since 1.0
+ * @author Pasqual Koschmieder
+ * @since 3.0
  */
 @FunctionalInterface
-@API(status = API.Status.STABLE, since = "1.0")
-public interface BindingConstructor {
+@API(status = API.Status.STABLE, since = "3.0")
+public interface ScopeApplier {
 
   /**
-   * Constructs this binding and installs it to the injector. The construction can result in an {@link AerogelException}
-   * but should not result in any other exception.
+   * Returns a new provider with this scope applied to it. If necessary, the method may obtain an instance from the
+   * given provider.
    *
-   * @param injector the injector which is currently installing the binding.
-   * @return the constructed binding holder based on the given {@code injector}.
-   * @throws AerogelException if the construction failed.
+   * @param key      the key of the binding that requests the scoping.
+   * @param original the original provider to apply this scope to.
+   * @param <T>      the type of value returned by the provider.
+   * @return a new provider that scopes the given provider.
    */
-  @NotNull BindingHolder construct(@NotNull Injector injector) throws AerogelException;
+  @NotNull
+  @CheckReturnValue
+  <T> Provider<T> applyScope(@NotNull BindingKey<T> key, @NotNull Provider<T> original);
 }

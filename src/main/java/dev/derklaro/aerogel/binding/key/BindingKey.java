@@ -24,9 +24,11 @@
 
 package dev.derklaro.aerogel.binding.key;
 
+import dev.derklaro.aerogel.internal.annotation.AnnotationUtil;
 import dev.derklaro.aerogel.internal.util.Preconditions;
 import io.leangen.geantyref.TypeToken;
 import java.lang.annotation.Annotation;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Type;
 import java.util.Objects;
 import org.apiguardian.api.API;
@@ -47,7 +49,7 @@ public final class BindingKey<T> {
   private final AnnotationMatcher annotationMatcher;
 
   @SuppressWarnings("unused") // leave my unused parameters alone!
-  private BindingKey(@NotNull Type type, @Nullable AnnotationMatcher matcher, Void unused) {
+  private BindingKey(@NotNull Type type, @Nullable AnnotationMatcher matcher, @Nullable Void unused) {
     this.type = type;
     this.annotationMatcher = matcher;
     this.hash = Objects.hash(this.type, this.annotationMatcher);
@@ -60,9 +62,10 @@ public final class BindingKey<T> {
       AnnotationMatcher matcher = null;
       for (Annotation annotation : annotations) {
         Class<? extends Annotation> annotationType = annotation.annotationType();
-        if (AnnotationUtil.isRuntimeRetained(annotationType) && AnnotationUtil.isQualifierAnnotation(annotationType)) {
-          AnnotationMatcher matcherForAnnotation = AnnotationMatcher.matchingStrategyFor(annotation);
-          matcher = combineMatchers(matcher, matcherForAnnotation);
+        RetentionPolicy annotationRetention = AnnotationUtil.extractRetention(annotationType);
+        if (annotationRetention == RetentionPolicy.RUNTIME && AnnotationUtil.isQualifierAnnotation(annotationType)) {
+          Preconditions.checkArgument(matcher == null, "Detected duplicate qualifier annotation");
+          matcher = AnnotationMatcher.matchingStrategyFor(annotation);
         }
       }
 
@@ -107,18 +110,6 @@ public final class BindingKey<T> {
   }
 
   @CheckReturnValue
-  private static @NotNull AnnotationMatcher combineMatchers(
-    @Nullable AnnotationMatcher left,
-    @NotNull AnnotationMatcher right
-  ) {
-    if (left == null) {
-      return right;
-    } else {
-      return left.and(right);
-    }
-  }
-
-  @CheckReturnValue
   public @NotNull BindingKey<T> withoutAnnotations() {
     return new BindingKey<>(this.type, null, null);
   }
@@ -131,29 +122,27 @@ public final class BindingKey<T> {
   @CheckReturnValue
   public @NotNull BindingKey<T> withAnnotation(@NotNull Annotation annotation) {
     Preconditions.checkArgument(
-      AnnotationUtil.isRuntimeRetained(annotation.annotationType()),
+      AnnotationUtil.extractRetention(annotation.annotationType()) == RetentionPolicy.RUNTIME,
       "Annotation %s is not retained at runtime", annotation.annotationType());
     Preconditions.checkArgument(
       AnnotationUtil.isQualifierAnnotation(annotation.annotationType()),
       "Annotation %s is not a qualifier annotation", annotation.annotationType());
 
-    AnnotationMatcher matcher = AnnotationMatcher.forMatchingInstance(annotation);
-    AnnotationMatcher newFullMatcher = combineMatchers(this.annotationMatcher, matcher);
-    return new BindingKey<>(this.type, newFullMatcher, null);
+    AnnotationMatcher matcher = AnnotationMatcher.matchingStrategyFor(annotation);
+    return new BindingKey<>(this.type, matcher, null);
   }
 
   @CheckReturnValue
   public @NotNull BindingKey<T> withAnnotation(@NotNull Class<? extends Annotation> annotationType) {
     Preconditions.checkArgument(
-      AnnotationUtil.isRuntimeRetained(annotationType),
+      AnnotationUtil.extractRetention(annotationType) == RetentionPolicy.RUNTIME,
       "Annotation %s is not retained at runtime", annotationType);
     Preconditions.checkArgument(
       AnnotationUtil.isQualifierAnnotation(annotationType),
       "Annotation %s is not a qualifier annotation", annotationType);
 
     AnnotationMatcher matcher = AnnotationMatcher.forMatchingType(annotationType);
-    AnnotationMatcher newFullMatcher = combineMatchers(this.annotationMatcher, matcher);
-    return new BindingKey<>(this.type, newFullMatcher, null);
+    return new BindingKey<>(this.type, matcher, null);
   }
 
   @CheckReturnValue

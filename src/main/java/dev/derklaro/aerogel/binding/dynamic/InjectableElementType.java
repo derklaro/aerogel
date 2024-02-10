@@ -22,20 +22,18 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.binding.desc;
+package dev.derklaro.aerogel.binding.dynamic;
 
-import java.lang.annotation.Annotation;
-import java.util.Collection;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+/**
+ *
+ */
+public interface InjectableElementType {
 
-public interface AnnotatedDescriptor {
+  boolean isClass();
 
-  @NotNull
-  Collection<Annotation> annotations();
+  boolean isMember();
 
-  @Nullable
-  <T extends Annotation> T annotation(@NotNull Class<T> annotationType);
+  boolean isExecutable();
 
-  boolean annotationPresent(@NotNull Class<? extends Annotation> annotationType);
+  boolean isParameter();
 }

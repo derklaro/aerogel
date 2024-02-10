@@ -28,7 +28,7 @@ import dev.derklaro.aerogel.AerogelException;
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.KnownValue;
+import dev.derklaro.aerogel.scope.KnownValue;
 import dev.derklaro.aerogel.context.InjectionContext;
 import dev.derklaro.aerogel.context.InjectionContextProvider;
 import dev.derklaro.aerogel.context.LazyContextualProvider;
