@@ -24,16 +24,44 @@
 
 package dev.derklaro.aerogel.binding.dynamic;
 
+import org.apiguardian.api.API;
+
 /**
+ * Defines a type of injectable element. Some default methods are provided for distinction, but virtually every other
+ * implementation is possible, even if it matches none of the characteristics described by the methods below.
  *
+ * @author Pasqual Koschmieder
+ * @see StandardInjectableElementType
+ * @since 3.0
  */
+@API(status = API.Status.STABLE, since = "3.0")
 public interface InjectableElementType {
 
+  /**
+   * Get if the element type is some sort of class (interface, record, enum, ...).
+   *
+   * @return if the element type is some sort of class.
+   */
   boolean isClass();
 
+  /**
+   * Get if this element is some sort of class member (field, method or constructor).
+   *
+   * @return if this element is some sort of class member.
+   */
   boolean isMember();
 
+  /**
+   * Get if this element is executable (method or constructor).
+   *
+   * @return if this element is executable.
+   */
   boolean isExecutable();
 
+  /**
+   * Get if this element is some sort of executable parameter (method or constructor parameter).
+   *
+   * @return if this element is some sort of executable parameter.
+   */
   boolean isParameter();
 }

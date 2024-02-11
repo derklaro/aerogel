@@ -139,15 +139,24 @@ public interface InjectableElement {
   String name();
 
   /**
-   * Get the annotated type of this element.
+   * Get the generic type of this element with all annotations of this element. The returned type is in a canonical form
+   * that implements {@code equals} and {@code hashCode}.
    *
    * @return the annotated type of this element.
+   * @see #genericType()
+   * @see #annotations()
    */
   @NotNull
   AnnotatedType annotatedType();
 
   /**
-   * Get the generic type of this element.
+   * Get the generic type of this element:
+   * <ol>
+   *  <li>For fields or parameters this is the generic type of them.
+   *  <li>For methods this is the return type of the method.
+   *  <li>For constructors this is always {@code void}.
+   *  <li>For classes this is the raw class type.
+   * </ol>
    *
    * @return the generic type of this element.
    */
@@ -158,6 +167,7 @@ public interface InjectableElement {
    * Get the erased type of this element.
    *
    * @return the erased type of this element.
+   * @see #genericType()
    */
   @NotNull
   Class<?> rawType();

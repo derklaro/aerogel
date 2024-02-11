@@ -37,7 +37,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual Koschmieder
  * @since 3.0
  */
-@API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.type")
+@API(status = API.Status.INTERNAL, since = "3.0")
 interface AnnotationMatcher {
 
   /**
@@ -116,7 +116,7 @@ interface AnnotationMatcher {
    * @author Pasqual Koschmieder
    * @since 3.0
    */
-  @API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.type")
+  @API(status = API.Status.INTERNAL, since = "3.0")
   final class AnnotationTypeMatcher implements AnnotationMatcher {
 
     private final Class<? extends Annotation> type;
@@ -175,7 +175,7 @@ interface AnnotationMatcher {
    * @author Pasqual Koschmieder
    * @since 3.0
    */
-  @API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.type")
+  @API(status = API.Status.INTERNAL, since = "3.0")
   final class AnnotationInstanceMatcher implements AnnotationMatcher {
 
     private final Annotation annotation;
