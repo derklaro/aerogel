@@ -26,6 +26,7 @@ package dev.derklaro.aerogel.binding;
 
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.ScopeApplier;
+import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import java.util.Optional;
 import org.apiguardian.api.API;
@@ -37,8 +38,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A binding that is aware of the target binding key, but is not yet installed to an injector.
  * <p>
- * Instances of this type of binding are returned by a {@link dev.derklaro.aerogel.binding.builder.BindingBuilder} when
- * finishing the build process. Note that scopes are applied when installing the binding.
+ * Instances of this type of binding are returned by a {@link RootBindingBuilder} when finishing the build process. Note
+ * that scopes are applied when installing the binding.
  *
  * @param <T> the type of values handled by this binding.
  * @author Pasqual Koschmieder

@@ -179,4 +179,14 @@ public interface InjectableElement {
    */
   @NotNull
   Collection<Annotation> annotations();
+
+  /**
+   * Returns this element's annotation of the specified annotation type, if present.
+   *
+   * @param <A>            the type of the annotation to query.
+   * @param annotationType the class corresponding to the annotation type to get.
+   * @return the annotation with the given type that is present on this element.
+   */
+  @NotNull
+  <A extends Annotation> Optional<A> annotation(@NotNull Class<A> annotationType);
 }

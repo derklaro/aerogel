@@ -24,6 +24,29 @@
 
 package dev.derklaro.aerogel.binding.builder;
 
-public interface BindingBuilder {
+import java.lang.annotation.Annotation;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
 
+public interface BindingAnnotationBuilder<A extends Annotation, T> {
+
+  @NotNull
+  <R> DefineReturn<A, T, R> property(@NotNull Function<A, R> accessor);
+
+  @NotNull
+  ScopeableBindingBuilder<T> require();
+
+  interface DefineReturn<A extends Annotation, T, R> {
+
+    @NotNull
+    <X extends R> BindingAnnotationBuilder<A, T> returns(@NotNull X returnValue);
+
+    @NotNull
+    <X extends R> BindingAnnotationBuilder<A, T> returnLazyCall(@NotNull Callable<X> returnValueProvider);
+
+    @NotNull
+    <X extends R> BindingAnnotationBuilder<A, T> returnLazySupply(@NotNull Supplier<X> returnValueProvider);
+  }
 }

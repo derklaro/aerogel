@@ -258,6 +258,20 @@ final class InjectableElementImpl implements InjectableElement {
    * {@inheritDoc}
    */
   @Override
+  public @NotNull <A extends Annotation> Optional<A> annotation(@NotNull Class<A> annotationType) {
+    for (Annotation annotation : this.annotations) {
+      if (annotation.annotationType().equals(annotationType)) {
+        return Optional.of(annotationType.cast(annotation));
+      }
+    }
+
+    return Optional.empty();
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public @NotNull String toString() {
     return "InjectableElement[type=" + this.elementType + ", name=" + this.name + ", genericType=" + this.type + "]";
   }
