@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
 public interface RootBindingBuilder {
 
   @NotNull
-  DynamicBindingBuilder bindDynamically();
+  DynamicBindingBuilder.Root bindDynamically();
 
   @NotNull
   <T> QualifiableBindingBuilder<T> bind(@NotNull Type type);
