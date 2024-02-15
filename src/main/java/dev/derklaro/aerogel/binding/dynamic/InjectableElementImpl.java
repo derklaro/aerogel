@@ -103,7 +103,7 @@ final class InjectableElementImpl implements InjectableElement {
       StandardInjectableElementType.CLASS,
       type,
       type.getName(),
-      type.getDeclaredAnnotations());
+      type.getAnnotations());
   }
 
   /**

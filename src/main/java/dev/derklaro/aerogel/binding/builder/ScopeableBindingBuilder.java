@@ -31,8 +31,8 @@ import org.jetbrains.annotations.NotNull;
 public interface ScopeableBindingBuilder<T> extends TargetableBindingBuilder<T> {
 
   @NotNull
-  ScopeableBindingBuilder<T> scopedWith(@NotNull ScopeApplier scopeApplier);
+  TargetableBindingBuilder<T> scopedWith(@NotNull ScopeApplier scopeApplier);
 
   @NotNull
-  ScopeableBindingBuilder<T> scopedWith(@NotNull Class<? extends Annotation> scopeAnnotationType);
+  TargetableBindingBuilder<T> scopedWith(@NotNull Class<? extends Annotation> scopeAnnotationType);
 }
