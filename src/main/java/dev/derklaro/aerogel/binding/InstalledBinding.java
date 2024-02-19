@@ -66,6 +66,14 @@ public interface InstalledBinding<T> {
   Injector injector();
 
   /**
+   * Get the advanced options that were supplied to the binding.
+   *
+   * @return the advanced options that were supplied to the binding.
+   */
+  @NotNull
+  BindingOptions bindingOptions();
+
+  /**
    * Get the scope that was applied to this binding.
    *
    * @return the scope that was applied to this binding.

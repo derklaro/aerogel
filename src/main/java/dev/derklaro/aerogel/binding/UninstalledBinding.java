@@ -58,6 +58,14 @@ public interface UninstalledBinding<T> {
   BindingKey<T> key();
 
   /**
+   * Get the advanced options that were supplied to the binding.
+   *
+   * @return the advanced options that were supplied to the binding.
+   */
+  @NotNull
+  BindingOptions bindingOptions();
+
+  /**
    * Get the scope that will be applied to the binding on creation.
    *
    * @return the scope that will be applied to the binding on creation.
