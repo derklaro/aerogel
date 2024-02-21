@@ -55,7 +55,7 @@ interface AnnotationMatcher {
   /**
    * Constructs a new annotation matcher that just validates the type of the given annotation.
    *
-   * @param annotationType the annoation type to match.
+   * @param annotationType the annotation type to match.
    * @return a new annotation matcher that matches the given annotation type.
    */
   @Contract(value = "_ -> new", pure = true)
@@ -84,12 +84,20 @@ interface AnnotationMatcher {
   }
 
   /**
-   * Validates that the given annotation matches the stategy of this matcher implementation.
+   * Validates that the given annotation matches the strategy of this matcher implementation.
    *
-   * @param annotation the annoation to validate.
+   * @param annotation the annotation to validate.
    * @return true if the given annotation matches, false otherwise.
    */
   boolean test(@NotNull Annotation annotation);
+
+  /**
+   * Get the type of annotation that is being matched by the matcher.
+   *
+   * @return the type of annotation being matched.
+   */
+  @NotNull
+  Class<? extends Annotation> annotationType();
 
   /**
    * {@inheritDoc}
@@ -137,6 +145,14 @@ interface AnnotationMatcher {
     public boolean test(@NotNull Annotation annotation) {
       Class<? extends Annotation> annotationType = annotation.annotationType();
       return this.type.equals(annotationType);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull Class<? extends Annotation> annotationType() {
+      return this.type;
     }
 
     /**
@@ -195,6 +211,14 @@ interface AnnotationMatcher {
     @Override
     public boolean test(@NotNull Annotation annotation) {
       return this.annotation.equals(annotation);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull Class<? extends Annotation> annotationType() {
+      return this.annotation.annotationType();
     }
 
     /**

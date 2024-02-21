@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel.internal.annotation;
 
-import jakarta.inject.Qualifier;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -64,17 +63,5 @@ public final class AnnotationUtil {
   public static @NotNull RetentionPolicy extractRetention(@NotNull Class<? extends Annotation> annotationType) {
     Retention retention = annotationType.getDeclaredAnnotation(Retention.class);
     return retention != null ? retention.value() : RetentionPolicy.CLASS;
-  }
-
-  /**
-   * Checks if the given annotation is a qualifier annotation. This is done by checking if the jakarta.Qualifier
-   * annotation is present on the annotation type.
-   *
-   * @param annotationType the annotation type to check for qualifier status.
-   * @return true if the given annotation is a qualifier, false otherwise.
-   * @see Qualifier
-   */
-  public static boolean isQualifierAnnotation(@NotNull Class<? extends Annotation> annotationType) {
-    return annotationType.isAnnotationPresent(Qualifier.class);
   }
 }
