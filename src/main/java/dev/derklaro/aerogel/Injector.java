@@ -24,20 +24,13 @@
 
 package dev.derklaro.aerogel;
 
-import dev.derklaro.aerogel.binding.BindingConstructor;
-import dev.derklaro.aerogel.binding.BindingHolder;
 import dev.derklaro.aerogel.internal.DefaultInjector;
-import dev.derklaro.aerogel.member.MemberInjector;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.util.Collection;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.util.Optional;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.UnknownNullability;
 import org.jetbrains.annotations.Unmodifiable;
 
 /**
@@ -64,11 +57,10 @@ public interface Injector {
   }
 
   /**
-   * Get the parent injector of this injector.
    *
-   * @return the parent injector of this injector or {@code null} if the injector has no parent.
    */
-  @Nullable Injector parent();
+  @NotNull
+  Optional<Injector> parentInjector();
 
   /**
    * Creates a new child injector which has this injector as it's parent injector. The child injector has access to all
@@ -76,17 +68,8 @@ public interface Injector {
    *
    * @return a new child injector of this injector.
    */
-  @NotNull Injector newChildInjector();
-
-  /**
-   * Returns a new specified injector which has this injector as its parent injector. Note that specified injectors can
-   * be the parent of a specified injector as well.
-   *
-   * @return a new specified injector of this injector.
-   * @since 2.0
-   */
-  @API(status = API.Status.EXPERIMENTAL, since = "2.0")
-  @NotNull SpecifiedInjector newSpecifiedInjector();
+  @NotNull
+  Injector createChildInjector();
 
   /**
    * Creates or gets the instance of the given class type.
@@ -98,7 +81,7 @@ public interface Injector {
    * @throws AerogelException     if no binding is present and no runtime binding can be created.
    * @since 1.2.0
    */
-  @UnknownNullability <T> T instance(@NotNull Class<T> type);
+  <T> T instance(@NotNull Class<T> type);
 
   /**
    * Creates or gets the instance of the given type.
@@ -109,46 +92,7 @@ public interface Injector {
    * @throws NullPointerException if {@code type} is null.
    * @throws AerogelException     if no binding is present and no runtime binding can be created.
    */
-  @UnknownNullability <T> T instance(@NotNull Type type);
-
-  /**
-   * Creates or gets the instance of the given element.
-   *
-   * @param element the element to get.
-   * @param <T>     the type of the element.
-   * @return the constructed instance of the type, may be null.
-   * @throws NullPointerException if {@code type} is null.
-   * @throws AerogelException     if no binding is present and no runtime binding can be created.
-   */
-  @UnknownNullability <T> T instance(@NotNull Element element);
-
-  /**
-   * Installs the binding constructed by the given {@code constructor} to this injector.
-   *
-   * @param constructor the constructor to install.
-   * @return the same instance as used to call this method, for chaining.
-   * @throws NullPointerException if {@code constructor} is null or the constructor constructs a null value.
-   */
-  @NotNull Injector install(@NotNull BindingConstructor constructor);
-
-  /**
-   * Installs all bindings constructed by each element of the given {@code constructors} to this injector.
-   *
-   * @param constructors the constructors to install.
-   * @return the same instance as used to call this method, for chaining.
-   * @throws NullPointerException if {@code constructor} is null or the constructor constructs a null value.
-   */
-  @NotNull Injector install(@NotNull Iterable<BindingConstructor> constructors);
-
-  /**
-   * Installs the given binding holder into this injector.
-   *
-   * @param bindingHolder the binding holder to install.
-   * @return the same instance as used to call this method, for chaining.
-   * @throws NullPointerException if the given binding holder is null.
-   */
-  @API(status = API.Status.EXPERIMENTAL, since = "2.0")
-  @NotNull Injector install(@NotNull BindingHolder bindingHolder);
+  <T> T instance(@NotNull Type type);
 
   /**
    * Get a member injector for all fields and methods annotated as {@literal @}{@code Inject} in the class. The returned
@@ -159,16 +103,8 @@ public interface Injector {
    * @return the created or cached member injector for the given {@code memberHolderClass}.
    * @throws NullPointerException if {@code memberHolderClass} is null.
    */
-  @NotNull MemberInjector memberInjector(@NotNull Class<?> memberHolderClass);
-
-  /**
-   * Get the cached member injector of this injector if present.
-   *
-   * @param memberHolderClass the holder class of the members.
-   * @return the cached member injector or null if no member injector is cached.
-   * @throws NullPointerException if {@code memberHolderClass} is null.
-   */
-  @Nullable MemberInjector fastMemberInjector(@NotNull Class<?> memberHolderClass);
+  @NotNull
+  <T> MemberInjector<T> memberInjector(@NotNull Class<T> memberHolderClass);
 
   /**
    * Get the stored binding for the given {@code target} type. This call might create a binding for the given type if
@@ -179,7 +115,8 @@ public interface Injector {
    * @throws NullPointerException if {@code target} is null.
    * @throws AerogelException     if no binding is present and no runtime binding can be created.
    */
-  @NotNull BindingHolder binding(@NotNull Type target);
+  @NotNull
+  BindingHolder binding(@NotNull Type target);
 
   /**
    * Get the stored binding for the given {@code element}. This call might create a binding for the given type if the
@@ -190,40 +127,8 @@ public interface Injector {
    * @throws NullPointerException if {@code element} is null.
    * @throws AerogelException     if no binding is present and no runtime binding can be created.
    */
-  @NotNull BindingHolder binding(@NotNull Element element);
-
-  /**
-   * Gets the stored binding for the given element or calls the given factory to obtain a binding holder. The binding
-   * can be stored in the parent injector chain as well.
-   *
-   * @param element the element of the binding to get.
-   * @param factory the factory to call if no binding is available.
-   * @return the stored binding for the given element target.
-   * @throws NullPointerException if the given element or factory is null.
-   * @throws AerogelException     if no binding is present and no runtime binding can be created.
-   * @since 2.0
-   */
-  @API(status = API.Status.EXPERIMENTAL, since = "2.0")
-  @UnknownNullability BindingHolder bindingOr(@NotNull Element element, @NotNull Supplier<BindingHolder> factory);
-
-  /**
-   * Get the stored binding for the given {@code element}. The binding can be stored in the parent injector chain as
-   * well.
-   *
-   * @param element the element of the binding to get.
-   * @return the stored binding for the given element target or null if no type is stored for the element.
-   * @throws NullPointerException if {@code element} is null.
-   */
-  @Nullable BindingHolder bindingOrNull(@NotNull Element element);
-
-  /**
-   * Get the stored binding for the given {@code element} in this injector.
-   *
-   * @param element the element of the binding to get.
-   * @return the stored binding for the given element target or null if no type is stored for the element.
-   * @throws NullPointerException if {@code element} is null.
-   */
-  @Nullable BindingHolder fastBinding(@NotNull Element element);
+  @NotNull
+  BindingHolder binding(@NotNull Element element);
 
   /**
    * Get all bindings which are constructed for this injector.
@@ -231,15 +136,8 @@ public interface Injector {
    * @return all bindings which are constructed for this injector.
    */
   @Unmodifiable
-  @NotNull Collection<BindingHolder> bindings();
-
-  /**
-   * Get all bindings which are constructed for this injector and every parent injector in the chain.
-   *
-   * @return all bindings of this and all parent injectors.
-   */
-  @Unmodifiable
-  @NotNull Collection<BindingHolder> allBindings();
+  @NotNull
+  Collection<BindingHolder> bindings();
 
   /**
    * Registers the given annotation as a scope annotation to this injector. All child injectors will have the
@@ -257,38 +155,8 @@ public interface Injector {
    * @since 2.0
    */
   @API(status = API.Status.STABLE, since = "2.0")
-  @NotNull Injector registerScope(@NotNull Class<? extends Annotation> scopeAnno, @NotNull ScopeProvider provider);
-
-  /**
-   * Gets the registered scope provider associated with the given annotation from this or any parent injector. The first
-   * scope registration in the tree will be used.
-   *
-   * @param scopeAnnotation the scope annotation to find the provider of.
-   * @return the scope provider associated with the given annotation, null if not registered.
-   * @since 2.0
-   */
-  @API(status = API.Status.STABLE, since = "2.0")
-  @Nullable ScopeProvider scope(@NotNull Class<? extends Annotation> scopeAnnotation);
-
-  /**
-   * Get the registered scope from this provider. This method will not check any parent injector.
-   *
-   * @param scopeAnnotation the scope annotation to find the local provider of.
-   * @return the scope provider associated with the given annotation in this injector, null if not registered.
-   * @since 2.0
-   */
-  @API(status = API.Status.STABLE, since = "2.0")
-  @Nullable ScopeProvider fastScope(@NotNull Class<? extends Annotation> scopeAnnotation);
-
-  /**
-   * Get all registered scopes from the full injector tree, travelling up all injectors.
-   *
-   * @return the registered scopes in all injectors up the tree.
-   * @since 2.0
-   */
-  @Unmodifiable
-  @API(status = API.Status.STABLE, since = "2.0")
-  @NotNull Collection<ScopeProvider> scopes();
+  @NotNull
+  Injector registerScope(@NotNull Class<? extends Annotation> scopeAnno, @NotNull ScopeProvider provider);
 
   /**
    * Removes all bindings which are directly registered in this injector and are passing the given filter predicate.

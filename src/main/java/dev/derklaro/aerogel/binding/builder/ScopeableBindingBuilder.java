@@ -61,6 +61,15 @@ public interface ScopeableBindingBuilder<T> extends AdvancedBindingBuilder<T> {
   AdvancedBindingBuilder<T> unscoped();
 
   /**
+   * Instructs this builder that the singleton scope should be applied after constructing the binding.
+   *
+   * @return the next builder step which allows to target the binding builder.
+   * @see jakarta.inject.Singleton
+   */
+  @NotNull
+  AdvancedBindingBuilder<T> scopedWithSingleton();
+
+  /**
    * Instructs the builder to apply the given scope after constructing the binding.
    *
    * @param scopeApplier the scope to apply after constructing the binding.

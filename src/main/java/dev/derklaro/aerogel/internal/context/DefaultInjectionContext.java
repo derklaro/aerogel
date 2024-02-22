@@ -36,7 +36,7 @@ import dev.derklaro.aerogel.internal.proxy.InjectionTimeProxy;
 import dev.derklaro.aerogel.internal.proxy.ProxyMapping;
 import dev.derklaro.aerogel.internal.reflect.TypeUtil;
 import dev.derklaro.aerogel.internal.util.Preconditions;
-import dev.derklaro.aerogel.member.InjectionSetting;
+import dev.derklaro.aerogel.member.MemberInjectionType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -549,7 +549,7 @@ public final class DefaultInjectionContext implements InjectionContext {
    */
   @Override
   public void requestMemberInjection(@Nullable Object value) {
-    this.requestMemberInjection(value, InjectionSetting.FLAG_ALL_MEMBERS);
+    this.requestMemberInjection(value, MemberInjectionType.FLAG_ALL_MEMBERS);
   }
 
   /**

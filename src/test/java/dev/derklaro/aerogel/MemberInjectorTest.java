@@ -24,7 +24,7 @@
 
 package dev.derklaro.aerogel;
 
-import dev.derklaro.aerogel.member.InjectionSetting;
+import dev.derklaro.aerogel.member.MemberInjectionType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -43,7 +43,7 @@ public class MemberInjectorTest {
   @Test
   void testOnlyNonPrivateStaticFieldInjection() {
     Injector injector = Injector.newInjector();
-    long flag = InjectionSetting.toFlag(InjectionSetting.STATIC_FIELDS);
+    long flag = MemberInjectionType.toFlag(MemberInjectionType.STATIC_FIELDS);
 
     injector.memberInjector(FieldHolder.class).inject(flag);
     Assertions.assertNull(FieldHolder.dataClass);
@@ -62,7 +62,7 @@ public class MemberInjectorTest {
   @Test
   void testOnlyUninitializedStaticFieldInjection() {
     Injector injector = Injector.newInjector();
-    long flag = InjectionSetting.toFlag(InjectionSetting.STATIC_FIELDS, InjectionSetting.ONLY_UNINITIALIZED_FIELDS);
+    long flag = MemberInjectionType.toFlag(MemberInjectionType.STATIC_FIELDS, MemberInjectionType.ONLY_UNINITIALIZED_FIELDS);
 
     DataClass dataClass = new DataClass();
     FieldHolder.dataClass = dataClass;
@@ -86,7 +86,7 @@ public class MemberInjectorTest {
   @Test
   void testOnlyNonPrivateInstanceFieldInjection() {
     Injector injector = Injector.newInjector();
-    long flag = InjectionSetting.toFlag(InjectionSetting.INSTANCE_FIELDS);
+    long flag = MemberInjectionType.toFlag(MemberInjectionType.INSTANCE_FIELDS);
 
     // test instance based field injection
     FieldHolder instance = new FieldHolder();
@@ -99,7 +99,7 @@ public class MemberInjectorTest {
   @Test
   void testAllInstanceFieldInjection() {
     Injector injector = Injector.newInjector();
-    long flag = InjectionSetting.toFlag(InjectionSetting.INSTANCE_FIELDS, InjectionSetting.PRIVATE_FIELDS);
+    long flag = MemberInjectionType.toFlag(MemberInjectionType.INSTANCE_FIELDS, MemberInjectionType.PRIVATE_FIELDS);
 
     // test instance based field injection
     FieldHolder instance = new FieldHolder();
@@ -112,10 +112,10 @@ public class MemberInjectorTest {
   @Test
   void testOnlyUninitializedInstanceFieldInjection() {
     Injector injector = Injector.newInjector();
-    long flag = InjectionSetting.toFlag(
-      InjectionSetting.PRIVATE_FIELDS,
-      InjectionSetting.INSTANCE_FIELDS,
-      InjectionSetting.ONLY_UNINITIALIZED_FIELDS);
+    long flag = MemberInjectionType.toFlag(
+      MemberInjectionType.PRIVATE_FIELDS,
+      MemberInjectionType.INSTANCE_FIELDS,
+      MemberInjectionType.ONLY_UNINITIALIZED_FIELDS);
 
     // test instance based field injection
     FieldHolder instance = new FieldHolder();
@@ -145,7 +145,7 @@ public class MemberInjectorTest {
   @Test
   void testOnlyNonPrivateStaticMethodInjection() {
     Injector injector = Injector.newInjector();
-    long flag = InjectionSetting.toFlag(InjectionSetting.STATIC_METHODS);
+    long flag = MemberInjectionType.toFlag(MemberInjectionType.STATIC_METHODS);
 
     injector.memberInjector(MethodHolder.class).inject(flag);
     Assertions.assertNull(MethodHolder.test1);
@@ -155,7 +155,7 @@ public class MemberInjectorTest {
   @Test
   void testAllStaticMethodInjection() {
     Injector injector = Injector.newInjector();
-    long flag = InjectionSetting.toFlag(InjectionSetting.STATIC_METHODS, InjectionSetting.PRIVATE_METHODS);
+    long flag = MemberInjectionType.toFlag(MemberInjectionType.STATIC_METHODS, MemberInjectionType.PRIVATE_METHODS);
 
     injector.memberInjector(MethodHolder.class).inject(flag);
     Assertions.assertNotNull(MethodHolder.test);
@@ -174,7 +174,7 @@ public class MemberInjectorTest {
   @Test
   void testOnlyNonPrivateInstanceMethodInjection() {
     Injector injector = Injector.newInjector();
-    long flag = InjectionSetting.toFlag(InjectionSetting.STATIC_METHODS, InjectionSetting.INSTANCE_METHODS);
+    long flag = MemberInjectionType.toFlag(MemberInjectionType.STATIC_METHODS, MemberInjectionType.INSTANCE_METHODS);
 
     // test instance based method injection
     MethodHolder instance = new MethodHolder();
@@ -187,10 +187,10 @@ public class MemberInjectorTest {
   @Test
   void testAllInstanceMethodInjection() {
     Injector injector = Injector.newInjector();
-    long flag = InjectionSetting.toFlag(
-      InjectionSetting.STATIC_METHODS,
-      InjectionSetting.PRIVATE_METHODS,
-      InjectionSetting.INSTANCE_METHODS);
+    long flag = MemberInjectionType.toFlag(
+      MemberInjectionType.STATIC_METHODS,
+      MemberInjectionType.PRIVATE_METHODS,
+      MemberInjectionType.INSTANCE_METHODS);
 
     // test instance based method injection
     MethodHolder instance = new MethodHolder();

@@ -36,7 +36,7 @@ import dev.derklaro.aerogel.internal.context.util.ContextInstanceResolveHelper;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
 import dev.derklaro.aerogel.internal.util.InjectorUtil;
 import dev.derklaro.aerogel.internal.util.MapUtil;
-import dev.derklaro.aerogel.member.MemberInjector;
+import dev.derklaro.aerogel.MemberInjector;
 import dev.derklaro.aerogel.util.Scopes;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;

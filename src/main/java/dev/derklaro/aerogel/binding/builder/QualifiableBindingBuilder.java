@@ -65,6 +65,17 @@ import org.jetbrains.annotations.NotNull;
 public interface QualifiableBindingBuilder<T> extends ScopeableBindingBuilder<T> {
 
   /**
+   * Requires the binding that is being build to be annotated with the {@link jakarta.inject.Named} qualifier annotation
+   * and the name to match the given name.
+   *
+   * @param name the value to require from the named qualifier annotation.
+   * @return the next binding step that allows for scoping the target binding.
+   * @see jakarta.inject.Named
+   */
+  @NotNull
+  ScopeableBindingBuilder<T> qualifiedWithName(@NotNull String name);
+
+  /**
    * Requires the given annotation instance in this builder. If the underlying annotation type has no properties (marker
    * annotation), only the annotation type will be required. If properties are present, the properties must also match
    * on the element that is being injected.

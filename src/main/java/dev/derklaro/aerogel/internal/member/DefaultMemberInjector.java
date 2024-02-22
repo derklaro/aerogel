@@ -34,8 +34,8 @@ import dev.derklaro.aerogel.internal.reflect.ReflectionUtil;
 import dev.derklaro.aerogel.internal.util.ElementHelper;
 import dev.derklaro.aerogel.internal.util.MethodHandleUtil;
 import dev.derklaro.aerogel.internal.util.Preconditions;
-import dev.derklaro.aerogel.member.InjectionSetting;
-import dev.derklaro.aerogel.member.MemberInjector;
+import dev.derklaro.aerogel.member.MemberInjectionType;
+import dev.derklaro.aerogel.MemberInjector;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
@@ -129,7 +129,7 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   @Override
   public void inject() {
-    this.inject(InjectionSetting.FLAG_STATIC_MEMBERS);
+    this.inject(MemberInjectionType.FLAG_STATIC_MEMBERS);
   }
 
   /**
@@ -145,7 +145,7 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   @Override
   public void inject(@Nullable Object instance) {
-    this.inject(instance, InjectionSetting.FLAG_ALL_MEMBERS);
+    this.inject(instance, MemberInjectionType.FLAG_ALL_MEMBERS);
   }
 
   /**
@@ -252,7 +252,7 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   private void injectStaticFields(@NotNull Predicate<Member> preTester, long flags) {
     // check if we need to inject all static fields
-    if (InjectionSetting.STATIC_FIELDS.enabled(flags)) {
+    if (MemberInjectionType.STATIC_FIELDS.enabled(flags)) {
       // loop and search for every field we should inject
       for (InjectableField field : this.injectableFields) {
         if (Modifier.isStatic(field.field.getModifiers())
@@ -275,7 +275,7 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   private void injectInstanceFields(@Nullable Object instance, @NotNull Predicate<Member> preTester, long flags) {
     // check if we need (and can) to inject instance fields
-    if (InjectionSetting.INSTANCE_FIELDS.enabled(flags)) {
+    if (MemberInjectionType.INSTANCE_FIELDS.enabled(flags)) {
       // loop and search for every field we should inject
       for (InjectableField injectable : this.injectableFields) {
         if (!Modifier.isStatic(injectable.field.getModifiers())
@@ -297,7 +297,7 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   private void injectStaticMethods(@NotNull Predicate<Member> preTester, long flags) {
     // check if we need to inject all static methods
-    if (InjectionSetting.STATIC_METHODS.enabled(flags)) {
+    if (MemberInjectionType.STATIC_METHODS.enabled(flags)) {
       // loop and search for every method we should inject
       for (InjectableMethod injectable : this.injectableMethods) {
         if (Modifier.isStatic(injectable.method.getModifiers())
@@ -320,7 +320,7 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   private void injectInstanceMethods(@Nullable Object instance, @NotNull Predicate<Member> preTester, long flags) {
     // check if we need to inject instance methods
-    if (InjectionSetting.INSTANCE_METHODS.enabled(flags)) {
+    if (MemberInjectionType.INSTANCE_METHODS.enabled(flags)) {
       // loop and search for every method we should inject
       for (InjectableMethod injectable : this.injectableMethods) {
         if (!Modifier.isStatic(injectable.method.getModifiers())
@@ -342,7 +342,7 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   private void executePostConstructListeners(@Nullable Object instance, long flags) {
     // check if we need to execute post construct listeners
-    if (InjectionSetting.RUN_POST_CONSTRUCT_LISTENERS.enabled(flags)) {
+    if (MemberInjectionType.RUN_POST_CONSTRUCT_LISTENERS.enabled(flags)) {
       // loop and search for every method we should execute
       for (InjectableMethod injectable : this.postConstructMethods) {
         this.injectMethod(instance, injectable);
@@ -476,7 +476,7 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   private boolean methodMatches(@NotNull Method method, long flags) {
     // check if the method is private & private method injection is enabled
-    if (Modifier.isPrivate(method.getModifiers()) && InjectionSetting.PRIVATE_METHODS.disabled(flags)) {
+    if (Modifier.isPrivate(method.getModifiers()) && MemberInjectionType.PRIVATE_METHODS.disabled(flags)) {
       return false;
     }
 
@@ -486,7 +486,7 @@ public final class DefaultMemberInjector implements MemberInjector {
     }
 
     // check if inherited methods are enabled
-    return InjectionSetting.INHERITED_METHODS.enabled(flags);
+    return MemberInjectionType.INHERITED_METHODS.enabled(flags);
   }
 
   /**
@@ -499,17 +499,17 @@ public final class DefaultMemberInjector implements MemberInjector {
    */
   private boolean fieldMatches(@NotNull Field field, @Nullable Object on, long flags) {
     // check if the method is private & private method injection is enabled
-    if (Modifier.isPrivate(field.getModifiers()) && InjectionSetting.PRIVATE_FIELDS.disabled(flags)) {
+    if (Modifier.isPrivate(field.getModifiers()) && MemberInjectionType.PRIVATE_FIELDS.disabled(flags)) {
       return false;
     }
 
     // check if the method is inherited & inherited methods are enabled
-    if (!field.getDeclaringClass().equals(this.targetClass) && InjectionSetting.INHERITED_METHODS.disabled(flags)) {
+    if (!field.getDeclaringClass().equals(this.targetClass) && MemberInjectionType.INHERITED_METHODS.disabled(flags)) {
       return false;
     }
 
     // check if the field is initialized
-    if (InjectionSetting.ONLY_UNINITIALIZED_FIELDS.enabled(flags)) {
+    if (MemberInjectionType.ONLY_UNINITIALIZED_FIELDS.enabled(flags)) {
       try {
         // tries to read the field value
         return ReflectionUtil.isUninitialized(field, on);

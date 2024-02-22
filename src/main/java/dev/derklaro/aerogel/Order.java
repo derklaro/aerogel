@@ -36,8 +36,6 @@ import org.apiguardian.api.API;
  * defined the {@link Order#DEFAULT} value will be applied to the element. If multiple elements have the same order, the
  * natural ordering is applied to them.
  *
- * <p>This annotation only takes effect on method annotated as {@link Inject} or {@link PostConstruct}.
- *
  * @author Pasqual K.
  * @since 2.0
  */
