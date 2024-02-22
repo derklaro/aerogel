@@ -24,14 +24,20 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.binding.InstalledBinding;
+import dev.derklaro.aerogel.binding.UninstalledBinding;
+import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
+import dev.derklaro.aerogel.binding.dynamic.DynamicBinding;
+import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.DefaultInjector;
+import dev.derklaro.aerogel.registry.Registry;
+import io.leangen.geantyref.TypeToken;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Optional;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * The main part of aerogel. The injector keeps track of all known bindings and shared them with their child injectors.
@@ -46,126 +52,49 @@ import org.jetbrains.annotations.Unmodifiable;
 @API(status = API.Status.STABLE, since = "1.0")
 public interface Injector {
 
-  /**
-   * Creates a new, empty injector instance.
-   *
-   * @return a new, empty injector instance.
-   */
   @Contract(pure = true)
   static @NotNull Injector newInjector() {
     return new DefaultInjector(null);
   }
 
-  /**
-   *
-   */
   @NotNull
   Optional<Injector> parentInjector();
 
-  /**
-   * Creates a new child injector which has this injector as it's parent injector. The child injector has access to all
-   * bindings of the parent injector but not vice-versa.
-   *
-   * @return a new child injector of this injector.
-   */
   @NotNull
   Injector createChildInjector();
 
-  /**
-   * Creates or gets the instance of the given class type.
-   *
-   * @param type the type of the element to get.
-   * @param <T>  the type of the class modeled by the given class object.
-   * @return the constructed instance of the class type, may be null.
-   * @throws NullPointerException if {@code type} is null.
-   * @throws AerogelException     if no binding is present and no runtime binding can be created.
-   * @since 1.2.0
-   */
-  <T> T instance(@NotNull Class<T> type);
+  @NotNull
+  RootBindingBuilder createBindingBuilder();
 
-  /**
-   * Creates or gets the instance of the given type.
-   *
-   * @param type the type of the element to get.
-   * @param <T>  the wildcard type of the element.
-   * @return the constructed instance of the type, may be null.
-   * @throws NullPointerException if {@code type} is null.
-   * @throws AerogelException     if no binding is present and no runtime binding can be created.
-   */
-  <T> T instance(@NotNull Type type);
-
-  /**
-   * Get a member injector for all fields and methods annotated as {@literal @}{@code Inject} in the class. The returned
-   * member injector is cached in this injector once this method was called for the given holder class, but any other
-   * injector in the downstream injector chain will have no access to the injector.
-   *
-   * @param memberHolderClass the holder class of the members.
-   * @return the created or cached member injector for the given {@code memberHolderClass}.
-   * @throws NullPointerException if {@code memberHolderClass} is null.
-   */
   @NotNull
   <T> MemberInjector<T> memberInjector(@NotNull Class<T> memberHolderClass);
 
-  /**
-   * Get the stored binding for the given {@code target} type. This call might create a binding for the given type if
-   * the type is constructable. The binding can be stored in the parent injector chain as well.
-   *
-   * @param target the type of the binding to get.
-   * @return the stored binding for the given element target.
-   * @throws NullPointerException if {@code target} is null.
-   * @throws AerogelException     if no binding is present and no runtime binding can be created.
-   */
-  @NotNull
-  BindingHolder binding(@NotNull Type target);
+  <T> T instance(@NotNull Class<T> type);
 
-  /**
-   * Get the stored binding for the given {@code element}. This call might create a binding for the given type if the
-   * type is constructable. The binding can be stored in the parent injector chain as well.
-   *
-   * @param element the element of the binding to get.
-   * @return the stored binding for the given element target.
-   * @throws NullPointerException if {@code element} is null.
-   * @throws AerogelException     if no binding is present and no runtime binding can be created.
-   */
-  @NotNull
-  BindingHolder binding(@NotNull Element element);
+  <T> T instance(@NotNull Type type);
 
-  /**
-   * Get all bindings which are constructed for this injector.
-   *
-   * @return all bindings which are constructed for this injector.
-   */
-  @Unmodifiable
-  @NotNull
-  Collection<BindingHolder> bindings();
+  <T> T instance(@NotNull TypeToken<T> typeToken);
 
-  /**
-   * Registers the given annotation as a scope annotation to this injector. All child injectors will have the
-   * information about the given scope present, unless the scope was registered to them specifically (or anywhere
-   * downstream of this injector) as well.
-   *
-   * <p>This method does not validate that the given annotation is marked as &#064;Scope. If the scope annotation is
-   * missing on the given annotation, and the scope is applied somewhere, the injector will not be able to understand
-   * that the given annotation should get treated as a scope.
-   *
-   * @param scopeAnno the annotation to associate as a scope with the given scope provider.
-   * @param provider  the provider to apply when the scope is requested via the given annotation.
-   * @return the same injector as used to call the method, for chaining.
-   * @throws NullPointerException if the given scope annotation class or scope provider is null.
-   * @since 2.0
-   */
-  @API(status = API.Status.STABLE, since = "2.0")
-  @NotNull
-  Injector registerScope(@NotNull Class<? extends Annotation> scopeAnno, @NotNull ScopeProvider provider);
+  <T> T instance(@NotNull BindingKey<T> key);
 
-  /**
-   * Removes all bindings which are directly registered in this injector and are passing the given filter predicate.
-   *
-   * @param filter the predicate to filter out the bindings to remove.
-   * @return true if a binding was removed as a result of this call, false otherwise.
-   * @throws NullPointerException if the given filter is null.
-   * @since 2.0
-   */
-  @API(status = API.Status.EXPERIMENTAL, since = "2.0")
-  boolean removeBindings(@NotNull Predicate<BindingHolder> filter);
+  @NotNull
+  <T> InstalledBinding<T> binding(@NotNull BindingKey<T> key);
+
+  @NotNull
+  <T> Optional<InstalledBinding<T>> existingBinding(@NotNull BindingKey<T> key);
+
+  @NotNull
+  Injector installBinding(@NotNull DynamicBinding binding);
+
+  @NotNull
+  <T> Injector installBinding(@NotNull UninstalledBinding<T> binding);
+
+  @NotNull
+  Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry();
+
+  @NotNull
+  Registry.WithoutKeyMapping<BindingKey<?>, DynamicBinding> dynamicBindingRegistry();
+
+  @NotNull
+  Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry();
 }
