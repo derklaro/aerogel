@@ -26,11 +26,10 @@ package dev.derklaro.aerogel.scopedvalue;
 
 import dev.derklaro.aerogel.ContextualProvider;
 import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.context.InjectionContext;
-import dev.derklaro.aerogel.context.InjectionContextProvider;
-import dev.derklaro.aerogel.context.InjectionContextScope;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
 import dev.derklaro.aerogel.context.LazyContextualProvider;
-import dev.derklaro.aerogel.internal.context.DefaultInjectionContext;
+import dev.derklaro.aerogel.internal.context.InjectionContext;
 import java.lang.reflect.Type;
 import java.util.List;
 import org.apiguardian.api.API;
@@ -70,7 +69,7 @@ public final class ScopedValueInjectionContextProvider implements InjectionConte
     if (currentScope != null) {
       if (currentScope.context().obsolete()) {
         // the current root context is obsolete, copy the necessary information from it into a new root context
-        InjectionContext context = currentScope.context().copyAsRoot(
+        dev.derklaro.aerogel.context.InjectionContext context = currentScope.context().copyAsRoot(
           callingBinding,
           constructingType,
           overrides,
@@ -79,12 +78,12 @@ public final class ScopedValueInjectionContextProvider implements InjectionConte
         return new ScopedValueInjectionContextScope(context, this.scopeScopedValue);
       } else {
         // we're already in an existing root context, enter a subcontext of that one
-        InjectionContext subcontext = currentScope.context().enterSubcontext(constructingType, callingBinding, null);
+        dev.derklaro.aerogel.context.InjectionContext subcontext = currentScope.context().enterSubcontext(constructingType, callingBinding, null);
         return new ScopedValueInjectionContextScope(subcontext, this.scopeScopedValue);
       }
     } else {
       // no context yet, construct a new root context
-      InjectionContext context = new DefaultInjectionContext(
+      dev.derklaro.aerogel.context.InjectionContext context = new InjectionContext(
         callingBinding,
         constructingType,
         overrides,

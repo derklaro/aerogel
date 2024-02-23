@@ -24,15 +24,13 @@
 
 package dev.derklaro.aerogel.internal.context.scope.threadlocal;
 
-import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.context.InjectionContext;
-import dev.derklaro.aerogel.context.InjectionContextProvider;
-import dev.derklaro.aerogel.context.InjectionContextScope;
-import dev.derklaro.aerogel.context.LazyContextualProvider;
-import dev.derklaro.aerogel.internal.context.DefaultInjectionContext;
-import java.lang.reflect.Type;
-import java.util.List;
+import dev.derklaro.aerogel.binding.InstalledBinding;
+import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.context.InjectionContext;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
+import jakarta.inject.Provider;
+import java.util.Map;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -56,40 +54,27 @@ public final class ThreadLocalInjectionContextProvider implements InjectionConte
     return this.scopeThreadLocal.get();
   }
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public @NotNull InjectionContextScope enterContextScope(
-    @NotNull ContextualProvider<?> callingBinding,
-    @NotNull Type constructingType,
-    @NotNull List<LazyContextualProvider> overrides,
-    @Nullable Element associatedElement
+    @NotNull InstalledBinding<?> binding,
+    @NotNull Map<BindingKey<?>, Provider<?>> overrides
   ) {
     InjectionContextScope currentScope = this.scopeThreadLocal.get();
     if (currentScope != null) {
+      InjectionContext currentContext = currentScope.context();
       if (currentScope.context().obsolete()) {
         // the current root context is obsolete, copy the necessary information from it into a new root context
-        InjectionContext context = currentScope.context().copyAsRoot(
-          callingBinding,
-          constructingType,
-          overrides,
-          associatedElement,
-          this);
-        return new ThreadLocalInjectionContextScope(context, this.scopeThreadLocal);
+        InjectionContext newContext = currentContext.copyAsRoot(binding, overrides, this);
+        return new ThreadLocalInjectionContextScope(newContext, this.scopeThreadLocal);
       } else {
         // we're already in an existing root context, enter a subcontext of that one
-        InjectionContext subcontext = currentScope.context().enterSubcontext(constructingType, callingBinding, null);
+        InjectionContext subcontext = currentContext.enterSubcontext(binding);
         return new ThreadLocalInjectionContextScope(subcontext, this.scopeThreadLocal);
       }
     } else {
       // no context yet, construct a new root context
-      InjectionContext context = new DefaultInjectionContext(
-        callingBinding,
-        constructingType,
-        overrides,
-        this);
-      return new ThreadLocalInjectionContextScope(context, this.scopeThreadLocal);
+      InjectionContext newContext = new InjectionContext(binding, overrides, this);
+      return new ThreadLocalInjectionContextScope(newContext, this.scopeThreadLocal);
     }
   }
 }

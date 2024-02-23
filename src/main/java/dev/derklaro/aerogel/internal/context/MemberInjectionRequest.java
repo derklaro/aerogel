@@ -37,31 +37,27 @@ import org.jetbrains.annotations.Nullable;
  */
 final class MemberInjectionRequest {
 
-  private final long flag;
+  private final Injector injector;
   private final Class<?> targetClass;
   private final Object constructedValue;
-  private final Injector parentInjector;
 
   private final int hashCode;
 
   /**
    * Constructs a new member injection request.
    *
-   * @param flag             the flag to pass to the member injector when injecting.
+   * @param injector         the injector which should be used as the parent of the member injector.
    * @param targetClass      the target class to resolve the fields and methods to call from.
    * @param constructedValue the value that was constructed and should receive member injection.
-   * @param parentInjector   the injector which should be used as the parent of the member injector.
    */
   public MemberInjectionRequest(
-    long flag,
+    @NotNull Injector injector,
     @NotNull Class<?> targetClass,
-    @Nullable Object constructedValue,
-    @NotNull Injector parentInjector
+    @Nullable Object constructedValue
   ) {
-    this.flag = flag;
     this.targetClass = targetClass;
     this.constructedValue = constructedValue;
-    this.parentInjector = parentInjector;
+    this.injector = injector;
     this.hashCode = targetClass.hashCode() ^ System.identityHashCode(constructedValue);
   }
 
@@ -69,8 +65,9 @@ final class MemberInjectionRequest {
    * Executes the requested member injection.
    */
   public void executeMemberInjection() {
-    MemberInjector memberInjector = this.parentInjector.memberInjector(this.targetClass);
-    memberInjector.inject(this.constructedValue, this.flag);
+    @SuppressWarnings("unchecked")
+    MemberInjector<Object> memberInjector = (MemberInjector<Object>) this.injector.memberInjector(this.targetClass);
+    memberInjector.injectMembers(this.constructedValue);
   }
 
   /**

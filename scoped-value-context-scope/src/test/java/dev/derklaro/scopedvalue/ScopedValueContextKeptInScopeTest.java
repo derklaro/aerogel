@@ -31,7 +31,7 @@ import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.Name;
 import dev.derklaro.aerogel.binding.BindingBuilder;
 import dev.derklaro.aerogel.context.InjectionContext;
-import dev.derklaro.aerogel.context.InjectionContextScope;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
 import dev.derklaro.aerogel.internal.context.util.ContextInstanceResolveHelper;
 import dev.derklaro.aerogel.util.Qualifiers;
 import org.junit.jupiter.api.Assertions;

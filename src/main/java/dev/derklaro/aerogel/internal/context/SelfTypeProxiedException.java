@@ -52,14 +52,6 @@ final class SelfTypeProxiedException extends PassthroughException {
    * {@inheritDoc}
    */
   @Override
-  public @NotNull Throwable fillInStackTrace() {
-    return this;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public @NotNull Throwable initCause(@Nullable Throwable cause) {
     return this;
   }

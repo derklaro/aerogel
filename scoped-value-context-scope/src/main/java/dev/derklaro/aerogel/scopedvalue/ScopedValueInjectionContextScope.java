@@ -25,7 +25,7 @@
 package dev.derklaro.aerogel.scopedvalue;
 
 import dev.derklaro.aerogel.context.InjectionContext;
-import dev.derklaro.aerogel.context.InjectionContextScope;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
 import java.util.function.Supplier;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;

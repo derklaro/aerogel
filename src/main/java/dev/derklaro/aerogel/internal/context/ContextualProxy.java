@@ -24,7 +24,7 @@
 
 package dev.derklaro.aerogel.internal.context;
 
-import dev.derklaro.aerogel.ContextualProvider;
+import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.internal.proxy.ProxyMapping;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -33,18 +33,18 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A created proxy associated with a context. This proxy mapping contains more info which allows to resolve the context
  * which requested this proxy instance.
+ * <p>
+ * This proxy also holds a remove listener to execute various actions after the construction finished. Note that there
+ * is no requirement for the remove listener to be called.
  *
- * <p>This proxy also holds a remove listener to execute various actions after the construction finished. Note that
- * there is no requirement for the remove listener to be called.
- *
- * @author Pasqual K.
+ * @author Pasqual Koschmieder
  * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.context")
+@API(status = API.Status.INTERNAL, since = "2.0")
 final class ContextualProxy {
 
   final ProxyMapping proxyMapping;
-  final ContextualProvider<?> callingProvider;
+  final InstalledBinding<?> binding;
 
   Runnable removeListener;
   boolean removeListenerExecuted = false;
@@ -52,18 +52,18 @@ final class ContextualProxy {
   /**
    * Constructs a new contextual proxy.
    *
-   * @param removeListener  the remove listener to call when this mapping gets disconnected from a context.
-   * @param proxyMapping    the actual created proxy.
-   * @param callingProvider the provider that created this proxy mapping.
+   * @param removeListener the remove listener to call when this mapping gets disconnected from a context.
+   * @param proxyMapping   the actual created proxy.
+   * @param binding        the provider that created this proxy mapping.
    */
   public ContextualProxy(
     @NotNull Runnable removeListener,
     @NotNull ProxyMapping proxyMapping,
-    @NotNull ContextualProvider<?> callingProvider
+    @NotNull InstalledBinding<?> binding
   ) {
     this.removeListener = removeListener;
     this.proxyMapping = proxyMapping;
-    this.callingProvider = callingProvider;
+    this.binding = binding;
   }
 
   /**
@@ -72,7 +72,6 @@ final class ContextualProxy {
    * @param delegate the delegate to use for the created proxy.
    */
   public void setDelegate(@Nullable Object delegate) {
-    // ensure that we don't set the delegate twice
     if (!this.proxyMapping.isDelegatePresent()) {
       this.proxyMapping.setDelegate(delegate);
     }
@@ -87,7 +86,6 @@ final class ContextualProxy {
     if (removeListener != null && !this.removeListenerExecuted) {
       removeListener.run();
 
-      // mark as executed and leave the listener for gc
       this.removeListener = null;
       this.removeListenerExecuted = true;
     }

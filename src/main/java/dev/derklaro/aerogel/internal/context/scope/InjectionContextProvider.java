@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,12 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.context;
+package dev.derklaro.aerogel.internal.context.scope;
 
-import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.internal.context.scope.InjectionContextProviderHolder;
-import java.lang.reflect.Type;
-import java.util.List;
+import dev.derklaro.aerogel.binding.InstalledBinding;
+import dev.derklaro.aerogel.binding.key.BindingKey;
+import jakarta.inject.Provider;
+import java.util.Map;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual K.
  * @since 3.0
  */
-@API(status = API.Status.STABLE, since = "3.0")
+@API(status = API.Status.INTERNAL, since = "3.0")
 public interface InjectionContextProvider {
 
   /**
@@ -56,20 +55,11 @@ public interface InjectionContextProvider {
    *
    * @return the current injection context scope, if any is bound in the current context.
    */
-  @Nullable InjectionContextScope currentScope();
+  @Nullable
+  InjectionContextScope currentScope();
 
-  /**
-   * Enters a new subcontext or a new root context in the current execution scope.
-   *
-   * @param callingBinding    the binding to create the context for.
-   * @param constructingType  the type that gets constructed by the new context.
-   * @param overrides         the overridden instances which are directly available.
-   * @param associatedElement the element for which the context is needed, null if unknown.
-   * @return a subcontext or new root context for the given parameters.
-   */
-  @NotNull InjectionContextScope enterContextScope(
-    @NotNull ContextualProvider<?> callingBinding,
-    @NotNull Type constructingType,
-    @NotNull List<LazyContextualProvider> overrides,
-    @Nullable Element associatedElement);
+  @NotNull
+  InjectionContextScope enterContextScope(
+    @NotNull InstalledBinding<?> binding,
+    @NotNull Map<BindingKey<?>, Provider<?>> overrides);
 }

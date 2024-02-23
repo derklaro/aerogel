@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,38 +22,32 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.provider;
+package dev.derklaro.aerogel.internal.context;
 
-import dev.derklaro.aerogel.Provider;
-import org.apiguardian.api.API;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Represents a provider which will always return a fixed value bound to the type {@code T}.
- *
- * @param <T> the type of the element this provider returns.
- * @author Pasqual K.
- * @since 1.0
- */
-@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
-public final class ImmediateProvider<T> implements Provider<T> {
+public final class ScopedSingleton {
 
-  private final T provided;
+  private final Object inner;
 
-  /**
-   * Constructs a new immediate provider.
-   *
-   * @param provided the element which should be returned by a call to {@link #get()}.
-   */
-  public ImmediateProvider(@Nullable T provided) {
-    this.provided = provided;
+  private ScopedSingleton(@Nullable Object inner) {
+    this.inner = inner;
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @Nullable T get() {
-    return this.provided;
+  public static @NotNull ScopedSingleton of(@Nullable Object inner) {
+    return new ScopedSingleton(inner);
+  }
+
+  static @Nullable Object unwrap(@NotNull ScopedSingleton value) {
+    Object inner = value.inner;
+    if (inner instanceof ScopedSingleton) {
+      while (inner instanceof ScopedSingleton) {
+        ScopedSingleton innerValue = (ScopedSingleton) inner;
+        inner = innerValue.inner;
+      }
+    }
+
+    return inner;
   }
 }

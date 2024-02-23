@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,9 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.context;
+package dev.derklaro.aerogel.internal.context.scope;
 
+import dev.derklaro.aerogel.internal.context.InjectionContext;
 import java.util.function.Supplier;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -36,7 +37,7 @@ import org.jetbrains.annotations.UnknownNullability;
  * @author Pasqual K.
  * @since 3.0
  */
-@API(status = API.Status.STABLE, since = "3.0")
+@API(status = API.Status.INTERNAL, since = "3.0")
 public interface InjectionContextScope {
 
   /**
@@ -53,7 +54,8 @@ public interface InjectionContextScope {
    *
    * @return the wrapped injection context.
    */
-  @NotNull InjectionContext context();
+  @NotNull
+  InjectionContext context();
 
   /**
    * Executes the given operation using the injection context of this scope, unless another non-obsolete context is
@@ -64,7 +66,8 @@ public interface InjectionContextScope {
    * @return the value returned by the given operation.
    * @throws NullPointerException if the given operation is null.
    */
-  @UnknownNullability <T> T executeScoped(@NotNull Supplier<T> operation);
+  @UnknownNullability
+  <T> T executeScoped(@NotNull Supplier<T> operation);
 
   /**
    * Executes the given operation using the injection context of this scope. This method overrides the current scoped
@@ -75,5 +78,6 @@ public interface InjectionContextScope {
    * @return the value returned by the given operation.
    * @throws NullPointerException if the given operation is null.
    */
-  @UnknownNullability <T> T forceExecuteScoped(@NotNull Supplier<T> operation);
+  @UnknownNullability
+  <T> T forceExecuteScoped(@NotNull Supplier<T> operation);
 }

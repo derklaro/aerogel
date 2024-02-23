@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel.internal;
 
-import dev.derklaro.aerogel.AerogelException;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
@@ -52,14 +51,8 @@ public class PassthroughException extends RuntimeException {
     super(cause);
   }
 
-  /**
-   * Rethrows the given exception if no wrapping should be done. This applies to {@link AerogelException} as well as
-   * subtypes of {@link PassthroughException}.
-   *
-   * @param throwable the throwable to possibly rethrow.
-   */
   public static void rethrow(@NotNull Throwable throwable) {
-    if (throwable instanceof AerogelException || throwable instanceof PassthroughException) {
+    if (throwable instanceof PassthroughException) {
       throw (RuntimeException) throwable;
     }
   }

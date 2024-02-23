@@ -24,26 +24,21 @@
 
 package dev.derklaro.aerogel.internal.context;
 
-import dev.derklaro.aerogel.AerogelException;
-import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.scope.KnownValue;
-import dev.derklaro.aerogel.context.InjectionContext;
-import dev.derklaro.aerogel.context.InjectionContextProvider;
-import dev.derklaro.aerogel.context.LazyContextualProvider;
+import dev.derklaro.aerogel.binding.InstalledBinding;
+import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
 import dev.derklaro.aerogel.internal.proxy.InjectionTimeProxy;
 import dev.derklaro.aerogel.internal.proxy.ProxyMapping;
-import dev.derklaro.aerogel.internal.reflect.TypeUtil;
 import dev.derklaro.aerogel.internal.util.Preconditions;
-import dev.derklaro.aerogel.member.MemberInjectionType;
-import java.lang.reflect.Type;
+import io.leangen.geantyref.GenericTypeReflector;
+import jakarta.inject.Provider;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -52,13 +47,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The default implementation of an injection context.
- *
- * @author Pasqual K.
+ * @author Pasqual Koschmieder
  * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.context")
-public final class DefaultInjectionContext implements InjectionContext {
+@API(status = API.Status.INTERNAL, since = "2.0")
+public final class InjectionContext {
 
   private static final MemberInjectionRequest[] EMPTY_MEMBER_REQUEST_ARRAY = new MemberInjectionRequest[0];
 
@@ -84,15 +77,11 @@ public final class DefaultInjectionContext implements InjectionContext {
    * Stores the direct reference to the root context. This prevents the need to travel up the full tree in order to get
    * the root context.
    */
-  private final DefaultInjectionContext root;
-  /**
-   * The element which this context is constructing.
-   */
-  private final Type constructingType;
+  private final InjectionContext root;
   /**
    * The binding instance that requested the construction of the element.
    */
-  private final ContextualProvider<?> callingBinding;
+  private final InstalledBinding<?> binding;
 
   /**
    * The context provider that tracks this scope, null if no provider is responsible for this scope.
@@ -108,7 +97,7 @@ public final class DefaultInjectionContext implements InjectionContext {
    * Holds all mappings of overridden instances for the current context tree, note that this list is only present on the
    * root context, in all other cases modifying the map will result in an exception.
    */
-  private final LazyContextualProvider[] overrides;
+  private final Map<BindingKey<?>, Provider<?>> overrides;
   /**
    * Holds all member injection requests that were made somewhere in the tree. Note that this collection is only
    * writeable in a root context, in all other cases modifying the collection will result in an exception.
@@ -129,11 +118,11 @@ public final class DefaultInjectionContext implements InjectionContext {
   /**
    * The context prior to this one, null if this context is the root context.
    */
-  private DefaultInjectionContext prev;
+  private InjectionContext prev;
   /**
    * The context which was created based on this context, null if this is the tail context.
    */
-  private DefaultInjectionContext next;
+  private InjectionContext next;
 
   /**
    * The current state of this context, see the static state fields.
@@ -151,7 +140,7 @@ public final class DefaultInjectionContext implements InjectionContext {
   /**
    * The constructions which are waiting to be resumed by this context once the underlying value was constructed.
    */
-  private Queue<DefaultInjectionContext> waitingConstructions;
+  private Queue<InjectionContext> waitingConstructions;
   /**
    * The added listeners for construction finish.
    */
@@ -160,192 +149,96 @@ public final class DefaultInjectionContext implements InjectionContext {
   /**
    * Constructs a new root injection context.
    *
-   * @param callingBinding   the binding that requested this context.
-   * @param constructingType the type constructed by this context.
-   * @param overrides        the overridden instances whose delegates are present immediately.
-   * @param contextProvider  the context provider that is tracking the context.
+   * @param binding         the binding that requested this context.
+   * @param overrides       the overridden instances whose delegates are present immediately.
+   * @param contextProvider the context provider that is tracking the context.
    */
-  public DefaultInjectionContext(
-    @NotNull ContextualProvider<?> callingBinding,
-    @NotNull Type constructingType,
-    @NotNull List<LazyContextualProvider> overrides,
+  public InjectionContext(
+    @NotNull InstalledBinding<?> binding,
+    @NotNull Map<BindingKey<?>, Provider<?>> overrides,
     @Nullable InjectionContextProvider contextProvider
   ) {
-    this(
-      callingBinding,
-      constructingType,
-      overrides.toArray(DefaultInjectionContextBuilder.EMPTY_OVERRIDES),
-      contextProvider);
-  }
-
-  /**
-   * Constructs a new root injection context.
-   *
-   * @param callingBinding   the binding that requested this context.
-   * @param constructingType the type constructed by this context.
-   * @param overrides        the overridden instances whose delegates are present immediately.
-   * @param contextProvider  the context provider that is tracking the context.
-   */
-  public DefaultInjectionContext(
-    @NotNull ContextualProvider<?> callingBinding,
-    @NotNull Type constructingType,
-    @NotNull LazyContextualProvider[] overrides,
-    @Nullable InjectionContextProvider contextProvider
-  ) {
-    this.root = this;
-    this.callingBinding = callingBinding;
-    this.constructingType = constructingType;
+    this.binding = binding;
     this.contextProvider = contextProvider;
 
-    // initialize to real fields as this is the root context
+    this.root = this;
     this.knownProxies = new ArrayList<>();
+    this.overrides = new HashMap<>(overrides); // TODO: should this map be immutable?
     this.requestedMemberInjections = new LinkedHashSet<>();
-    this.overrides = overrides;
   }
 
   /**
    * Constructs a new sub injection context of the given root context.
    *
-   * @param root             the root context.
-   * @param callingBinding   the binding that requested this context.
-   * @param constructingType the type constructed by this context.
+   * @param root    the root context.
+   * @param binding the binding that requested this context.
    */
-  private DefaultInjectionContext(
-    @NotNull DefaultInjectionContext root,
-    @NotNull ContextualProvider<?> callingBinding,
-    @NotNull Type constructingType
+  private InjectionContext(
+    @NotNull InjectionContext root,
+    @NotNull InstalledBinding<?> binding
   ) {
     this.root = root;
-    this.callingBinding = callingBinding;
-    this.constructingType = constructingType;
-    this.contextProvider = null;
+    this.binding = binding;
 
     // just use the empty variants as we're not the root
+    this.overrides = null;
+    this.contextProvider = null;
     this.knownProxies = Collections.emptyList();
     this.requestedMemberInjections = Collections.emptySet();
-    this.overrides = null;
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull Type constructingType() {
-    return this.constructingType;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull ContextualProvider<?> callingProvider() {
-    return this.callingBinding;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull ContextualProvider<?> resolveProvider(@NotNull Element element) {
-    // get the current injector which is associated with the binding that requested this context
-    Injector currentInjector = this.callingBinding.injector();
-
-    // check if the element is overridden
-    LazyContextualProvider provider = this.findOverriddenProvider(element);
-    if (provider != null) {
-      return provider.withInjector(currentInjector);
+  public @NotNull Provider<?> resolveProvider(@NotNull BindingKey<?> key) {
+    Provider<?> overridden = this.findOverriddenProvider(key);
+    if (overridden != null) {
+      return overridden;
     }
 
-    // not overridden - resolve from the injector
-    return currentInjector.binding(element).provider(element);
+    InstalledBinding<?> binding = this.binding.injector().binding(key);
+    return binding.provider();
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @Nullable InjectionContext next() {
-    return this.next;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @Nullable InjectionContext prev() {
-    return this.prev;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull InjectionContext root() {
-    return this.root;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public @NotNull InjectionContext copyAsRoot(
-    @NotNull ContextualProvider<?> callingBinding,
-    @NotNull Type constructingType,
-    @NotNull List<LazyContextualProvider> overrides,
-    @Nullable Element associatedElement,
+    @NotNull InstalledBinding<?> binding,
+    @NotNull Map<BindingKey<?>, Provider<?>> overrides,
     @Nullable InjectionContextProvider contextProvider
   ) {
     InjectionContextProvider ctxProvider = contextProvider == null ? this.contextProvider : contextProvider;
-    LazyContextualProvider[] givenProviders = overrides.toArray(DefaultInjectionContextBuilder.EMPTY_OVERRIDES);
 
-    DefaultInjectionContext context;
-    if (this.overrides == null || this.overrides.length == 0) {
+    InjectionContext context;
+    if (this.overrides == null || this.overrides.isEmpty()) {
       // if this context has no overrides just return a new context using the given overrides
-      context = new DefaultInjectionContext(callingBinding, constructingType, givenProviders, ctxProvider);
+      context = new InjectionContext(binding, overrides, ctxProvider);
     } else {
       // copy this injection context into a new root context, preserving the given overrides
-      LazyContextualProvider[] ap = Arrays.copyOf(this.overrides, this.overrides.length + givenProviders.length);
-      System.arraycopy(givenProviders, 0, ap, this.overrides.length, givenProviders.length);
-      context = new DefaultInjectionContext(callingBinding, constructingType, ap, ctxProvider);
+      Map<BindingKey<?>, Provider<?>> overriddenProviders = new HashMap<>(overrides);
+      overriddenProviders.putAll(this.overrides);
+      context = new InjectionContext(binding, overriddenProviders, ctxProvider);
     }
 
     // check if the root context has an overridden value available if the associated element is known
     // delegate the newly created context directly to the overridden value
-    if (associatedElement != null) {
-      LazyContextualProvider overriddenProvider = this.findOverriddenProvider(associatedElement);
-      if (overriddenProvider != null) {
-        context.state = STATE_DELEGATED;
-        context.delegate = overriddenProvider.get();
-      }
+    Provider<?> overridden = this.findOverriddenProvider(binding.key());
+    if (overridden != null) {
+      context.state = STATE_DELEGATED;
+      context.delegate = overridden.get();
     }
 
     return context;
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull DefaultInjectionContext enterSubcontext(
-    @NotNull Type constructingType,
-    @NotNull ContextualProvider<?> callingBinding,
-    @Nullable Element associatedElement
-  ) {
+  public @NotNull InjectionContext enterSubcontext(@NotNull InstalledBinding<?> binding) {
     // check if the root context has an overridden value available if the associated element is known
-    if (associatedElement != null) {
-      LazyContextualProvider overriddenProvider = this.findOverriddenProvider(associatedElement);
-      if (overriddenProvider != null) {
-        // create a sub context which just returns the given instance
-        DefaultInjectionContext subcontext = new DefaultInjectionContext(this.root, callingBinding, constructingType);
-        subcontext.state = STATE_DELEGATED;
-        subcontext.delegate = overriddenProvider.get();
-        // mark the context as a child of this context
-        return subcontext.init(this);
-      }
+    Provider<?> overridden = this.findOverriddenProvider(binding.key());
+    if (overridden != null) {
+      // create a sub context which just returns the given instance
+      InjectionContext subcontext = new InjectionContext(this.root, binding);
+      subcontext.state = STATE_DELEGATED;
+      subcontext.delegate = overridden.get();
+      return subcontext.init(this);
     }
 
     // find the known context leaf in the current tree
-    DefaultInjectionContext knownLeaf = this.findCreatedLeaf(callingBinding);
+    InjectionContext knownLeaf = this.findCreatedLeaf(binding);
     if (knownLeaf != null) {
       // if the known leaf is delegated or proxied, we can just return the leaf as the value is immediately present,
       // and therefore we cannot run into any circular issues
@@ -355,12 +248,12 @@ public final class DefaultInjectionContext implements InjectionContext {
       }
 
       // this is a circular call, check if we can proxy this leaf first
-      Class<?> ourRawType = TypeUtil.rawType(this.constructingType);
+      Class<?> ourRawType = GenericTypeReflector.erase(this.binding.key().type());
       if (ourRawType.isInterface()) {
         // yes, this is proxyable
         if (this.createdProxy == null) {
           // check if there is a re-usable proxy
-          ContextualProxy createdProxy = this.findReusableProxy(this.callingBinding);
+          ContextualProxy createdProxy = this.findReusableProxy(this.binding);
           if (createdProxy != null) {
             this.setProxy(createdProxy);
           } else {
@@ -369,11 +262,11 @@ public final class DefaultInjectionContext implements InjectionContext {
             Runnable proxyRemoveListener = new LeafWaitingConstructionRemoveTask(knownLeaf);
 
             // register the proxy
-            ContextualProxy proxy = new ContextualProxy(proxyRemoveListener, proxyMapping, this.callingBinding);
+            ContextualProxy proxy = new ContextualProxy(proxyRemoveListener, proxyMapping, this.binding);
             this.setProxy(proxy);
 
             // add a note to the leaf context that it should resume the construction
-            Queue<DefaultInjectionContext> waitingConstructions = knownLeaf.waitingConstructions;
+            Queue<InjectionContext> waitingConstructions = knownLeaf.waitingConstructions;
             if (waitingConstructions == null) {
               knownLeaf.waitingConstructions = waitingConstructions = new LinkedList<>();
             }
@@ -386,17 +279,16 @@ public final class DefaultInjectionContext implements InjectionContext {
       }
 
       // check if the known leaf node is proxyable
-      Class<?> leafRawType = TypeUtil.rawType(knownLeaf.constructingType);
+      Class<?> leafRawType = GenericTypeReflector.erase(knownLeaf.binding.key().type());
       if (leafRawType.isInterface()) {
         // create a marker context which holds the proxy for the leaf type
-        DefaultInjectionContext subcontext = new DefaultInjectionContext(this.root, callingBinding, constructingType);
+        InjectionContext subcontext = new InjectionContext(this.root, binding);
         subcontext.virtual = true;
         subcontext.state = STATE_PROXIED;
-        // mark the context as a child of this context
         subcontext.init(this);
 
         // check if there is a re-usable proxy
-        ContextualProxy createdProxy = this.findReusableProxy(callingBinding);
+        ContextualProxy createdProxy = this.findReusableProxy(binding);
         if (createdProxy != null) {
           subcontext.setProxy(createdProxy);
         } else {
@@ -409,7 +301,7 @@ public final class DefaultInjectionContext implements InjectionContext {
           Runnable proxyRemoveListener = new LeafConstructionListenerRemoveTask(knownLeaf, listener);
 
           // insert the proxy into the subcontext
-          ContextualProxy proxy = new ContextualProxy(proxyRemoveListener, proxyMapping, callingBinding);
+          ContextualProxy proxy = new ContextualProxy(proxyRemoveListener, proxyMapping, binding);
           subcontext.setProxy(proxy);
         }
 
@@ -421,15 +313,20 @@ public final class DefaultInjectionContext implements InjectionContext {
       // in this case there is no way to recover, we just fail hard and try to provide a good error message
       StringBuilder treeInfoBuilder = new StringBuilder();
 
-      DefaultInjectionContext ctx = this.root;
+      InjectionContext ctx = this.root;
       do {
+        // skip virtual nodes
+        if (ctx.virtual) {
+          continue;
+        }
+
         // if the context is not the root we append a branch
         if (ctx != this.root) {
           treeInfoBuilder.append(" >--> ");
         }
 
         // [ <type> (<-- here) ]
-        treeInfoBuilder.append("[ ").append(TypeUtil.toPrettyString(ctx.constructingType));
+        treeInfoBuilder.append("[ ").append(ctx.binding.key().type());
         if (ctx == knownLeaf) {
           treeInfoBuilder.append(" <-- here");
         }
@@ -437,21 +334,17 @@ public final class DefaultInjectionContext implements InjectionContext {
       } while ((ctx = ctx.next) != null);
 
       // build the full error message and throw the exception
-      throw AerogelException.forMessage(String.format(
+      throw new IllegalStateException(String.format(
         "Detected cyclic dependency while constructing %s. See traverse tree for more info: %s",
-        this.root.constructingType,
-        treeInfoBuilder.append(" >--> [ ").append(TypeUtil.toPrettyString(constructingType)).append(" ]")));
+        this.root.binding.key().type(),
+        treeInfoBuilder.append(" >--> [ ").append(this.binding.key().type()).append(" ]")));
     }
 
     // nothing special to do, just construct a brand-new sub context
-    DefaultInjectionContext subcontext = new DefaultInjectionContext(this.root, callingBinding, constructingType);
+    InjectionContext subcontext = new InjectionContext(this.root, binding);
     return subcontext.init(this);
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public @Nullable Object resolveInstance() {
     int currentState = this.state;
     if (currentState == STATE_READY) {
@@ -459,29 +352,26 @@ public final class DefaultInjectionContext implements InjectionContext {
       this.state = STATE_CONSTRUCTING;
       try {
         // construct the value from the underlying binding
-        Object constructedValue = this.callingBinding.get(this);
+        Provider<?> provider = this.binding.provider();
+        Object constructedValue = provider.get();
 
-        // check if the constructed value requests the store of it
-        if (constructedValue instanceof KnownValue) {
+        // check if the constructed value is a singleton in the current scope
+        // in this case the result of this context should be delegated to the value
+        if (constructedValue instanceof ScopedSingleton) {
           // mark this context as delegated
           this.state = STATE_DELEGATED;
 
           // unwrap the inner value
-          KnownValue knownValue = (KnownValue) constructedValue;
-          this.delegate = constructedValue = KnownValue.unwrap(knownValue);
-
-          // add an injection request for the value if it is the first occurrence
-          if (knownValue.firstOccurrence() && constructedValue != null) {
-            this.requestMemberInjection(constructedValue);
-          }
+          ScopedSingleton knownValue = (ScopedSingleton) constructedValue;
+          this.delegate = constructedValue = ScopedSingleton.unwrap(knownValue);
 
           // if the result is a known value there is a chance that multiple proxies were created
           // that we should all delegate to the same instance
           List<ContextualProxy> knownProxies = this.root.knownProxies;
           if (!knownProxies.isEmpty()) {
             for (ContextualProxy knownProxy : knownProxies) {
-              ContextualProvider<?> callingProvider = knownProxy.callingProvider;
-              if (callingProvider == this.callingBinding && !knownProxy.removeListenerExecuted) {
+              InstalledBinding<?> proxyBinding = knownProxy.binding;
+              if (proxyBinding == this.binding && !knownProxy.removeListenerExecuted) {
                 // this provider and the proxy provider were called from the same context
                 // this is the indication that the same delegate can be used for both proxies
                 knownProxy.setDelegate(constructedValue);
@@ -491,9 +381,6 @@ public final class DefaultInjectionContext implements InjectionContext {
               }
             }
           }
-        } else if (constructedValue != null) {
-          // request member injection for the constructed value
-          this.requestMemberInjection(constructedValue);
         }
 
         // finish the construction by calling all added stuff to this leaf
@@ -515,7 +402,7 @@ public final class DefaultInjectionContext implements InjectionContext {
 
     if (currentState == STATE_CONSTRUCTING) {
       // circular call, should not happen
-      throw AerogelException.forMessage("Circular call to InjectionContext#resolveInstance()!");
+      throw new IllegalStateException("Circular call to InjectionContext#resolveInstance()!");
     }
 
     if (currentState == STATE_PROXIED) {
@@ -529,52 +416,23 @@ public final class DefaultInjectionContext implements InjectionContext {
     }
 
     // unhandled state
-    throw AerogelException.forMessage("Unable to handle context state: " + currentState);
+    throw new IllegalStateException("Unable to handle context state: " + currentState);
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public void addConstructionListener(@NotNull BiConsumer<InjectionContext, Object> listener) {
     Queue<BiConsumer<InjectionContext, Object>> constructionFinishListeners = this.constructionFinishListeners;
     if (constructionFinishListeners == null) {
       this.constructionFinishListeners = constructionFinishListeners = new LinkedList<>();
     }
+
     constructionFinishListeners.add(listener);
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public void requestMemberInjection(@Nullable Object value) {
-    this.requestMemberInjection(value, MemberInjectionType.FLAG_ALL_MEMBERS);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public void requestMemberInjection(@Nullable Object value, long flag) {
-    // get the type of the value, if the value is present we can directly use the given type
-    // in all other cases we can fall back to the raw type of the constructing type
-    Class<?> valueType;
-    if (value != null) {
-      valueType = value.getClass();
-    } else {
-      valueType = TypeUtil.rawType(this.constructingType);
-    }
-
-    // construct and store the injection request
-    MemberInjectionRequest request = new MemberInjectionRequest(flag, valueType, value, this.callingBinding.injector());
+  public void requestMemberInjection(@NotNull Class<?> type, @Nullable Object instance) {
+    MemberInjectionRequest request = new MemberInjectionRequest(this.binding.injector(), type, instance);
     this.root.requestedMemberInjections.add(request);
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public void finishConstruction() {
     // ensure that we are the root context
     Preconditions.checkArgument(this.root == this, "finishConstruction() call to non-root context");
@@ -610,86 +468,31 @@ public final class DefaultInjectionContext implements InjectionContext {
     }
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public boolean obsolete() {
-    return this.obsolete;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public boolean virtualContext() {
-    return this.virtual;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public boolean rootContext() {
-    return this.prev == null;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public boolean leafContext() {
-    return this.next == null;
-  }
-
-  /**
-   * Inits this context by marking this context as a next context of the given parent and sets the previous context of
-   * this context to the parent.
-   *
-   * @param parent the parent context to set as the previous context.
-   * @return this context.
-   */
-  private @NotNull DefaultInjectionContext init(@NotNull DefaultInjectionContext parent) {
+  private @NotNull InjectionContext init(@NotNull InjectionContext parent) {
     this.prev = parent;
     parent.next = this;
-    // return this context, for chaining
     return this;
   }
 
-  /**
-   * Finds the context in the current subtree which was created for the given provider. This method returns null if no
-   * node was created for the given provider in the current subtree.
-   *
-   * @param leafProvider the provider to find the node of.
-   * @return the node which is associated with the given provider, null if no node is known.
-   */
-  private @Nullable DefaultInjectionContext findCreatedLeaf(@NotNull ContextualProvider<?> leafProvider) {
-    // check if a context for the given calling binding was already created
-    DefaultInjectionContext leaf = this.prev;
+  private @Nullable InjectionContext findCreatedLeaf(@NotNull InstalledBinding<?> binding) {
+    InjectionContext leaf = this.prev;
     if (leaf != null) {
       do {
-        if (leaf.callingBinding == leafProvider) {
-          // found a matching context
+        if (leaf.binding == binding) {
           return leaf;
         }
       } while ((leaf = leaf.prev) != null);
     }
-    // no such leaf in the tree
+
     return null;
   }
 
-  /**
-   * Finds a proxy instance which is re-usable for the given calling provider in the complete tree.
-   *
-   * @param callingProvider the provider for which the proxy is needed.
-   * @return a proxy which can be re-used for the given provider.
-   */
-  private @Nullable ContextualProxy findReusableProxy(@NotNull ContextualProvider<?> callingProvider) {
+  private @Nullable ContextualProxy findReusableProxy(@NotNull InstalledBinding<?> binding) {
     List<ContextualProxy> knownProxies = this.root.knownProxies;
     if (!knownProxies.isEmpty()) {
       for (ContextualProxy knownProxy : knownProxies) {
         // a proxy is re-usable if the same provider constructed the proxy + the delegate is present
-        if (knownProxy.callingProvider == callingProvider && knownProxy.removeListenerExecuted) {
+        if (knownProxy.binding == binding && knownProxy.removeListenerExecuted) {
           return knownProxy;
         }
       }
@@ -731,7 +534,7 @@ public final class DefaultInjectionContext implements InjectionContext {
    * @param constructedValue the value constructed by this context.
    */
   private void executeWaitingConstructions(@Nullable Object constructedValue) {
-    Queue<DefaultInjectionContext> waitingConstructions = this.waitingConstructions;
+    Queue<InjectionContext> waitingConstructions = this.waitingConstructions;
     if (waitingConstructions != null && !waitingConstructions.isEmpty()) {
       // store the old field values for later reset
       int oldState = this.state;
@@ -743,7 +546,7 @@ public final class DefaultInjectionContext implements InjectionContext {
         this.delegate = constructedValue;
 
         // call the waiting constructions
-        DefaultInjectionContext waitingContext;
+        InjectionContext waitingContext;
         while ((waitingContext = waitingConstructions.poll()) != null) {
           // reset the state of the waiting context to ready in order to force the instance resolve
           waitingContext.state = STATE_READY;
@@ -765,11 +568,6 @@ public final class DefaultInjectionContext implements InjectionContext {
     }
   }
 
-  /**
-   * Validates that all known proxies have a delegate present.
-   *
-   * @throws AerogelException if there are proxies without a delegate known in the tree.
-   */
   private void validateAllProxiesAreDelegated() {
     // ensure that there are no proxies without a delegate
     List<ContextualProxy> knownProxies = this.knownProxies;
@@ -783,7 +581,7 @@ public final class DefaultInjectionContext implements InjectionContext {
 
       // fail hard if there are invalid proxies
       if (proxiesWithoutDelegate > 0) {
-        throw AerogelException.forMessageWithoutStack(
+        throw new IllegalStateException(
           "Construction finish requested but there were " + proxiesWithoutDelegate + " proxies without a delegate");
       }
     }
@@ -792,22 +590,16 @@ public final class DefaultInjectionContext implements InjectionContext {
   /**
    * Tries to resolve an overridden provider for the given element.
    *
-   * @param element the element to get the provider for.
+   * @param key the element to get the provider for.
    * @return the overridden provider, or null if no provider override is registered that matches the given element.
    */
-  private @Nullable LazyContextualProvider findOverriddenProvider(@NotNull Element element) {
-    // try to resolve a provider which constructs a value that matches one provider
-    LazyContextualProvider[] overriddenProviders = this.root.overrides;
-    if (overriddenProviders != null) {
-      for (LazyContextualProvider overriddenProvider : overriddenProviders) {
-        if (overriddenProvider.elementMatcher().test(element)) {
-          return overriddenProvider;
-        }
-      }
-    }
+  private @Nullable Provider<?> findOverriddenProvider(@NotNull BindingKey<?> key) {
+    // overrides are provided to the root injector only
+    return this.root.overrides.get(key);
+  }
 
-    // no matching provider found
-    return null;
+  public boolean obsolete() {
+    return this.obsolete;
   }
 
   /**
@@ -818,7 +610,7 @@ public final class DefaultInjectionContext implements InjectionContext {
    */
   private static final class LeafConstructionListenerRemoveTask implements Runnable {
 
-    private final DefaultInjectionContext leaf;
+    private final InjectionContext leaf;
     private final BiConsumer<InjectionContext, Object> listener;
 
     /**
@@ -828,7 +620,7 @@ public final class DefaultInjectionContext implements InjectionContext {
      * @param listener the listener to remove.
      */
     public LeafConstructionListenerRemoveTask(
-      @NotNull DefaultInjectionContext leaf,
+      @NotNull InjectionContext leaf,
       @NotNull BiConsumer<InjectionContext, Object> listener
     ) {
       this.leaf = leaf;
@@ -855,14 +647,14 @@ public final class DefaultInjectionContext implements InjectionContext {
    */
   private final class LeafWaitingConstructionRemoveTask implements Runnable {
 
-    private final DefaultInjectionContext leaf;
+    private final InjectionContext leaf;
 
     /**
      * Constructs a new waiting construction remove task.
      *
      * @param leaf the node to remove the waiting construction from.
      */
-    public LeafWaitingConstructionRemoveTask(@NotNull DefaultInjectionContext leaf) {
+    public LeafWaitingConstructionRemoveTask(@NotNull InjectionContext leaf) {
       this.leaf = leaf;
     }
 
@@ -871,9 +663,9 @@ public final class DefaultInjectionContext implements InjectionContext {
      */
     @Override
     public void run() {
-      Queue<DefaultInjectionContext> waitingConstructions = this.leaf.waitingConstructions;
+      Queue<InjectionContext> waitingConstructions = this.leaf.waitingConstructions;
       if (waitingConstructions != null) {
-        waitingConstructions.remove(DefaultInjectionContext.this);
+        waitingConstructions.remove(InjectionContext.this);
       }
     }
   }
@@ -887,14 +679,14 @@ public final class DefaultInjectionContext implements InjectionContext {
    */
   private final class MarkerConstructionDoneListener implements BiConsumer<InjectionContext, Object> {
 
-    private final DefaultInjectionContext markerContext;
+    private final InjectionContext markerContext;
 
     /**
      * Constructs a new marker construction done listener.
      *
      * @param markerContext the virtual context that was inserted into the tree.
      */
-    public MarkerConstructionDoneListener(@NotNull DefaultInjectionContext markerContext) {
+    public MarkerConstructionDoneListener(@NotNull InjectionContext markerContext) {
       this.markerContext = markerContext;
     }
 
@@ -914,10 +706,10 @@ public final class DefaultInjectionContext implements InjectionContext {
       }
 
       // remove the marker context from the tree
-      DefaultInjectionContext markerNext = this.markerContext.next;
-      DefaultInjectionContext.this.next = markerNext;
+      InjectionContext markerNext = this.markerContext.next;
+      InjectionContext.this.next = markerNext;
       if (markerNext != null) {
-        markerNext.prev = DefaultInjectionContext.this;
+        markerNext.prev = InjectionContext.this;
       }
     }
   }

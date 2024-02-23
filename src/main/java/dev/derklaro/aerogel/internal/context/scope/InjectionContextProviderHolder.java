@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel.internal.context.scope;
 
-import dev.derklaro.aerogel.context.InjectionContextProvider;
 import dev.derklaro.aerogel.internal.context.scope.threadlocal.ThreadLocalInjectionContextProvider;
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
@@ -41,7 +40,7 @@ import org.jetbrains.annotations.NotNull;
  * @since 3.0
  */
 @API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.internal.context.scope")
-public final class InjectionContextProviderHolder {
+final class InjectionContextProviderHolder {
 
   private static volatile InjectionContextProvider LOADED_PROVIDER;
 
