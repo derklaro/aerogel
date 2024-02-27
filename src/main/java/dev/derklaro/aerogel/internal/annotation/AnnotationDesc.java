@@ -25,10 +25,7 @@
 package dev.derklaro.aerogel.internal.annotation;
 
 import dev.derklaro.aerogel.internal.util.MapUtil;
-import jakarta.inject.Qualifier;
-import jakarta.inject.Scope;
 import java.lang.annotation.Annotation;
-import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -71,14 +68,9 @@ public final class AnnotationDesc {
       this.members = Collections.unmodifiableMap(members);
     }
 
-    // get the retention of the annotation from the retention annotation
-    // if the retention annotation is not present, fall back to the default behaviour
-    Retention retention = annotationType.getDeclaredAnnotation(Retention.class);
-    this.retentionPolicy = retention != null ? retention.value() : RetentionPolicy.CLASS;
-
-    // injection related annotations
-    this.scope = annotationType.isAnnotationPresent(Scope.class);
-    this.qualifier = annotationType.isAnnotationPresent(Qualifier.class);
+    this.retentionPolicy = AnnotationUtil.extractRetention(annotationType);
+    this.scope = InjectAnnotationUtil.validScopeAnnotation(annotationType);
+    this.qualifier = InjectAnnotationUtil.validQualifierAnnotation(annotationType);
 
     this.annotationType = annotationType;
   }

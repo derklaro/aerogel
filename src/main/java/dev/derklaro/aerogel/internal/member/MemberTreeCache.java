@@ -22,57 +22,43 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.unsafe;
+package dev.derklaro.aerogel.internal.member;
 
-import java.lang.reflect.Field;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
+import dev.derklaro.aerogel.internal.util.MapUtil;
+import java.util.List;
+import java.util.Map;
 import org.apiguardian.api.API;
-import sun.misc.Unsafe;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
- * Gives access to the {@code Unsafe} class of the jvm which allows access to previously inaccessible magic.
+ * A utility class to build a tree of injectable members for a specified target class, ensuring that overridden methods
+ * are handled correctly and are not called twice.
  *
  * @author Pasqual K.
- * @since 1.0
+ * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal.unsafe")
-final class UnsafeAccess {
+@API(status = API.Status.INTERNAL, since = "2.0")
+final class MemberTreeCache {
 
-  /**
-   * The {@code unsafe} class object if present.
-   */
-  static final Unsafe U;
+  private static final Map<Class<?>, List<InjectableMember>> CACHE = MapUtil.newConcurrentMap();
 
-  static {
-    Unsafe unsafe = null;
-
-    try {
-      // get the unsafe class
-      Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
-      // get the unsafe instance
-      unsafe = AccessController.doPrivileged((PrivilegedExceptionAction<Unsafe>) () -> {
-        Field theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
-        theUnsafeField.setAccessible(true);
-        return (Unsafe) theUnsafeField.get(null);
-      });
-    } catch (Exception ignored) {
-    }
-
-    // assign to the static final fields
-    U = unsafe;
-  }
-
-  private UnsafeAccess() {
+  private MemberTreeCache() {
     throw new UnsupportedOperationException();
   }
 
-  /**
-   * Get if the {@code Unsafe} class and instance were successfully loaded.
-   *
-   * @return if the {@code Unsafe} class and instance were successfully loaded.
-   */
-  static boolean isAvailable() {
-    return U != null;
+  @Unmodifiable
+  public static @NotNull List<InjectableMember> computeMemberTree(@NotNull Class<?> type) {
+    List<InjectableMember> tree = CACHE.get(type);
+    if (tree == null) {
+      MemberTreeProvider provider = new MemberTreeProvider(type);
+      provider.resolveInjectableMembers();
+
+      List<InjectableMember> computedTree = provider.toMemberTree();
+      List<InjectableMember> registeredTree = CACHE.putIfAbsent(type, computedTree);
+      tree = registeredTree != null ? registeredTree : computedTree;
+    }
+
+    return tree;
   }
 }

@@ -29,15 +29,16 @@ import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.dynamic.DynamicBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
-import dev.derklaro.aerogel.internal.DefaultInjector;
 import dev.derklaro.aerogel.registry.Registry;
 import io.leangen.geantyref.TypeToken;
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.Optional;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The main part of aerogel. The injector keeps track of all known bindings and shared them with their child injectors.
@@ -68,6 +69,9 @@ public interface Injector {
 
   @NotNull
   <T> MemberInjector<T> memberInjector(@NotNull Class<T> memberHolderClass);
+
+  @NotNull
+  <T> MemberInjector<T> memberInjector(@NotNull Class<T> memberHolderClass, @Nullable MethodHandles.Lookup lookup);
 
   <T> T instance(@NotNull Class<T> type);
 

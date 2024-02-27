@@ -48,7 +48,7 @@ public final class ProxyMapping implements DelegationHolder {
    * @param proxy   the constructed proxy instance.
    * @param handler the delegating invocation handler associated with the proxy.
    */
-  public ProxyMapping(@NotNull Object proxy, @NotNull InjectionTimeProxy.DelegatingInvocationHandler handler) {
+  ProxyMapping(@NotNull Object proxy, @NotNull InjectionTimeProxy.DelegatingInvocationHandler handler) {
     this.proxy = proxy;
     this.invocationHandler = handler;
   }

@@ -85,19 +85,7 @@ public final class ReflectionUtil {
    * @return true if the left method overrides the right method, false otherwise.
    */
   public static boolean overrides(@NotNull Method left, @NotNull Method right) {
-    int modifiers = left.getModifiers();
-    if (Modifier.isPrivate(modifiers)) {
-      // private methods cannot be overridden
-      return false;
-    }
 
-    if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
-      // public and protected methods in the same class tree always override each other
-      return true;
-    }
-
-    // package-private method, check if the methods share the same package
-    return Objects.equals(left.getDeclaringClass().getPackage(), right.getDeclaringClass().getPackage());
   }
 
   /**
@@ -137,19 +125,5 @@ public final class ReflectionUtil {
    * @param startingPoint the starting point from which the tree should get created.
    * @return a full tree of all extended classes of starting from the given {@code startingPoint}.
    */
-  public static @NotNull List<Class<?>> hierarchyTree(@NotNull Class<?> startingPoint) {
-    List<Class<?>> result = new LinkedList<>();
-    // add all super classes of the class
-    Class<?> currentClass = startingPoint;
-    do {
-      // if this gets called for a type without super (f. ex. a primitive type) then the current class might be null
-      if (currentClass == null) {
-        break;
-      }
 
-      result.add(currentClass);
-    } while ((currentClass = currentClass.getSuperclass()) != Object.class);
-    // return the result
-    return result;
-  }
 }

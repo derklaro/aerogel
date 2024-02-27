@@ -32,6 +32,7 @@ import dev.derklaro.aerogel.internal.proxy.ProxyMapping;
 import dev.derklaro.aerogel.internal.util.Preconditions;
 import io.leangen.geantyref.GenericTypeReflector;
 import jakarta.inject.Provider;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -428,7 +429,17 @@ public final class InjectionContext {
     constructionFinishListeners.add(listener);
   }
 
-  public void requestMemberInjection(@NotNull Class<?> type, @Nullable Object instance) {
+  public void requestMemberInjectionSameBinding(@Nullable Object constructedValue) {
+    Class<?> constructedType = GenericTypeReflector.erase(this.binding.key().type());
+    MethodHandles.Lookup lookup = this.binding.bindingOptions().memberLookup().orElse(null);
+    this.requestMemberInjection(constructedType, constructedValue, lookup);
+  }
+
+  public void requestMemberInjection(
+    @NotNull Class<?> type,
+    @Nullable Object instance,
+    @Nullable MethodHandles.Lookup lookup
+  ) {
     MemberInjectionRequest request = new MemberInjectionRequest(this.binding.injector(), type, instance);
     this.root.requestedMemberInjections.add(request);
   }

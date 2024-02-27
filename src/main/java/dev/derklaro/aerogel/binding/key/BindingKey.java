@@ -178,6 +178,36 @@ public final class BindingKey<T> {
   }
 
   /**
+   * @param annotations
+   * @return
+   * @throws IllegalArgumentException
+   */
+  @CheckReturnValue
+  public @NotNull BindingKey<T> selectQualifier(@NotNull Annotation[] annotations) {
+    Annotation qualifier = null;
+    for (Annotation annotation : annotations) {
+      boolean validQualifier = InjectAnnotationUtil.validQualifierAnnotation(annotation.annotationType());
+      if (validQualifier) {
+        if (qualifier != null) {
+          throw new IllegalArgumentException("Detected duplicate qualifier annotation: "
+            + annotation.annotationType()
+            + " and "
+            + qualifier.annotationType());
+        }
+
+        qualifier = annotation;
+      }
+    }
+
+    if (qualifier == null) {
+      return this;
+    } else {
+      AnnotationMatcher matcher = AnnotationMatcher.matchingStrategyFor(qualifier);
+      return new BindingKey<>(this.type, matcher);
+    }
+  }
+
+  /**
    * Constructs a new binding key that matches the given type and the same qualifier annotation that this key is
    * matching.
    *

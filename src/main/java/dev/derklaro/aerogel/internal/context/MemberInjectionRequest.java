@@ -26,6 +26,7 @@ package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjector;
+import java.lang.invoke.MethodHandles;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,6 +41,7 @@ final class MemberInjectionRequest {
   private final Injector injector;
   private final Class<?> targetClass;
   private final Object constructedValue;
+  private final MethodHandles.Lookup lookup;
 
   private final int hashCode;
 
@@ -53,11 +55,14 @@ final class MemberInjectionRequest {
   public MemberInjectionRequest(
     @NotNull Injector injector,
     @NotNull Class<?> targetClass,
-    @Nullable Object constructedValue
+    @Nullable Object constructedValue,
+    @Nullable MethodHandles.Lookup lookup
   ) {
+    this.injector = injector;
     this.targetClass = targetClass;
     this.constructedValue = constructedValue;
-    this.injector = injector;
+    this.lookup = lookup;
+
     this.hashCode = targetClass.hashCode() ^ System.identityHashCode(constructedValue);
   }
 
@@ -66,7 +71,8 @@ final class MemberInjectionRequest {
    */
   public void executeMemberInjection() {
     @SuppressWarnings("unchecked")
-    MemberInjector<Object> memberInjector = (MemberInjector<Object>) this.injector.memberInjector(this.targetClass);
+    MemberInjector<Object> memberInjector =
+      (MemberInjector<Object>) this.injector.memberInjector(this.targetClass, this.lookup);
     memberInjector.injectMembers(this.constructedValue);
   }
 
