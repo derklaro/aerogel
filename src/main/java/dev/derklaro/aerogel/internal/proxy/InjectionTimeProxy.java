@@ -24,9 +24,7 @@
 
 package dev.derklaro.aerogel.internal.proxy;
 
-import dev.derklaro.aerogel.internal.unsafe.UnsafeMemberAccess;
 import dev.derklaro.aerogel.internal.util.NullMask;
-import dev.derklaro.aerogel.internal.util.Preconditions;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -41,7 +39,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual K.
  * @since 1.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.internal")
+@API(status = API.Status.INTERNAL, since = "1.0")
 public final class InjectionTimeProxy {
 
   private InjectionTimeProxy() {
@@ -65,16 +63,6 @@ public final class InjectionTimeProxy {
   }
 
   /**
-   * Checks if the given instance is a proxy.
-   *
-   * @param candidate the candidate to check.
-   * @return true if the given candidate is a proxy, false otherwise.
-   */
-  public static boolean isProxy(@NotNull Object candidate) {
-    return Proxy.isProxyClass(candidate.getClass());
-  }
-
-  /**
    * Represents an invocation handler which can have a delegate set to forward all calls to. If no delegate is availabe
    * the calls will fail with an exception.
    *
@@ -84,8 +72,7 @@ public final class InjectionTimeProxy {
   @API(status = API.Status.INTERNAL, since = "2.0")
   static final class DelegatingInvocationHandler implements InvocationHandler {
 
-    // no need to make this volatile nor lock based nor atomic, there should never
-    // be two threads which are writing to this simultaneously
+    // should only be written to once, and only by ProxyMapping
     Object delegate;
 
     /**
@@ -99,15 +86,19 @@ public final class InjectionTimeProxy {
     ) throws Throwable {
       // ensure that the proxy has a delegate
       Object delegate = this.delegate;
-      Preconditions.checkArgument(delegate != null, "Proxy was used before a delegate is available");
+      if (delegate == null) {
+        throw new IllegalStateException("injection proxy access before construction completion");
+      }
 
-      // ensure that we can call the underlying method
-      Method accessibleMethod = UnsafeMemberAccess.forceMakeAccessible(method);
+      // ensure the visibility in case the method is defined in an interface that
+      // is not exposed to us directly. This might however fail, in case the access
+      // permissions for modules are not set up properly...
+      method.setAccessible(true);
 
       try {
         // call the delegate method with the given arguments
         Object unmaskedDelegate = NullMask.unmask(delegate);
-        return accessibleMethod.invoke(unmaskedDelegate, args);
+        return method.invoke(unmaskedDelegate, args);
       } catch (InvocationTargetException invocationException) {
         // rethrow the underlying exception
         throw invocationException.getTargetException();

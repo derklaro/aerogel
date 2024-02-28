@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.reflect;
+package dev.derklaro.aerogel.internal.util;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -38,8 +38,8 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual K.
  * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.reflect")
-final class RecordSupport {
+@API(status = API.Status.INTERNAL, since = "2.0")
+public final class RecordUtil {
 
   private static final MethodHandle GET_RECORD_COMPONENTS;
   private static final MethodHandle RECORD_COMPONENT_GET_TYPE;
@@ -69,27 +69,20 @@ final class RecordSupport {
   }
 
   /**
-   * Get if records are supported on the current jvm, in other words if the {@code recordComponentTypes} method can
-   * return a result.
-   *
-   * @return true if records are available, false otherwise.
-   */
-  public static boolean available() {
-    return GET_RECORD_COMPONENTS != null && RECORD_COMPONENT_GET_TYPE != null;
-  }
-
-  /**
    * Get the record component types of a class or null if the given class is not a record.
    *
    * @param clazz the class to get the record components of.
    * @return the record components of the class, null if the class is not a record.
    */
   public static @Nullable Class<?>[] recordComponentTypes(@NotNull Class<?> clazz) {
+    if (GET_RECORD_COMPONENTS == null || RECORD_COMPONENT_GET_TYPE == null) {
+      return null;
+    }
+
     try {
-      // get the record component types
+      // get the record component types; null is returned in case the given class is not a record
       Object[] recordComponents = (Object[]) GET_RECORD_COMPONENTS.invoke(clazz);
       if (recordComponents == null) {
-        // not a record class
         return null;
       }
 
@@ -100,8 +93,7 @@ final class RecordSupport {
         types[i] = type;
       }
       return types;
-    } catch (Throwable throwable) {
-      // not available
+    } catch (Throwable ignored) {
       return null;
     }
   }

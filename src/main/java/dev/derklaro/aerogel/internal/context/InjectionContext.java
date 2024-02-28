@@ -29,7 +29,6 @@ import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
 import dev.derklaro.aerogel.internal.proxy.InjectionTimeProxy;
 import dev.derklaro.aerogel.internal.proxy.ProxyMapping;
-import dev.derklaro.aerogel.internal.util.Preconditions;
 import io.leangen.geantyref.GenericTypeReflector;
 import jakarta.inject.Provider;
 import java.lang.invoke.MethodHandles;
@@ -440,13 +439,15 @@ public final class InjectionContext {
     @Nullable Object instance,
     @Nullable MethodHandles.Lookup lookup
   ) {
-    MemberInjectionRequest request = new MemberInjectionRequest(this.binding.injector(), type, instance);
+    MemberInjectionRequest request = new MemberInjectionRequest(this.binding.injector(), type, instance, lookup);
     this.root.requestedMemberInjections.add(request);
   }
 
   public void finishConstruction() {
     // ensure that we are the root context
-    Preconditions.checkArgument(this.root == this, "finishConstruction() call to non-root context");
+    if (this.root != this) {
+      throw new IllegalStateException("finishConstruction() call to non-root context");
+    }
 
     // mark this context as obsolete to indicate that the context should no longer
     // be used to resolve instances, however, the overrides should persist, and therefore
@@ -604,7 +605,7 @@ public final class InjectionContext {
    * @param key the element to get the provider for.
    * @return the overridden provider, or null if no provider override is registered that matches the given element.
    */
-  private @Nullable Provider<?> findOverriddenProvider(@NotNull BindingKey<?> key) {
+  public @Nullable Provider<?> findOverriddenProvider(@NotNull BindingKey<?> key) {
     // overrides are provided to the root injector only
     return this.root.overrides.get(key);
   }

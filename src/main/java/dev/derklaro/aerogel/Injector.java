@@ -27,7 +27,7 @@ package dev.derklaro.aerogel;
 import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
-import dev.derklaro.aerogel.binding.dynamic.DynamicBinding;
+import dev.derklaro.aerogel.binding.DynamicBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.registry.Registry;
 import io.leangen.geantyref.TypeToken;

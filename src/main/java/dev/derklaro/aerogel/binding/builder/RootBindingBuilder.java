@@ -113,7 +113,7 @@ import org.jetbrains.annotations.NotNull;
  *   .bindDynamically()
  *   .exactRawType(UserService.class)
  *   .annotationPresent(InMemory.class)
- *   .toBindingProvider(bb -> bb
+ *   .toKeyedBindingProvider(bb -> bb
  *     .scopedWith(Singleton.class)
  *     .toConstructingClass(UserServiceImpl.class));
  * }
@@ -132,7 +132,7 @@ public interface RootBindingBuilder {
    * @return a new builder for dynamic bindings.
    */
   @NotNull
-  DynamicBindingBuilder.Root bindDynamically();
+  DynamicBindingBuilder bindDynamically();
 
   /**
    * Starts the bind process for a new binding that targets the given type. This method takes a generic type, which

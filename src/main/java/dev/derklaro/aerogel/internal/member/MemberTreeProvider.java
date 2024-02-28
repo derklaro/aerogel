@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel.internal.member;
 
+import dev.derklaro.aerogel.Order;
 import jakarta.inject.Inject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -31,6 +32,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -44,6 +46,12 @@ import org.jetbrains.annotations.Unmodifiable;
 
 final class MemberTreeProvider {
 
+  private static final Comparator<Method> METHOD_COMPARATOR_BY_ORDER = (left, right) -> {
+    int lo = extractMethodOrder(left);
+    int ro = extractMethodOrder(right);
+    return Integer.compare(lo, ro);
+  };
+
   private final Class<?> baseClass;
 
   private final Set<Field> injectableFields = new LinkedHashSet<>();
@@ -53,6 +61,11 @@ final class MemberTreeProvider {
 
   public MemberTreeProvider(@NotNull Class<?> baseClass) {
     this.baseClass = baseClass;
+  }
+
+  private static int extractMethodOrder(@NotNull Method method) {
+    Order order = method.getAnnotation(Order.class);
+    return order == null ? Order.DEFAULT : order.value();
   }
 
   private static boolean methodOverriddenBy(@NotNull Method maybeOverride, @NotNull Method maybeOverridden) {
@@ -88,7 +101,8 @@ final class MemberTreeProvider {
         }
       }
 
-      Method[] methods = currentType.getDeclaredMethods();
+      List<Method> methods = new ArrayList<>(Arrays.asList(currentType.getDeclaredMethods()));
+      methods.sort(METHOD_COMPARATOR_BY_ORDER);
       for (Method method : methods) {
         // ignore methods added by the compiler
         if (method.isSynthetic()

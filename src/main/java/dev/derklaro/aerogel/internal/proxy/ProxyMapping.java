@@ -25,7 +25,6 @@
 package dev.derklaro.aerogel.internal.proxy;
 
 import dev.derklaro.aerogel.internal.util.NullMask;
-import dev.derklaro.aerogel.internal.util.Preconditions;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,8 +35,8 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual K.
  * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.*")
-public final class ProxyMapping implements DelegationHolder {
+@API(status = API.Status.INTERNAL, since = "2.0")
+public final class ProxyMapping {
 
   private final Object proxy;
   private final InjectionTimeProxy.DelegatingInvocationHandler invocationHandler;
@@ -62,19 +61,14 @@ public final class ProxyMapping implements DelegationHolder {
     return this.proxy;
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public void setDelegate(@Nullable Object delegate) {
-    Preconditions.checkArgument(this.invocationHandler.delegate == null, "delegate already set");
+    if (this.invocationHandler.delegate != null) {
+      throw new IllegalStateException("delegate for proxy already present");
+    }
+
     this.invocationHandler.delegate = NullMask.mask(delegate);
   }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
   public boolean isDelegatePresent() {
     return this.invocationHandler.delegate != null;
   }
