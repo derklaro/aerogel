@@ -34,7 +34,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual K.
  * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel")
+@API(status = API.Status.INTERNAL, since = "1.0")
 public final class NullMask {
 
   /**

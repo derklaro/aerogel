@@ -24,8 +24,8 @@
 
 package dev.derklaro.aerogel;
 
-import dev.derklaro.aerogel.internal.proxy.InjectionTimeProxy;
-import dev.derklaro.aerogel.internal.proxy.ProxyMapping;
+import dev.derklaro.aerogel.internal.context.InjectionTimeProxy;
+import dev.derklaro.aerogel.internal.context.ProxyMapping;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

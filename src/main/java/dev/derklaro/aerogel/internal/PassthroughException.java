@@ -26,6 +26,7 @@ package dev.derklaro.aerogel.internal;
 
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an exception which, when caught, should be rethrown as-is without further wrapping. This exception type
@@ -33,7 +34,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0", consumers = "dev.derklaro.aerogel.internal.*")
+@API(status = API.Status.INTERNAL, since = "2.0")
 public class PassthroughException extends RuntimeException {
 
   /**
@@ -47,14 +48,8 @@ public class PassthroughException extends RuntimeException {
    *
    * @param cause the cause which should be available for later retrieval.
    */
-  protected PassthroughException(@NotNull Exception cause) {
+  protected PassthroughException(@NotNull Throwable cause) {
     super(cause);
-  }
-
-  public static void rethrow(@NotNull Throwable throwable) {
-    if (throwable instanceof PassthroughException) {
-      throw (RuntimeException) throwable;
-    }
   }
 
   /**
@@ -62,6 +57,14 @@ public class PassthroughException extends RuntimeException {
    */
   @Override
   public @NotNull Throwable fillInStackTrace() {
+    return this;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull Throwable initCause(@Nullable Throwable cause) {
     return this;
   }
 }

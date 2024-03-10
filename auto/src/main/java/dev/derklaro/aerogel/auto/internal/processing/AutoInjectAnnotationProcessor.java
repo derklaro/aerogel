@@ -56,7 +56,7 @@ import org.apiguardian.api.API;
  * @author Pasqual K.
  * @since 1.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.auto.internal")
+@API(status = API.Status.INTERNAL, since = "1.0")
 public final class AutoInjectAnnotationProcessor extends AbstractProcessor {
 
   // output file config

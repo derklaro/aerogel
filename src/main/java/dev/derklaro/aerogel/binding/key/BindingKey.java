@@ -178,9 +178,13 @@ public final class BindingKey<T> {
   }
 
   /**
-   * @param annotations
-   * @return
-   * @throws IllegalArgumentException
+   * Tried to find a qualifier annotation in the given annotation array and applies it as a requirement to this binding
+   * key. If no qualifier annotations are present in the given annotation array, this binding key is returned without
+   * any modifications.
+   *
+   * @param annotations the array of annotations in which a qualifier annotation is to be searched for.
+   * @return a new binding key with the qualifier annotation from the given array applied, else this key.
+   * @throws IllegalArgumentException if multiple qualifier annotations are detected in the given annotation array.
    */
   @CheckReturnValue
   public @NotNull BindingKey<T> selectQualifier(@NotNull Annotation[] annotations) {

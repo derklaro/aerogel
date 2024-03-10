@@ -26,7 +26,7 @@ package dev.derklaro.aerogel.internal.member;
 
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.key.BindingKey;
-import dev.derklaro.aerogel.internal.provider.ParameterProvider;
+import dev.derklaro.aerogel.internal.provider.ParameterProviderFactory;
 import dev.derklaro.aerogel.internal.util.MethodHandleUtil;
 import jakarta.inject.Provider;
 import java.lang.invoke.MethodHandle;
@@ -35,7 +35,6 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
 import org.jetbrains.annotations.NotNull;
 
 interface InjectableMember {
@@ -93,13 +92,15 @@ interface InjectableMember {
 
   class InjectableMethod implements InjectableMember {
 
-    private final BindingKey<?>[] parameterKeys;
+    private static final Object[] NO_PARAMS = new Object[0];
 
     private final String name;
     private final boolean isStatic;
 
     private final Class<?> refClass;
     private final MethodType methodType;
+
+    private final BindingKey<?>[] paramKeys;
 
     public InjectableMethod(@NotNull Method method) {
       this.name = method.getName();
@@ -108,8 +109,7 @@ interface InjectableMember {
       this.refClass = method.getDeclaringClass();
       this.methodType = MethodType.methodType(method.getReturnType(), method.getParameterTypes());
 
-      Parameter[] parameters = method.getParameters();
-      this.parameterKeys = ParameterProvider.resolveKeys(parameters);
+      this.paramKeys = ParameterProviderFactory.resolveParameterKeys(method.getParameters());
     }
 
     @Override
@@ -126,14 +126,31 @@ interface InjectableMember {
       }
 
       // resolve the providers for the parameters & generify the invoke method handle
-      ParameterProvider provider = new ParameterProvider(injector, this.parameterKeys);
       MethodHandle genericInvoker = MethodHandleUtil.generifyMethodInvoker(invoker, this.isStatic, true);
       return constructedInstance -> {
         if (constructedInstance != null || this.isStatic) {
-          Object[] params = provider.get();
+          Object[] params = this.resolveParameterValues(injector);
           genericInvoker.invokeExact(constructedInstance, params);
         }
       };
+    }
+
+    private @NotNull Object[] resolveParameterValues(@NotNull Injector injector) {
+      // no providers, no parameter values
+      int paramKeyCount = this.paramKeys.length;
+      if (paramKeyCount == 0) {
+        return NO_PARAMS;
+      }
+
+      // resolve the instances for each target parameter
+      Object[] paramInstances = new Object[paramKeyCount];
+      for (int keyIndex = 0; keyIndex < paramKeyCount; keyIndex++) {
+        BindingKey<?> key = this.paramKeys[keyIndex];
+        Provider<?> paramProvider = injector.binding(key).provider();
+        paramInstances[keyIndex] = paramProvider.get();
+      }
+
+      return paramInstances;
     }
   }
 }

@@ -39,7 +39,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 3.0
  */
-@API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.internal.context.scope")
+@API(status = API.Status.INTERNAL, since = "3.0")
 final class InjectionContextProviderHolder {
 
   private static volatile InjectionContextProvider LOADED_PROVIDER;

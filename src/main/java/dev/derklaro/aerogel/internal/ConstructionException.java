@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,27 +22,23 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.context;
+package dev.derklaro.aerogel.internal;
 
-import dev.derklaro.aerogel.internal.PassthroughException;
-import org.apiguardian.api.API;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-/**
- * An exception thrown by an injection context that indicates that the type constructed by the current context was
- * proxied. The instance of this exception is jvm-static and the exception has neither a message, cause nor stack.
- *
- * @author Pasqual K.
- * @since 2.0
- */
-@API(status = API.Status.INTERNAL, since = "2.0")
-final class SelfTypeProxiedException extends PassthroughException {
+public final class ConstructionException extends IllegalStateException {
 
-  /**
-   * The jvm-static instance of this exception.
-   */
-  public static final SelfTypeProxiedException INSTANCE = new SelfTypeProxiedException();
+  private ConstructionException(@NotNull String message, @Nullable Throwable cause) {
+    super(message, cause);
+  }
 
-  private SelfTypeProxiedException() {
-    // we don't want anyone to construct this exception type directly
+  public static @NotNull ConstructionException of(@NotNull Object errorSource) {
+    return of(errorSource, null);
+  }
+
+  public static @NotNull ConstructionException of(@NotNull Object errorSource, @Nullable Throwable cause) {
+    String msg = "Unable to construct instance value using " + errorSource;
+    return new ConstructionException(msg, cause);
   }
 }

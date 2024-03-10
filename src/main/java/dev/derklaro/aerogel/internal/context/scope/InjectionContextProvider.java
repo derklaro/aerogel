@@ -28,6 +28,7 @@ import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.context.InjectionContext;
 import jakarta.inject.Provider;
+import java.util.Collections;
 import java.util.Map;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -64,6 +65,11 @@ public interface InjectionContextProvider {
    */
   @Nullable
   InjectionContextScope currentScope();
+
+  @NotNull
+  default InjectionContextScope enterContextScope(@NotNull InstalledBinding<?> binding) {
+    return this.enterContextScope(binding, Collections.emptyMap());
+  }
 
   @NotNull
   InjectionContextScope enterContextScope(

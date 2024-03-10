@@ -24,7 +24,7 @@
 
 package dev.derklaro.aerogel.assertion;
 
-import dev.derklaro.aerogel.internal.proxy.InjectionTimeProxy;
+import dev.derklaro.aerogel.internal.context.InjectionTimeProxy;
 import org.junit.jupiter.api.Assertions;
 
 public class InjectAssert {

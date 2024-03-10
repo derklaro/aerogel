@@ -48,7 +48,7 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual K.
  * @since 1.0.1
  */
-@API(status = API.Status.INTERNAL, since = "1.0.1", consumers = "dev.derklaro.aerogel.auto.internal")
+@API(status = API.Status.INTERNAL, since = "1.0.1")
 public final class TypeUtil {
 
   /**

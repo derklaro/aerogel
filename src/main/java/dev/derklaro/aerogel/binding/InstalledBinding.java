@@ -71,7 +71,7 @@ public interface InstalledBinding<T> {
    * @return the advanced options that were supplied to the binding.
    */
   @NotNull
-  BindingOptions bindingOptions();
+  BindingOptions options();
 
   /**
    * Get the scope that was applied to this binding.
@@ -88,6 +88,16 @@ public interface InstalledBinding<T> {
    */
   @NotNull
   Provider<T> provider();
+
+  /**
+   * Get a provider that can provide a value for this binding, but also takes the current injection context into
+   * account. Mainly exposed for internal use, but can be useful in some external cases as well.
+   *
+   * @return a provider that can provide a value for this binding and takes the current injection context into account.
+   */
+  @NotNull
+  @API(status = API.Status.MAINTAINED, since = "3.0")
+  ProviderWithContext<T> providerWithContext();
 
   /**
    * Get this binding without the connection to a specific injector.

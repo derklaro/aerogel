@@ -41,7 +41,7 @@ import org.jetbrains.annotations.Nullable;
  * @author Pasqual K.
  * @since 3.0
  */
-@API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.internal.context.scope")
+@API(status = API.Status.INTERNAL, since = "3.0")
 public final class ThreadLocalInjectionContextProvider implements InjectionContextProvider {
 
   private final ThreadLocal<InjectionContextScope> scopeThreadLocal = new ThreadLocal<>();

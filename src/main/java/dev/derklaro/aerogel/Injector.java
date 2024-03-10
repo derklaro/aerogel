@@ -29,6 +29,7 @@ import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.DynamicBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.InjectorImpl;
 import dev.derklaro.aerogel.registry.Registry;
 import io.leangen.geantyref.TypeToken;
 import java.lang.annotation.Annotation;
@@ -55,16 +56,18 @@ public interface Injector {
 
   @Contract(pure = true)
   static @NotNull Injector newInjector() {
-    return new DefaultInjector(null);
+    return new InjectorImpl();
   }
 
   @NotNull
   Optional<Injector> parentInjector();
 
   @NotNull
+  @Contract(" -> new")
   Injector createChildInjector();
 
   @NotNull
+  @Contract(" -> new")
   RootBindingBuilder createBindingBuilder();
 
   @NotNull

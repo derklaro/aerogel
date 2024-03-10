@@ -37,7 +37,7 @@ import org.jetbrains.annotations.UnknownNullability;
  * @author Pasqual K.
  * @since 3.0
  */
-@API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.scopedvalue")
+@API(status = API.Status.INTERNAL, since = "3.0")
 final class ScopedValueInjectionContextScope implements InjectionContextScope {
 
   private final InjectionContext context;

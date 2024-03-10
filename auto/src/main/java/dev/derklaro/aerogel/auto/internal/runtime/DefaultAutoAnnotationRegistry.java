@@ -49,7 +49,7 @@ import org.jetbrains.annotations.UnmodifiableView;
  * @author Pasqual K.
  * @since 1.0
  */
-@API(status = API.Status.INTERNAL, since = "1.0", consumers = "dev.derklaro.aerogel.auto")
+@API(status = API.Status.INTERNAL, since = "1.0")
 public final class DefaultAutoAnnotationRegistry implements AutoAnnotationRegistry {
 
   private final Map<String, AutoAnnotationReader> entries = MapUtil.newConcurrentMap();

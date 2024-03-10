@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,27 +22,32 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.context;
+package dev.derklaro.aerogel.binding;
 
-import dev.derklaro.aerogel.internal.PassthroughException;
+import dev.derklaro.aerogel.internal.context.InjectionContext;
 import org.apiguardian.api.API;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * An exception thrown by an injection context that indicates that the type constructed by the current context was
- * proxied. The instance of this exception is jvm-static and the exception has neither a message, cause nor stack.
+ * Provides instances of {@code T} while also taking the current injection context into account. Mainly used for
+ * internal instance construction, external users should use {@link jakarta.inject.Provider}s from the target binding
+ * instead. Note: unlike providers, this type cannot be injected.
  *
- * @author Pasqual K.
- * @since 2.0
+ * @param <T> the type being provided by this provider.
+ * @author Pasqual Koschmieder
+ * @since 3.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0")
-final class SelfTypeProxiedException extends PassthroughException {
+@FunctionalInterface
+@API(status = API.Status.MAINTAINED, since = "3.0")
+public interface ProviderWithContext<T> {
 
   /**
-   * The jvm-static instance of this exception.
+   * Provides a fully constructed value of {@code T} with respect to the given injection context.
+   *
+   * @param context the current injection context.
+   * @return a fully constructed value of {@code T}.
    */
-  public static final SelfTypeProxiedException INSTANCE = new SelfTypeProxiedException();
-
-  private SelfTypeProxiedException() {
-    // we don't want anyone to construct this exception type directly
-  }
+  @Nullable
+  T get(@NotNull InjectionContext context);
 }

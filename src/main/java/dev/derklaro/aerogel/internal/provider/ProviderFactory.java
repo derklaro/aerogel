@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,27 +22,17 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.context;
+package dev.derklaro.aerogel.internal.provider;
 
-import dev.derklaro.aerogel.internal.PassthroughException;
+import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.binding.ProviderWithContext;
 import org.apiguardian.api.API;
+import org.jetbrains.annotations.NotNull;
 
-/**
- * An exception thrown by an injection context that indicates that the type constructed by the current context was
- * proxied. The instance of this exception is jvm-static and the exception has neither a message, cause nor stack.
- *
- * @author Pasqual K.
- * @since 2.0
- */
-@API(status = API.Status.INTERNAL, since = "2.0")
-final class SelfTypeProxiedException extends PassthroughException {
+@FunctionalInterface
+@API(status = API.Status.INTERNAL, since = "3.0")
+public interface ProviderFactory<V> {
 
-  /**
-   * The jvm-static instance of this exception.
-   */
-  public static final SelfTypeProxiedException INSTANCE = new SelfTypeProxiedException();
-
-  private SelfTypeProxiedException() {
-    // we don't want anyone to construct this exception type directly
-  }
+  @NotNull
+  ProviderWithContext<V> constructProvider(@NotNull Injector injector);
 }

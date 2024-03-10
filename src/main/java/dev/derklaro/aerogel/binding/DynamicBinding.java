@@ -39,9 +39,18 @@ import org.jetbrains.annotations.NotNull;
  * @author Pasqual Koschmieder
  * @since 3.0
  */
-@FunctionalInterface
 @API(status = API.Status.STABLE, since = "3.0")
 public interface DynamicBinding {
+
+  /**
+   * Get if this dynamic binding would support creating a binding instance for the given binding key. If this method
+   * returns {@code true} for the given binding key, a subsequent call to {@link #tryMatch(BindingKey)} with the same
+   * key <strong>MUST</strong> return a binding.
+   *
+   * @param key the key to check for support.
+   * @return true if this binding supports the given key, false otherwise.
+   */
+  boolean supports(@NotNull BindingKey<?> key);
 
   /**
    * Tries to match this binding against the given binding key. If this binding matches the given key and want to

@@ -63,7 +63,7 @@ public interface UninstalledBinding<T> {
    * @return the advanced options that were supplied to the binding.
    */
   @NotNull
-  BindingOptions bindingOptions();
+  BindingOptions options();
 
   /**
    * Get the scope that will be applied to the binding on creation.

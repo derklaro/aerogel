@@ -25,10 +25,10 @@
 package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.binding.InstalledBinding;
+import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
-import dev.derklaro.aerogel.internal.proxy.InjectionTimeProxy;
-import dev.derklaro.aerogel.internal.proxy.ProxyMapping;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
 import io.leangen.geantyref.GenericTypeReflector;
 import jakarta.inject.Provider;
 import java.lang.invoke.MethodHandles;
@@ -92,7 +92,7 @@ public final class InjectionContext {
    * All proxies that were created somewhere in the tree. Note that this collection is only writeable in a root context,
    * in all other cases modifying the collection will result in an exception.
    */
-  private final List<ContextualProxy> knownProxies;
+  private final List<InjectionTimeProxy> knownProxies;
   /**
    * Holds all mappings of overridden instances for the current context tree, note that this list is only present on the
    * root context, in all other cases modifying the map will result in an exception.
@@ -136,7 +136,7 @@ public final class InjectionContext {
   /**
    * The created proxy of this context, null if no proxy was created for this context yet.
    */
-  private ProxyMapping createdProxy;
+  private InjectionTimeProxy createdProxy;
   /**
    * The constructions which are waiting to be resumed by this context once the underlying value was constructed.
    */
@@ -156,7 +156,7 @@ public final class InjectionContext {
   public InjectionContext(
     @NotNull InstalledBinding<?> binding,
     @NotNull Map<BindingKey<?>, Provider<?>> overrides,
-    @Nullable InjectionContextProvider contextProvider
+    @NotNull InjectionContextProvider contextProvider
   ) {
     this.binding = binding;
     this.contextProvider = contextProvider;
@@ -175,26 +175,17 @@ public final class InjectionContext {
    */
   private InjectionContext(
     @NotNull InjectionContext root,
-    @NotNull InstalledBinding<?> binding
+    @NotNull InstalledBinding<?> binding,
+    @NotNull InjectionContextProvider contextProvider
   ) {
     this.root = root;
     this.binding = binding;
+    this.contextProvider = contextProvider;
 
     // just use the empty variants as we're not the root
     this.overrides = null;
-    this.contextProvider = null;
     this.knownProxies = Collections.emptyList();
     this.requestedMemberInjections = Collections.emptySet();
-  }
-
-  public @NotNull Provider<?> resolveProvider(@NotNull BindingKey<?> key) {
-    Provider<?> overridden = this.findOverriddenProvider(key);
-    if (overridden != null) {
-      return overridden;
-    }
-
-    InstalledBinding<?> binding = this.binding.injector().binding(key);
-    return binding.provider();
   }
 
   public @NotNull InjectionContext copyAsRoot(
@@ -226,12 +217,17 @@ public final class InjectionContext {
     return context;
   }
 
+  public @NotNull InjectionContextScope enterSubcontextScope(@NotNull InstalledBinding<?> binding) {
+    return this.contextProvider.enterContextScope(binding);
+  }
+
+  // Note: only for calls from InjectionContextProvider, use enterSubcontextScope elsewhere
   public @NotNull InjectionContext enterSubcontext(@NotNull InstalledBinding<?> binding) {
     // check if the root context has an overridden value available if the associated element is known
     Provider<?> overridden = this.findOverriddenProvider(binding.key());
     if (overridden != null) {
       // create a sub context which just returns the given instance
-      InjectionContext subcontext = new InjectionContext(this.root, binding);
+      InjectionContext subcontext = new InjectionContext(this.root, binding, this.contextProvider);
       subcontext.state = STATE_DELEGATED;
       subcontext.delegate = overridden.get();
       return subcontext.init(this);
@@ -253,17 +249,14 @@ public final class InjectionContext {
         // yes, this is proxyable
         if (this.createdProxy == null) {
           // check if there is a re-usable proxy
-          ContextualProxy createdProxy = this.findReusableProxy(this.binding);
+          InjectionTimeProxy createdProxy = this.findReusableProxy(this.binding);
           if (createdProxy != null) {
             this.setProxy(createdProxy);
           } else {
-            // construct the proxy & it's remove listener
-            ProxyMapping proxyMapping = InjectionTimeProxy.makeProxy(ourRawType);
+            // proxy the type as a try to break the circular reference
             Runnable proxyRemoveListener = new LeafWaitingConstructionRemoveTask(knownLeaf);
-
-            // register the proxy
-            ContextualProxy proxy = new ContextualProxy(proxyRemoveListener, proxyMapping, this.binding);
-            this.setProxy(proxy);
+            InjectionTimeProxy itp = InjectionTimeProxy.make(ourRawType, proxyRemoveListener, this.binding);
+            this.setProxy(itp);
 
             // add a note to the leaf context that it should resume the construction
             Queue<InjectionContext> waitingConstructions = knownLeaf.waitingConstructions;
@@ -282,13 +275,13 @@ public final class InjectionContext {
       Class<?> leafRawType = GenericTypeReflector.erase(knownLeaf.binding.key().type());
       if (leafRawType.isInterface()) {
         // create a marker context which holds the proxy for the leaf type
-        InjectionContext subcontext = new InjectionContext(this.root, binding);
+        InjectionContext subcontext = new InjectionContext(this.root, binding, this.contextProvider);
         subcontext.virtual = true;
         subcontext.state = STATE_PROXIED;
         subcontext.init(this);
 
         // check if there is a re-usable proxy
-        ContextualProxy createdProxy = this.findReusableProxy(binding);
+        InjectionTimeProxy createdProxy = this.findReusableProxy(binding);
         if (createdProxy != null) {
           subcontext.setProxy(createdProxy);
         } else {
@@ -296,13 +289,10 @@ public final class InjectionContext {
           BiConsumer<InjectionContext, Object> listener = new MarkerConstructionDoneListener(subcontext);
           knownLeaf.addConstructionListener(listener);
 
-          // construct the proxy & it's remove listener
-          ProxyMapping proxyMapping = InjectionTimeProxy.makeProxy(leafRawType);
+          // proxy the other type as a try to break the circular reference
           Runnable proxyRemoveListener = new LeafConstructionListenerRemoveTask(knownLeaf, listener);
-
-          // insert the proxy into the subcontext
-          ContextualProxy proxy = new ContextualProxy(proxyRemoveListener, proxyMapping, binding);
-          subcontext.setProxy(proxy);
+          InjectionTimeProxy itp = InjectionTimeProxy.make(leafRawType, proxyRemoveListener, binding);
+          subcontext.setProxy(itp);
         }
 
         // return the created context
@@ -341,7 +331,7 @@ public final class InjectionContext {
     }
 
     // nothing special to do, just construct a brand-new sub context
-    InjectionContext subcontext = new InjectionContext(this.root, binding);
+    InjectionContext subcontext = new InjectionContext(this.root, binding, this.contextProvider);
     return subcontext.init(this);
   }
 
@@ -352,36 +342,8 @@ public final class InjectionContext {
       this.state = STATE_CONSTRUCTING;
       try {
         // construct the value from the underlying binding
-        Provider<?> provider = this.binding.provider();
-        Object constructedValue = provider.get();
-
-        // check if the constructed value is a singleton in the current scope
-        // in this case the result of this context should be delegated to the value
-        if (constructedValue instanceof ScopedSingleton) {
-          // mark this context as delegated
-          this.state = STATE_DELEGATED;
-
-          // unwrap the inner value
-          ScopedSingleton knownValue = (ScopedSingleton) constructedValue;
-          this.delegate = constructedValue = ScopedSingleton.unwrap(knownValue);
-
-          // if the result is a known value there is a chance that multiple proxies were created
-          // that we should all delegate to the same instance
-          List<ContextualProxy> knownProxies = this.root.knownProxies;
-          if (!knownProxies.isEmpty()) {
-            for (ContextualProxy knownProxy : knownProxies) {
-              InstalledBinding<?> proxyBinding = knownProxy.binding;
-              if (proxyBinding == this.binding && !knownProxy.removeListenerExecuted) {
-                // this provider and the proxy provider were called from the same context
-                // this is the indication that the same delegate can be used for both proxies
-                knownProxy.setDelegate(constructedValue);
-
-                // remove the waiting construction which depends on the proxy
-                knownProxy.executeRemoveListener();
-              }
-            }
-          }
-        }
+        ProviderWithContext<?> provider = this.binding.providerWithContext();
+        Object constructedValue = provider.get(this);
 
         // finish the construction by calling all added stuff to this leaf
         this.callConstructDoneListeners(constructedValue);
@@ -391,7 +353,7 @@ public final class InjectionContext {
         return constructedValue;
       } catch (SelfTypeProxiedException selfProxiedException) {
         // this type was proxied during the call
-        return this.createdProxy.proxy();
+        return this.createdProxy.proxy;
       } finally {
         // reset the state if no other call changed the field
         if (this.state == STATE_CONSTRUCTING) {
@@ -407,7 +369,7 @@ public final class InjectionContext {
 
     if (currentState == STATE_PROXIED) {
       // this context was proxied
-      return this.createdProxy.proxy();
+      return this.createdProxy.proxy;
     }
 
     if (currentState == STATE_DELEGATED) {
@@ -417,6 +379,27 @@ public final class InjectionContext {
 
     // unhandled state
     throw new IllegalStateException("Unable to handle context state: " + currentState);
+  }
+
+  public void delegateToContextualSingleton(@Nullable Object singletonBindingValue) {
+    // mark this context as delegated
+    this.state = STATE_DELEGATED;
+    this.delegate = singletonBindingValue;
+
+    // if the result is a known value there is a chance that multiple proxies were created
+    // that we should all delegate to the same instance
+    List<InjectionTimeProxy> knownProxies = this.root.knownProxies;
+    if (!knownProxies.isEmpty()) {
+      for (InjectionTimeProxy itp : knownProxies) {
+        InstalledBinding<?> proxyBinding = itp.binding;
+        if (proxyBinding == this.binding && itp.undelegated()) {
+          // this provider and the proxy provider were called from the same context
+          // this is the indication that the same delegate can be used for both proxies
+          itp.setDelegate(singletonBindingValue);
+          itp.executeRemoveListener();
+        }
+      }
+    }
   }
 
   public void addConstructionListener(@NotNull BiConsumer<InjectionContext, Object> listener) {
@@ -430,7 +413,7 @@ public final class InjectionContext {
 
   public void requestMemberInjectionSameBinding(@Nullable Object constructedValue) {
     Class<?> constructedType = GenericTypeReflector.erase(this.binding.key().type());
-    MethodHandles.Lookup lookup = this.binding.bindingOptions().memberLookup().orElse(null);
+    MethodHandles.Lookup lookup = this.binding.options().memberLookup().orElse(null);
     this.requestMemberInjection(constructedType, constructedValue, lookup);
   }
 
@@ -499,13 +482,13 @@ public final class InjectionContext {
     return null;
   }
 
-  private @Nullable ContextualProxy findReusableProxy(@NotNull InstalledBinding<?> binding) {
-    List<ContextualProxy> knownProxies = this.root.knownProxies;
+  private @Nullable InjectionTimeProxy findReusableProxy(@NotNull InstalledBinding<?> binding) {
+    List<InjectionTimeProxy> knownProxies = this.root.knownProxies;
     if (!knownProxies.isEmpty()) {
-      for (ContextualProxy knownProxy : knownProxies) {
+      for (InjectionTimeProxy itp : knownProxies) {
         // a proxy is re-usable if the same provider constructed the proxy + the delegate is present
-        if (knownProxy.binding == binding && knownProxy.removeListenerExecuted) {
-          return knownProxy;
+        if (itp.binding == binding && !itp.undelegated()) {
+          return itp;
         }
       }
     }
@@ -516,12 +499,12 @@ public final class InjectionContext {
    * Sets the proxy of this context and marks this context as proxied. The proxy is registered to the root node as well
    * to allow for later delegation validation.
    *
-   * @param proxy the proxy to set for this node.
+   * @param itp the proxy to set for this node.
    */
-  private void setProxy(@NotNull ContextualProxy proxy) {
+  private void setProxy(@NotNull InjectionTimeProxy itp) {
     this.state = STATE_PROXIED;
-    this.createdProxy = proxy.proxyMapping;
-    this.root.knownProxies.add(proxy);
+    this.createdProxy = itp;
+    this.root.knownProxies.add(itp);
   }
 
   /**
@@ -567,9 +550,9 @@ public final class InjectionContext {
           Object contextCreatedValue = waitingContext.resolveInstance();
 
           // set the proxy delegate if needed
-          ProxyMapping proxy = waitingContext.createdProxy;
-          if (proxy != null && !proxy.isDelegatePresent()) {
-            proxy.setDelegate(contextCreatedValue);
+          InjectionTimeProxy itp = waitingContext.createdProxy;
+          if (itp != null) {
+            itp.setDelegate(contextCreatedValue);
           }
         }
       } finally {
@@ -582,11 +565,11 @@ public final class InjectionContext {
 
   private void validateAllProxiesAreDelegated() {
     // ensure that there are no proxies without a delegate
-    List<ContextualProxy> knownProxies = this.knownProxies;
+    List<InjectionTimeProxy> knownProxies = this.knownProxies;
     if (!knownProxies.isEmpty()) {
       int proxiesWithoutDelegate = 0;
-      for (ContextualProxy proxy : knownProxies) {
-        if (!proxy.proxyMapping.isDelegatePresent()) {
+      for (InjectionTimeProxy itp : knownProxies) {
+        if (itp.undelegated()) {
           proxiesWithoutDelegate++;
         }
       }
@@ -612,6 +595,10 @@ public final class InjectionContext {
 
   public boolean obsolete() {
     return this.obsolete;
+  }
+
+  public boolean root() {
+    return this.root == this;
   }
 
   /**
@@ -712,10 +699,8 @@ public final class InjectionContext {
     @Override
     public void accept(@NotNull InjectionContext realContext, @Nullable Object constructedValue) {
       // set the delegate in the marker context we created
-      ProxyMapping proxyMapping = this.markerContext.createdProxy;
-      if (!proxyMapping.isDelegatePresent()) {
-        proxyMapping.setDelegate(constructedValue);
-      }
+      InjectionTimeProxy itp = this.markerContext.createdProxy;
+      itp.setDelegate(constructedValue);
 
       // remove the marker context from the tree
       InjectionContext markerNext = this.markerContext.next;

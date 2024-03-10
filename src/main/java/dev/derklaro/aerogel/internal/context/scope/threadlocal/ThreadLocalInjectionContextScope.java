@@ -38,7 +38,7 @@ import org.jetbrains.annotations.UnknownNullability;
  * @author Pasqual K.
  * @since 3.0
  */
-@API(status = API.Status.INTERNAL, since = "3.0", consumers = "dev.derklaro.aerogel.internal.context.scope.threadlocal")
+@API(status = API.Status.INTERNAL, since = "3.0")
 final class ThreadLocalInjectionContextScope implements InjectionContextScope {
 
   private final InjectionContext context;
@@ -96,19 +96,22 @@ final class ThreadLocalInjectionContextScope implements InjectionContextScope {
    * is null, then the value is removed from the thread-local.
    *
    * @param operation the operation to execute after the thread-local was set to this scope.
-   * @param cs        the current scope that should be reset to after executing the given operation.
+   * @param previous  the current scope that should be reset to after executing the given operation.
    * @param <T>       the type of result returned by the given operation.
    * @return the result of the given operation.
    */
-  private <T> @Nullable T forceExecuteScoped(@NotNull Supplier<T> operation, @Nullable InjectionContextScope cs) {
+  private <T> @Nullable T forceExecuteScoped(
+    @NotNull Supplier<T> operation,
+    @Nullable InjectionContextScope previous
+  ) {
     try {
       // update the thread local to use this scope, then call the given operation
       this.scopeThreadLocal.set(this);
       return operation.get();
     } finally {
       // reset to the previous scope if present, else remove the mapping to the current scope
-      if (cs != null) {
-        this.scopeThreadLocal.set(cs);
+      if (previous != null) {
+        this.scopeThreadLocal.set(previous);
       } else {
         this.scopeThreadLocal.remove();
       }

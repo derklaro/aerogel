@@ -22,37 +22,48 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel;
+package dev.derklaro.aerogel.internal.provider;
 
+import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
-import dev.derklaro.aerogel.binding.key.BindingKey;
-import org.apiguardian.api.API;
-import org.jetbrains.annotations.CheckReturnValue;
+import dev.derklaro.aerogel.internal.context.InjectionContext;
+import jakarta.inject.Provider;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-/**
- * A scope that can be applied to a provider. A scope can be used to inject a state into a provider. Default bindings
- * are created without a scope, therefore instances created by providers are create-and-forget. Once the current
- * injection context ends, the constructed instance will no longer by known by the injector. A scope can be used to
- * define a longer lifetime for those instances.
- *
- * @author Pasqual Koschmieder
- * @since 3.0
- */
-@FunctionalInterface
-@API(status = API.Status.STABLE, since = "3.0")
-public interface ScopeApplier {
+public final class DelegatingProviderFactory<T> implements ProviderFactory<T> {
 
-  /**
-   * Returns a new provider with this scope applied to it. If necessary, the method may obtain an instance from the
-   * given provider.
-   *
-   * @param key      the key of the binding that requests the scoping.
-   * @param original the original provider to apply this scope to.
-   * @param <T>      the type of value returned by the provider.
-   * @return a new provider that scopes the given provider.
-   */
-  @NotNull
-  @CheckReturnValue
-  <T> ProviderWithContext<T> applyScope(@NotNull BindingKey<T> key, @NotNull ProviderWithContext<T> original);
+  private final Provider<T> delegate;
+
+  private DelegatingProviderFactory(@NotNull Provider<T> delegate) {
+    this.delegate = delegate;
+  }
+
+  public static @NotNull <T> DelegatingProviderFactory<T> toProvider(@NotNull Provider<T> delegate) {
+    return new DelegatingProviderFactory<>(delegate);
+  }
+
+  @Override
+  public @NotNull ProviderWithContext<T> constructProvider(@NotNull Injector injector) {
+    return new DelegatingProvider<>(this.delegate);
+  }
+
+  private static final class DelegatingProvider<T> implements ProviderWithContext<T> {
+
+    private final Provider<T> delegate;
+
+    public DelegatingProvider(@NotNull Provider<T> delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override
+    public @Nullable T get(@NotNull InjectionContext context) {
+      return this.delegate.get();
+    }
+
+    @Override
+    public @NotNull String toString() {
+      return "Delegating(" + this.delegate + ")";
+    }
+  }
 }

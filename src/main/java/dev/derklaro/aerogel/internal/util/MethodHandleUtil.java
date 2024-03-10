@@ -40,6 +40,7 @@ import org.jetbrains.annotations.NotNull;
 public final class MethodHandleUtil {
 
   private static final MethodType GEN_F_SET = MethodType.methodType(void.class, Object.class, Object.class);
+  private static final MethodType GEN_C_INVOKE = MethodType.genericMethodType(0, true);
   private static final MethodType GEN_M_INVOKE = MethodType.genericMethodType(1, true);
   private static final MethodType GEN_M_INVOKE_NORETURN = GEN_M_INVOKE.changeReturnType(void.class);
 
@@ -81,5 +82,13 @@ public final class MethodHandleUtil {
     }
 
     return invoker.asFixedArity();
+  }
+
+  public static @NotNull MethodHandle generifyConstructorInvoker(@NotNull MethodHandle invoker) {
+    int paramCount = invoker.type().parameterCount();
+    return invoker
+      .asSpreader(Object[].class, paramCount)
+      .asType(GEN_C_INVOKE)
+      .asFixedArity();
   }
 }

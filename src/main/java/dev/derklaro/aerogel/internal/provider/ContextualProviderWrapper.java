@@ -22,32 +22,40 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.context;
+package dev.derklaro.aerogel.internal.provider;
 
+import dev.derklaro.aerogel.binding.InstalledBinding;
+import dev.derklaro.aerogel.internal.context.InjectionContext;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
+import jakarta.inject.Provider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class ScopedSingleton {
+public final class ContextualProviderWrapper<T> implements Provider<T> {
 
-  private final Object inner;
+  private final InstalledBinding<T> binding;
 
-  private ScopedSingleton(@Nullable Object inner) {
-    this.inner = inner;
+  private ContextualProviderWrapper(@NotNull InstalledBinding<T> binding) {
+    this.binding = binding;
   }
 
-  public static @NotNull ScopedSingleton of(@Nullable Object inner) {
-    return new ScopedSingleton(inner);
+  public static @NotNull <T> ContextualProviderWrapper<T> wrapBinding(@NotNull InstalledBinding<T> binding) {
+    return new ContextualProviderWrapper<>(binding);
   }
 
-  static @Nullable Object unwrap(@NotNull ScopedSingleton value) {
-    Object inner = value.inner;
-    if (inner instanceof ScopedSingleton) {
-      while (inner instanceof ScopedSingleton) {
-        ScopedSingleton innerValue = (ScopedSingleton) inner;
-        inner = innerValue.inner;
+  @Override
+  @SuppressWarnings("unchecked")
+  public @Nullable T get() {
+    InjectionContextProvider provider = InjectionContextProvider.provider();
+    InjectionContextScope scope = provider.enterContextScope(this.binding);
+    InjectionContext context = scope.context();
+    try {
+      return (T) scope.forceExecuteScoped(context::resolveInstance);
+    } finally {
+      if (context.root()) {
+        context.finishConstruction();
       }
     }
-
-    return inner;
   }
 }
