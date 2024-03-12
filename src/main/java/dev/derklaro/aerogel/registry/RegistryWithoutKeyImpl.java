@@ -211,7 +211,77 @@ final class RegistryWithoutKeyImpl<K, V> implements Registry.WithoutKeyMapping<K
    * {@inheritDoc}
    */
   @Override
+  public @NotNull Registry.WithoutKeyMapping<K, V> freeze() {
+    return new FrozenImpl<>(this);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public @NotNull Registry.WithoutKeyMapping<K, V> createChildRegistry() {
     return new RegistryWithoutKeyImpl<>(this.keyTester, this);
+  }
+
+  /**
+   * An implementation of {@link Registry.WithoutKeyMapping} that does not support any modifications.
+   *
+   * @param <K> the type of keys that can be used to access the values in the registry.
+   * @param <V> the type of values stored in this registry.
+   * @author Pasqual Koschmieder
+   * @since 3.0
+   */
+  private static final class FrozenImpl<K, V>
+    extends BaseFrozenRegistryImpl<K, V, Registry.WithoutKeyMapping<K, V>>
+    implements Registry.WithoutKeyMapping<K, V> {
+
+    /**
+     * Constructs a new frozen registry implementation of {@link Registry.WithoutKeyMapping}.
+     *
+     * @param delegate the original registry that contains the values to read from. Will not be written to.
+     */
+    private FrozenImpl(@NotNull Registry.WithoutKeyMapping<K, V> delegate) {
+      super(delegate);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void register(@NotNull V value) {
+      throw new UnsupportedOperationException("registry is frozen");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull @Unmodifiable Collection<V> entries() {
+      return this.delegate.entries();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull Registry.WithoutKeyMapping<K, V> copy() {
+      return new FrozenImpl<>(this.delegate.copy());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull Registry.WithoutKeyMapping<K, V> freeze() {
+      return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull Registry.WithoutKeyMapping<K, V> createChildRegistry() {
+      return this.delegate.createChildRegistry();
+    }
   }
 }

@@ -117,6 +117,7 @@ public interface Registry<K, V> {
    * Unregisters the values that are mapped or match the given key from this registry.
    *
    * @param key the key to remove the values of.
+   * @throws UnsupportedOperationException if this registry is frozen.
    */
   void unregisterByKey(@NotNull K key);
 
@@ -124,6 +125,7 @@ public interface Registry<K, V> {
    * Unregisters the given value from this registry, removing all keys that are associated with the given value.
    *
    * @param value the value to unregister from this registry.
+   * @throws UnsupportedOperationException if this registry is frozen.
    */
   void unregisterByValue(@NotNull V value);
 
@@ -131,6 +133,7 @@ public interface Registry<K, V> {
    * Unregisters all entries from this registry that match the given filter.
    *
    * @param filter the filter for the values to unregister.
+   * @throws UnsupportedOperationException if this registry is frozen.
    */
   void unregister(@NotNull Predicate<V> filter);
 
@@ -142,7 +145,8 @@ public interface Registry<K, V> {
   int entryCount();
 
   /**
-   * Copies the registry entries into a new registry which has the same attributes as this registry.
+   * Copies the registry entries into a new registry which has the same attributes as this registry. If this registry is
+   * frozen, the copied registry will be frozen as well.
    *
    * @return a new registry with the same properties and a copy of the values of this registry.
    */
@@ -151,7 +155,18 @@ public interface Registry<K, V> {
   Registry<K, V> copy();
 
   /**
-   * Creates a new, empty child registry that uses this registry as the parent registry.
+   * Freezes the current state of the registry, disallowing any modifications to it. This method does nothing if the
+   * current registry is already frozen.
+   *
+   * @return a new, frozen registry containing the same elements as this registry.
+   */
+  @NotNull
+  @CheckReturnValue
+  Registry<K, V> freeze();
+
+  /**
+   * Creates a new, empty child registry that uses this registry as the parent registry. If this registry is frozen, the
+   * returned registry will not be frozen.
    *
    * @return a new, empty child registry that uses this registry as the parent registry.
    */
@@ -176,7 +191,8 @@ public interface Registry<K, V> {
      *
      * @param key   the key to associate with the given value.
      * @param value the value to associated with the given key.
-     * @throws IllegalArgumentException if the given key is already mapped to a value in this registry.
+     * @throws IllegalArgumentException      if the given key is already mapped to a value in this registry.
+     * @throws UnsupportedOperationException if this registry is frozen.
      */
     void register(@NotNull K key, @NotNull V value);
 
@@ -196,6 +212,13 @@ public interface Registry<K, V> {
     @Override
     @NotNull
     Registry.WithKeyMapping<K, V> copy();
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @NotNull
+    Registry.WithKeyMapping<K, V> freeze();
 
     /**
      * {@inheritDoc}
@@ -222,7 +245,8 @@ public interface Registry<K, V> {
      * Registers the given value into this registry.
      *
      * @param value the value to register.
-     * @throws IllegalArgumentException if the given value is already registered in this registry.
+     * @throws IllegalArgumentException      if the given value is already registered in this registry.
+     * @throws UnsupportedOperationException if this registry is frozen.
      */
     void register(@NotNull V value);
 
@@ -242,6 +266,13 @@ public interface Registry<K, V> {
     @Override
     @NotNull
     Registry.WithoutKeyMapping<K, V> copy();
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @NotNull
+    Registry.WithoutKeyMapping<K, V> freeze();
 
     /**
      * {@inheritDoc}

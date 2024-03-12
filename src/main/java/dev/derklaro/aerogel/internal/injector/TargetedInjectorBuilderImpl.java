@@ -22,8 +22,30 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel;
+package dev.derklaro.aerogel.internal.injector;
 
-public interface TargetedInjector extends Injector {
+import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.TargetedInjectorBuilder;
+import dev.derklaro.aerogel.binding.InstalledBinding;
+import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.registry.Registry;
+import org.jetbrains.annotations.NotNull;
 
+final class TargetedInjectorBuilderImpl implements TargetedInjectorBuilder {
+
+  private final Injector parent;
+  private final Injector nonTargetedInjector;
+  private final Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry;
+
+  /* trusted */
+  TargetedInjectorBuilderImpl(@NotNull Injector parent, @NotNull Injector nonTargetedInjector) {
+    this.parent = parent;
+    this.nonTargetedInjector = nonTargetedInjector;
+    this.bindingRegistry = parent.bindingRegistry().createChildRegistry();
+  }
+
+  @Override
+  public @NotNull Injector build() {
+    return new TargetedInjectorImpl(this.parent, this.nonTargetedInjector, this.bindingRegistry.freeze());
+  }
 }

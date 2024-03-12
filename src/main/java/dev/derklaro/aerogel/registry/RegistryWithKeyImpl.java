@@ -179,7 +179,78 @@ final class RegistryWithKeyImpl<K, V> implements Registry.WithKeyMapping<K, V> {
    * {@inheritDoc}
    */
   @Override
-  public @NotNull WithKeyMapping<K, V> createChildRegistry() {
+  public @NotNull Registry.WithKeyMapping<K, V> freeze() {
+    return new FrozenImpl<>(this);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public @NotNull Registry.WithKeyMapping<K, V> createChildRegistry() {
     return new RegistryWithKeyImpl<>(this);
+  }
+
+  /**
+   * An implementation of {@link Registry.WithKeyMapping} that does not support any modifications.
+   *
+   * @param <K> the type of keys that can be used to access the values in the registry.
+   * @param <V> the type of values stored in this registry.
+   * @author Pasqual Koschmieder
+   * @since 3.0
+   */
+  @API(status = API.Status.INTERNAL, since = "3.0")
+  private static final class FrozenImpl<K, V>
+    extends BaseFrozenRegistryImpl<K, V, Registry.WithKeyMapping<K, V>>
+    implements Registry.WithKeyMapping<K, V> {
+
+    /**
+     * Constructs a new frozen registry implementation of {@link Registry.WithKeyMapping}.
+     *
+     * @param delegate the original registry that contains the values to read from. Will not be written to.
+     */
+    private FrozenImpl(@NotNull Registry.WithKeyMapping<K, V> delegate) {
+      super(delegate);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void register(@NotNull K key, @NotNull V value) {
+      throw new UnsupportedOperationException("registry is frozen");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull @Unmodifiable Map<K, V> entries() {
+      return this.delegate.entries();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull Registry.WithKeyMapping<K, V> copy() {
+      return new FrozenImpl<>(this.delegate.copy());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull Registry.WithKeyMapping<K, V> freeze() {
+      return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull Registry.WithKeyMapping<K, V> createChildRegistry() {
+      return this.delegate.createChildRegistry();
+    }
   }
 }

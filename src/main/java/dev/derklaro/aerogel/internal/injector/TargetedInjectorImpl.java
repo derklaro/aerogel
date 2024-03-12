@@ -22,11 +22,12 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal;
+package dev.derklaro.aerogel.internal.injector;
 
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjector;
 import dev.derklaro.aerogel.ScopeApplier;
+import dev.derklaro.aerogel.TargetedInjectorBuilder;
 import dev.derklaro.aerogel.binding.DynamicBinding;
 import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
@@ -45,36 +46,31 @@ import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class InjectorImpl implements Injector {
+final class TargetedInjectorImpl implements Injector {
 
-  // fallback lookup for member injection, only works if the injector
-  // has access to the target classes to inject in (best-effort)
-  private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+  final Injector parent;
+  final Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry;
 
-  private final Injector parent;
+  private final Injector nonTargetedInjector;
+  private final JitBindingFactory jitBindingFactory;
+
   private final Map<Class<?>, MemberInjector<?>> memberInjectorCache = MapUtil.newConcurrentMap();
 
-  private final Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry;
-  private final Registry.WithoutKeyMapping<BindingKey<?>, DynamicBinding> dynamicBindingRegistry;
-  private final Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry;
-
-  public InjectorImpl() {
-    this.parent = null;
-    this.scopeRegistry = Registry.createRegistryWithKeys();
-    this.bindingRegistry = Registry.createRegistryWithKeys();
-    this.dynamicBindingRegistry = Registry.createRegistryWithoutKeys((key, binding) -> binding.supports(key));
-  }
-
-  private InjectorImpl(@NotNull InjectorImpl parent) {
+  TargetedInjectorImpl(
+    @NotNull Injector parent,
+    @NotNull Injector nonTargetedInjector,
+    @NotNull Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry
+  ) {
     this.parent = parent;
-    this.scopeRegistry = parent.scopeRegistry.createChildRegistry();
-    this.bindingRegistry = parent.bindingRegistry.createChildRegistry();
-    this.dynamicBindingRegistry = parent.dynamicBindingRegistry.createChildRegistry();
+    this.bindingRegistry = bindingRegistry;
+
+    this.nonTargetedInjector = nonTargetedInjector;
+    this.jitBindingFactory = new JitBindingFactory(this);
   }
 
   @Override
   public @NotNull Optional<Injector> parentInjector() {
-    return Optional.ofNullable(this.parent);
+    return Optional.of(this.parent);
   }
 
   @Override
@@ -83,8 +79,13 @@ public final class InjectorImpl implements Injector {
   }
 
   @Override
+  public @NotNull TargetedInjectorBuilder createTargetedInjectorBuilder() {
+    return new TargetedInjectorBuilderImpl(this, this.nonTargetedInjector);
+  }
+
+  @Override
   public @NotNull RootBindingBuilder createBindingBuilder() {
-    return null;
+    return this.parent.createBindingBuilder();
   }
 
   @Override
@@ -105,7 +106,7 @@ public final class InjectorImpl implements Injector {
     }
 
     // create a new member injector
-    MethodHandles.Lookup lookup = givenLookup != null ? givenLookup : LOOKUP;
+    MethodHandles.Lookup lookup = givenLookup != null ? givenLookup : InjectorImpl.LOOKUP;
     MemberInjector<T> newMemberInjector = new DefaultMemberInjector<>(memberHolderClass, this, lookup);
     this.memberInjectorCache.put(memberHolderClass, newMemberInjector);
     return newMemberInjector;
@@ -113,62 +114,71 @@ public final class InjectorImpl implements Injector {
 
   @Override
   public @Nullable <T> T instance(@NotNull Class<T> type) {
-    BindingKey<T> bindingKey = BindingKey.of(type);
-    return this.instance(bindingKey);
+    BindingKey<T> key = BindingKey.of(type);
+    return this.instance(key);
   }
 
   @Override
   public @Nullable <T> T instance(@NotNull Type type) {
-    BindingKey<T> bindingKey = BindingKey.of(type);
-    return this.instance(bindingKey);
+    BindingKey<T> key = BindingKey.of(type);
+    return this.instance(key);
   }
 
   @Override
   public @Nullable <T> T instance(@NotNull TypeToken<T> typeToken) {
-    BindingKey<T> bindingKey = BindingKey.of(typeToken);
-    return this.instance(bindingKey);
+    BindingKey<T> key = BindingKey.of(typeToken);
+    return this.instance(key);
   }
 
   @Override
   public @Nullable <T> T instance(@NotNull BindingKey<T> key) {
-    Provider<T> provider = this.binding(key).provider();
-    return provider.get();
+    Provider<T> binding = this.binding(key).provider();
+    return binding.get();
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public @NotNull <T> InstalledBinding<T> binding(@NotNull BindingKey<T> key) {
-    return this.existingBinding(key).orElseGet(() -> null); // TODO: implement JIT bindings
+    // try to get an overridden binding from the local binding registry
+    InstalledBinding<?> binding = this.bindingRegistry.getDirect(key).orElse(null);
+    if (binding != null) {
+      return (InstalledBinding<T>) binding;
+    }
+
+    // try to get an existing binding from the parent registry
+    InstalledBinding<T> existingParentBinding = this.parent.existingBinding(key).orElse(null);
+    if (existingParentBinding != null) {
+      return existingParentBinding;
+    }
+
+    // construct a new jit binding for the type and register it to the non-targeted injector in the hierarchy
+    InstalledBinding<T> jitBinding = this.jitBindingFactory.createJitBinding(key);
+    this.nonTargetedInjector.bindingRegistry().register(key, jitBinding);
+    return jitBinding;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public @NotNull <T> Optional<InstalledBinding<T>> existingBinding(@NotNull BindingKey<T> key) {
-    // try to load an existing binding that is mapped to the given key
-    InstalledBinding<?> directBinding = this.bindingRegistry.get(key).orElse(null);
+    // try to get an overridden binding from the local binding registry
+    InstalledBinding<?> directBinding = this.bindingRegistry.getDirect(key).orElse(null);
     if (directBinding != null) {
       return Optional.of((InstalledBinding<T>) directBinding);
     }
 
-    // try to load a binding from the dynamic binding registry
-    return this.dynamicBindingRegistry.get(key)
-      .flatMap(dynamicBinding -> dynamicBinding.tryMatch(key))
-      .map(uninstalledBinding -> {
-        InstalledBinding<T> binding = uninstalledBinding.prepareForInstallation(this);
-        this.bindingRegistry.register(key, binding);
-        return binding;
-      });
+    // try to get an existing binding from the parent injector
+    return this.parent.existingBinding(key);
   }
 
   @Override
   public @NotNull Injector installBinding(@NotNull DynamicBinding binding) {
-    this.dynamicBindingRegistry.register(binding);
+    this.parent.installBinding(binding);
     return this;
   }
 
   @Override
   public @NotNull <T> Injector installBinding(@NotNull UninstalledBinding<T> binding) {
-    InstalledBinding<?> installedBinding = binding.prepareForInstallation(this);
-    this.bindingRegistry.register(binding.key(), installedBinding);
+    this.parent.installBinding(binding);
     return this;
   }
 
@@ -179,11 +189,11 @@ public final class InjectorImpl implements Injector {
 
   @Override
   public @NotNull Registry.WithoutKeyMapping<BindingKey<?>, DynamicBinding> dynamicBindingRegistry() {
-    return this.dynamicBindingRegistry;
+    return this.parent.dynamicBindingRegistry();
   }
 
   @Override
   public @NotNull Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry() {
-    return this.scopeRegistry;
+    return this.parent.scopeRegistry();
   }
 }
