@@ -32,6 +32,7 @@ import java.lang.annotation.Target;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
+// TODO: fix these docs
 /**
  * Defines which implementation should be used when injecting a type instance of the given class. In fact the injector
  * will only use the type this annotation references and ignores every other manually bound value to the class.

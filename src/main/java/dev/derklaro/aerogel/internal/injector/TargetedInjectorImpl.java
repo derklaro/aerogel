@@ -152,9 +152,9 @@ final class TargetedInjectorImpl implements Injector {
     }
 
     // construct a new jit binding for the type and register it to the non-targeted injector in the hierarchy
-    InstalledBinding<T> jitBinding = this.jitBindingFactory.createJitBinding(key);
+    InstalledBinding<?> jitBinding = this.jitBindingFactory.createJitBinding(key);
     this.nonTargetedInjector.bindingRegistry().register(key, jitBinding);
-    return jitBinding;
+    return (InstalledBinding<T>) jitBinding;
   }
 
   @Override

@@ -169,11 +169,12 @@ public final class InjectorImpl implements Injector {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public @NotNull <T> InstalledBinding<T> binding(@NotNull BindingKey<T> key) {
     return this.existingBinding(key).orElseGet(() -> {
-      InstalledBinding<T> jitBinding = this.jitBindingFactory.createJitBinding(key);
+      InstalledBinding<?> jitBinding = this.jitBindingFactory.createJitBinding(key);
       this.bindingRegistry.register(key, jitBinding);
-      return jitBinding;
+      return (InstalledBinding<T>) jitBinding;
     });
   }
 

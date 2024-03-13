@@ -25,8 +25,15 @@
 package dev.derklaro.aerogel.internal.injector;
 
 import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.MemberInjector;
+import dev.derklaro.aerogel.ProvidedBy;
 import dev.derklaro.aerogel.binding.InstalledBinding;
+import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import io.leangen.geantyref.GenericTypeReflector;
+import jakarta.inject.Provider;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import org.jetbrains.annotations.NotNull;
 
 final class JitBindingFactory {
@@ -37,7 +44,80 @@ final class JitBindingFactory {
     this.injector = injector;
   }
 
-  public @NotNull <T> InstalledBinding<T> createJitBinding(@NotNull BindingKey<T> key) {
+  @SuppressWarnings("unchecked")
+  private static @NotNull BindingKey<Object> convertKeyUnchecked(@NotNull BindingKey<?> key) {
+    return (BindingKey<Object>) key;
+  }
 
+  public @NotNull InstalledBinding<?> createJitBinding(@NotNull BindingKey<?> key) {
+    // check for special types: Provider & Member injector first
+    Type targetType = key.type();
+    if (targetType instanceof ParameterizedType) {
+      ParameterizedType parameterized = (ParameterizedType) targetType;
+      if (parameterized.getRawType().equals(Provider.class)) {
+        // target is a provider
+        Type componentType = parameterized.getActualTypeArguments()[0];
+        BindingKey<?> componentKey = key.withType(componentType);
+        InstalledBinding<?> componentBinding = this.injector.binding(componentKey);
+        return this.createStaticBinding(key, componentBinding.provider());
+      }
+
+      if (parameterized.getRawType().equals(MemberInjector.class)) {
+        // target is a member injector
+        Type componentType = parameterized.getActualTypeArguments()[0];
+        Class<?> rawComponentType = GenericTypeReflector.erase(componentType);
+        MemberInjector<?> componentMemberInjector = this.injector.memberInjector(rawComponentType);
+        return this.createStaticBinding(key, componentMemberInjector);
+      }
+    }
+
+    // at this point we actually need to create a binding, which cannot be done when
+    // a special binding is requested that is using a qualifier annotation
+    if (key.qualifierAnnotation().isPresent()) {
+      throw new IllegalStateException("Unable to create JIT binding for key with qualifier: " + key);
+    }
+
+    // check for @ProvidedBy
+    Class<?> rawTargetType = GenericTypeReflector.erase(targetType);
+    ProvidedBy providedBy = rawTargetType.getAnnotation(ProvidedBy.class);
+    if (providedBy != null) {
+      Class<?> implementation = providedBy.value();
+      if (targetType.equals(implementation)) {
+        throw new IllegalArgumentException("@ProvideBy: implementation " + implementation + " is the same as target");
+      }
+
+      if (!rawTargetType.isAssignableFrom(implementation)) {
+        throw new IllegalArgumentException(
+          "@ProvidedBy: implementation " + implementation + " is actually not an implementation of " + rawTargetType);
+      }
+
+      // get a binding for the implementation and bind construct a binding that
+      // delegates to the provider of the implementation binding
+      BindingKey<?> implementationKey = BindingKey.of(implementation);
+      InstalledBinding<?> binding = this.injector.binding(implementationKey);
+      return this.createDelegatingBinding(key, binding.provider());
+    }
+
+    // create a binding that tries to construct the raw target type
+    BindingKey<Object> objectKey = convertKeyUnchecked(key);
+    UninstalledBinding<?> binding = this.injector.createBindingBuilder()
+      .bind(objectKey)
+      .toConstructingClass(rawTargetType);
+    return binding.prepareForInstallation(this.injector);
+  }
+
+  private @NotNull InstalledBinding<?> createStaticBinding(@NotNull BindingKey<?> key, @NotNull Object wrappedValue) {
+    BindingKey<Object> objectKey = convertKeyUnchecked(key);
+    UninstalledBinding<?> uninstalled = this.injector.createBindingBuilder().bind(objectKey).toInstance(wrappedValue);
+    return uninstalled.prepareForInstallation(this.injector);
+  }
+
+  private @NotNull InstalledBinding<?> createDelegatingBinding(
+    @NotNull BindingKey<?> key,
+    @NotNull Provider<?> target
+  ) {
+    BindingKey<Object> objectKey = convertKeyUnchecked(key);
+    UninstalledBinding<?> uninstalled = this.injector.createBindingBuilder().bind(objectKey).toProvider(target);
+    return uninstalled.prepareForInstallation(this.injector);
   }
 }
