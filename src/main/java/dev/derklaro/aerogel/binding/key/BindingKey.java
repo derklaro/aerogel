@@ -275,12 +275,26 @@ public final class BindingKey<T> {
   }
 
   /**
+   * Get the qualifier annotation instance that is being matched by this key, if any.
+   *
+   * @return the qualifier annotation instance that is being matched by this key, if any.
+   */
+  @NotNull
+  public Optional<Annotation> qualifierAnnotation() {
+    if (this.annotationMatcher == null) {
+      return Optional.empty();
+    } else {
+      return Optional.ofNullable(this.annotationMatcher.annotationInstance());
+    }
+  }
+
+  /**
    * Get the type of the optional qualifier annotation that is being matched by this key.
    *
    * @return the type of the optional qualifier annotation that is being matched by this key.
    */
   @NotNull
-  public Optional<Class<? extends Annotation>> qualifierAnnotation() {
+  public Optional<Class<? extends Annotation>> qualifierAnnotationType() {
     if (this.annotationMatcher == null) {
       return Optional.empty();
     } else {

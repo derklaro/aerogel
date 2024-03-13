@@ -100,6 +100,14 @@ interface AnnotationMatcher {
   Class<? extends Annotation> annotationType();
 
   /**
+   * Get the annotation instance that is being matched by the matcher, if any.
+   *
+   * @return the annotation instance that is being matched by the matcher, if any.
+   */
+  @Nullable
+  Annotation annotationInstance();
+
+  /**
    * {@inheritDoc}
    */
   @Override
@@ -153,6 +161,14 @@ interface AnnotationMatcher {
     @Override
     public @NotNull Class<? extends Annotation> annotationType() {
       return this.type;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @Nullable Annotation annotationInstance() {
+      return null;
     }
 
     /**
@@ -219,6 +235,14 @@ interface AnnotationMatcher {
     @Override
     public @NotNull Class<? extends Annotation> annotationType() {
       return this.annotation.annotationType();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @NotNull Annotation annotationInstance() {
+      return this.annotation;
     }
 
     /**
