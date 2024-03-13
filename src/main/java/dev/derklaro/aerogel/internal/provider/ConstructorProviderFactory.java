@@ -41,12 +41,12 @@ import org.jetbrains.annotations.Nullable;
 @API(status = API.Status.INTERNAL, since = "3.0")
 public final class ConstructorProviderFactory<T> implements ProviderFactory<T> {
 
-  private final Constructor<T> origConstructor;
+  private final Constructor<?> origConstructor;
   private final MethodHandle constructorHandle;
   private final ParameterProviderFactory parameterProvider;
 
   private ConstructorProviderFactory(
-    @NotNull Constructor<T> origConstructor,
+    @NotNull Constructor<?> origConstructor,
     @NotNull MethodHandle constructorHandle,
     @NotNull ParameterProviderFactory parameterProvider
   ) {
@@ -56,7 +56,7 @@ public final class ConstructorProviderFactory<T> implements ProviderFactory<T> {
   }
 
   public static @NotNull <T> ConstructorProviderFactory<T> fromConstructor(
-    @NotNull Constructor<T> constructor,
+    @NotNull Constructor<? extends T> constructor,
     @NotNull MethodHandles.Lookup lookup
   ) {
     try {
@@ -70,7 +70,7 @@ public final class ConstructorProviderFactory<T> implements ProviderFactory<T> {
   }
 
   public static @NotNull <T> ConstructorProviderFactory<T> fromClass(
-    @NotNull Class<T> clazz,
+    @NotNull Class<? extends T> clazz,
     @NotNull MethodHandles.Lookup lookup
   ) {
     Constructor<?>[] constructors = clazz.getDeclaredConstructors();
@@ -127,12 +127,12 @@ public final class ConstructorProviderFactory<T> implements ProviderFactory<T> {
 
   private static final class ConstructorProvider<T> implements ProviderWithContext<T> {
 
-    private final Constructor<T> origConstructor;
+    private final Constructor<?> origConstructor;
     private final MethodHandle constructorHandle;
     private final ProviderWithContext<Object[]> paramProvider;
 
     public ConstructorProvider(
-      @NotNull Constructor<T> origConstructor,
+      @NotNull Constructor<?> origConstructor,
       @NotNull MethodHandle constructorHandle,
       @NotNull ProviderWithContext<Object[]> paramProvider
     ) {

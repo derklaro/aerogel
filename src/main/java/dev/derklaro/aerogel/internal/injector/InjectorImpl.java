@@ -33,6 +33,7 @@ import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.binding.builder.RootBindingBuilderImpl;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
 import dev.derklaro.aerogel.internal.util.MapUtil;
 import dev.derklaro.aerogel.registry.Registry;
@@ -117,7 +118,7 @@ public final class InjectorImpl implements Injector {
 
   @Override
   public @NotNull RootBindingBuilder createBindingBuilder() {
-    return null; // only give out scope registry
+    return new RootBindingBuilderImpl(this.scopeRegistry);
   }
 
   @Override

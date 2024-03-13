@@ -22,48 +22,30 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.provider;
+package dev.derklaro.aerogel.internal.binding;
 
-import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.binding.ProviderWithContext;
-import dev.derklaro.aerogel.internal.context.InjectionContext;
-import jakarta.inject.Provider;
+import dev.derklaro.aerogel.binding.BindingOptions;
+import java.lang.invoke.MethodHandles;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class DelegatingProviderFactory<T> implements ProviderFactory<T> {
+public final class BindingOptionsImpl implements BindingOptions {
 
-  private final Provider<? extends T> delegate;
+  public static final BindingOptionsImpl EMPTY = new BindingOptionsImpl(null);
 
-  private DelegatingProviderFactory(@NotNull Provider<? extends T> delegate) {
-    this.delegate = delegate;
-  }
+  private final MethodHandles.Lookup memberLookup;
 
-  public static @NotNull <T> DelegatingProviderFactory<T> toProvider(@NotNull Provider<? extends T> delegate) {
-    return new DelegatingProviderFactory<>(delegate);
+  public BindingOptionsImpl(@Nullable MethodHandles.Lookup memberLookup) {
+    this.memberLookup = memberLookup;
   }
 
   @Override
-  public @NotNull ProviderWithContext<T> constructProvider(@NotNull Injector injector) {
-    return new DelegatingProvider<>(this.delegate);
+  public @NotNull Optional<MethodHandles.Lookup> memberLookup() {
+    return Optional.ofNullable(this.memberLookup);
   }
 
-  private static final class DelegatingProvider<T> implements ProviderWithContext<T> {
-
-    private final Provider<? extends T> delegate;
-
-    public DelegatingProvider(@NotNull Provider<? extends T> delegate) {
-      this.delegate = delegate;
-    }
-
-    @Override
-    public @Nullable T get(@NotNull InjectionContext context) {
-      return this.delegate.get();
-    }
-
-    @Override
-    public @NotNull String toString() {
-      return "Delegating(" + this.delegate + ")";
-    }
+  public @NotNull BindingOptionsImpl withMemberLookup(@Nullable MethodHandles.Lookup lookup) {
+    return new BindingOptionsImpl(lookup);
   }
 }

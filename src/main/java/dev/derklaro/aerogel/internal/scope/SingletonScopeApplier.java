@@ -36,6 +36,11 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SingletonScopeApplier implements ScopeApplier {
 
+  public static final ScopeApplier INSTANCE = new SingletonScopeApplier();
+
+  private SingletonScopeApplier() {
+  }
+
   @Override
   public @NotNull <T> ProviderWithContext<T> applyScope(
     @NotNull BindingKey<T> key,
