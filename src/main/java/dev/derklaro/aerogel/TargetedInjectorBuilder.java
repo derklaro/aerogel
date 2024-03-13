@@ -24,9 +24,13 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.binding.UninstalledBinding;
 import org.jetbrains.annotations.NotNull;
 
 public interface TargetedInjectorBuilder {
+
+  @NotNull
+  <T> TargetedInjectorBuilder installBinding(@NotNull UninstalledBinding<T> binding);
 
   @NotNull
   Injector build();

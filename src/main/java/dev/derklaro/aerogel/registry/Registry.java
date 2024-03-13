@@ -156,7 +156,8 @@ public interface Registry<K, V> {
 
   /**
    * Freezes the current state of the registry, disallowing any modifications to it. This method does nothing if the
-   * current registry is already frozen.
+   * current registry is already frozen. Note: changes made to this registry after freezing will reflect into the frozen
+   * registry.
    *
    * @return a new, frozen registry containing the same elements as this registry.
    */

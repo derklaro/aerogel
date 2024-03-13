@@ -62,7 +62,7 @@ final class TargetedInjectorImpl implements Injector {
     @NotNull Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry
   ) {
     this.parent = parent;
-    this.bindingRegistry = bindingRegistry;
+    this.bindingRegistry = bindingRegistry.freeze();
 
     this.nonTargetedInjector = nonTargetedInjector;
     this.jitBindingFactory = new JitBindingFactory(this);
