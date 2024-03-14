@@ -164,8 +164,8 @@ public final class InjectionContext {
 
     this.root = this;
     this.knownProxies = new ArrayList<>();
-    this.overrides = new HashMap<>(overrides); // TODO: should this map be immutable?
     this.requestedMemberInjections = new LinkedHashSet<>();
+    this.overrides = Collections.unmodifiableMap(new HashMap<>(overrides));
   }
 
   /**
