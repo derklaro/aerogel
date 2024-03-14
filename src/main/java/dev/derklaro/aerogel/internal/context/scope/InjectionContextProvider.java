@@ -26,7 +26,6 @@ package dev.derklaro.aerogel.internal.context.scope;
 
 import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
-import dev.derklaro.aerogel.internal.context.InjectionContext;
 import jakarta.inject.Provider;
 import java.util.Collections;
 import java.util.Map;
@@ -50,12 +49,6 @@ public interface InjectionContextProvider {
    */
   static @NotNull InjectionContextProvider provider() {
     return InjectionContextProviderHolder.getContextProvider();
-  }
-
-  default @Nullable InjectionContext currentContext() {
-    InjectionContextScope scope = this.currentScope();
-    InjectionContext currentContext = scope == null ? null : scope.context();
-    return currentContext == null || currentContext.obsolete() ? null : currentContext;
   }
 
   /**

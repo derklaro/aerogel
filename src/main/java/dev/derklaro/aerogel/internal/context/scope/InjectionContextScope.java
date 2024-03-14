@@ -28,7 +28,6 @@ import dev.derklaro.aerogel.internal.context.InjectionContext;
 import java.util.function.Supplier;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.UnknownNullability;
 
 /**
@@ -39,15 +38,6 @@ import org.jetbrains.annotations.UnknownNullability;
  */
 @API(status = API.Status.INTERNAL, since = "3.0")
 public interface InjectionContextScope {
-
-  /**
-   * Get the current scope that is being operated in, if any.
-   *
-   * @return the current scope that is being operated in, if any.
-   */
-  static @Nullable InjectionContextScope currentScope() {
-    return InjectionContextProvider.provider().currentScope();
-  }
 
   /**
    * The context that is wrapped by this context scope.
