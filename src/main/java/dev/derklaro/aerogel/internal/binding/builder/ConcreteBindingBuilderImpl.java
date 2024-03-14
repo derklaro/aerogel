@@ -31,6 +31,7 @@ import dev.derklaro.aerogel.binding.builder.BindingAnnotationBuilder;
 import dev.derklaro.aerogel.binding.builder.QualifiableBindingBuilder;
 import dev.derklaro.aerogel.binding.builder.ScopeableBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.annotation.InjectAnnotationUtil;
 import dev.derklaro.aerogel.internal.binding.BindingOptionsImpl;
 import dev.derklaro.aerogel.internal.binding.UninstalledBindingImpl;
 import dev.derklaro.aerogel.internal.binding.annotation.BindingAnnotationBuilderImpl;
@@ -40,6 +41,7 @@ import dev.derklaro.aerogel.internal.provider.FactoryMethodProviderFactory;
 import dev.derklaro.aerogel.internal.provider.InstanceProviderFactory;
 import dev.derklaro.aerogel.internal.provider.ProviderFactory;
 import dev.derklaro.aerogel.internal.scope.SingletonScopeApplier;
+import dev.derklaro.aerogel.internal.scope.UnscopedScopeApplier;
 import dev.derklaro.aerogel.registry.Registry;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
@@ -47,6 +49,7 @@ import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -109,7 +112,11 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
 
   @Override
   public @NotNull AdvancedBindingBuilder<T> unscoped() {
-    return new ConcreteBindingBuilderImpl<>(this.bindingKey, this.scopeRegistry, null, this.options);
+    return new ConcreteBindingBuilderImpl<>(
+      this.bindingKey,
+      this.scopeRegistry,
+      UnscopedScopeApplier.INSTANCE,
+      this.options);
   }
 
   @Override
@@ -142,15 +149,19 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
 
   @Override
   public @NotNull UninstalledBinding<T> toInstance(@NotNull T instance) {
+    ScopeApplier scope = this.resolveActualScopeApplier(instance.getClass());
     ProviderFactory<T> providerFactory = InstanceProviderFactory.ofInstance(instance);
-    return new UninstalledBindingImpl<>(this.bindingKey, this.scope, this.options, providerFactory);
+    return new UninstalledBindingImpl<>(this.bindingKey, scope, this.options, providerFactory);
   }
 
   @Override
   public @NotNull UninstalledBinding<T> toFactoryMethod(@NotNull Method factoryMethod) {
+    // TODO: a bit of validation...
     MethodHandles.Lookup lookup = this.resolveMemberLookup();
     ProviderFactory<T> providerFactory = FactoryMethodProviderFactory.fromMethod(factoryMethod, lookup);
-    return new UninstalledBindingImpl<>(this.bindingKey, this.scope, this.options, providerFactory);
+
+    ScopeApplier scope = this.resolveActualScopeApplier(factoryMethod.getReturnType());
+    return new UninstalledBindingImpl<>(this.bindingKey, scope, this.options, providerFactory);
   }
 
   @Override
@@ -168,17 +179,43 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
   public @NotNull UninstalledBinding<T> toConstructor(@NotNull Constructor<? extends T> constructor) {
     MethodHandles.Lookup lookup = this.resolveMemberLookup();
     ProviderFactory<T> providerFactory = ConstructorProviderFactory.fromConstructor(constructor, lookup);
-    return new UninstalledBindingImpl<>(this.bindingKey, this.scope, this.options, providerFactory);
+
+    ScopeApplier scope = this.resolveActualScopeApplier(constructor.getDeclaringClass());
+    return new UninstalledBindingImpl<>(this.bindingKey, scope, this.options, providerFactory);
   }
 
   @Override
   public @NotNull UninstalledBinding<T> toConstructingClass(@NotNull Class<? extends T> implementationType) {
+    // TODO: a bit of validation...
     MethodHandles.Lookup lookup = this.resolveMemberLookup();
     ProviderFactory<T> providerFactory = ConstructorProviderFactory.fromClass(implementationType, lookup);
-    return new UninstalledBindingImpl<>(this.bindingKey, this.scope, this.options, providerFactory);
+
+    ScopeApplier scope = this.resolveActualScopeApplier(implementationType);
+    return new UninstalledBindingImpl<>(this.bindingKey, scope, this.options, providerFactory);
   }
 
   private @NotNull MethodHandles.Lookup resolveMemberLookup() {
     return this.options.memberLookup().orElse(LOOKUP);
+  }
+
+  private @Nullable ScopeApplier resolveActualScopeApplier(@NotNull Class<?> target) {
+    // prefer overridden scope annotation
+    if (this.scope != null) {
+      return this.scope;
+    }
+
+    // scope annotations are not allowed on abstract types
+    if (target.isInterface() || Modifier.isAbstract(target.getModifiers())) {
+      return null;
+    }
+
+    // try to find a scope annotation and resolve the associated applier
+    Class<? extends Annotation> boundScope = InjectAnnotationUtil.findScopeAnnotation(target.getAnnotations());
+    if (boundScope != null) {
+      return this.scopeRegistry.get(boundScope)
+        .orElseThrow(() -> new IllegalStateException("Scope @" + boundScope.getName() + " has no registered applier"));
+    }
+
+    return null;
   }
 }

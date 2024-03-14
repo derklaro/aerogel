@@ -28,6 +28,7 @@ import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjector;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -55,7 +56,7 @@ public final class DefaultMemberInjector<T> implements MemberInjector<T> {
     this.injector = injector;
     this.targetClass = targetClass;
 
-    List<InjectableMember> injectableMembers = MemberTreeCache.computeMemberTree(targetClass);
+    Collection<InjectableMember> injectableMembers = InjectionMemberCache.computeMemberTree(targetClass);
     this.memberInjectionExecutors = new ArrayList<>(injectableMembers.size());
     for (InjectableMember injectableMember : injectableMembers) {
       try {

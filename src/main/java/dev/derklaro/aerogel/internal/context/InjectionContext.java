@@ -32,6 +32,7 @@ import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
 import io.leangen.geantyref.GenericTypeReflector;
 import jakarta.inject.Provider;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -412,7 +413,10 @@ public final class InjectionContext {
   }
 
   public void requestMemberInjectionSameBinding(@Nullable Object constructedValue) {
-    Class<?> constructedType = GenericTypeReflector.erase(this.binding.key().type());
+    Type bindingKeyType = this.binding.key().type();
+    Class<?> constructedType = constructedValue != null
+      ? constructedValue.getClass()
+      : GenericTypeReflector.erase(bindingKeyType);
     MethodHandles.Lookup lookup = this.binding.options().memberLookup().orElse(null);
     this.requestMemberInjection(constructedType, constructedValue, lookup);
   }

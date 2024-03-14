@@ -29,6 +29,7 @@ import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.internal.ConstructionException;
 import dev.derklaro.aerogel.internal.context.InjectionContext;
 import dev.derklaro.aerogel.internal.util.MethodHandleUtil;
+import dev.derklaro.aerogel.internal.util.UnreflectionUtil;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
@@ -52,14 +53,10 @@ public final class FactoryMethodProviderFactory<T> implements ProviderFactory<T>
     @NotNull Method factoryMethod,
     @NotNull MethodHandles.Lookup lookup
   ) {
-    try {
-      MethodHandle directMethodHandle = lookup.unreflect(factoryMethod);
-      MethodHandle genericMethodHandle = MethodHandleUtil.generifyMethodInvoker(directMethodHandle, true, false);
-      ParameterProviderFactory parameterProviderFactory = ParameterProviderFactory.fromMethod(factoryMethod);
-      return new FactoryMethodProviderFactory<>(factoryMethod, genericMethodHandle, parameterProviderFactory);
-    } catch (IllegalAccessException ex) {
-      throw new IllegalStateException("Unable to access method " + factoryMethod + " from lookup " + lookup, ex);
-    }
+    MethodHandle directMethodHandle = UnreflectionUtil.unreflectMethod(factoryMethod, lookup);
+    MethodHandle genericMethodHandle = MethodHandleUtil.generifyMethodInvoker(directMethodHandle, true, false);
+    ParameterProviderFactory parameterProviderFactory = ParameterProviderFactory.fromMethod(factoryMethod);
+    return new FactoryMethodProviderFactory<>(factoryMethod, genericMethodHandle, parameterProviderFactory);
   }
 
   @Override

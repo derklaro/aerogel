@@ -188,21 +188,7 @@ public final class BindingKey<T> {
    */
   @CheckReturnValue
   public @NotNull BindingKey<T> selectQualifier(@NotNull Annotation[] annotations) {
-    Annotation qualifier = null;
-    for (Annotation annotation : annotations) {
-      boolean validQualifier = InjectAnnotationUtil.validQualifierAnnotation(annotation.annotationType());
-      if (validQualifier) {
-        if (qualifier != null) {
-          throw new IllegalArgumentException("Detected duplicate qualifier annotation: "
-            + annotation.annotationType()
-            + " and "
-            + qualifier.annotationType());
-        }
-
-        qualifier = annotation;
-      }
-    }
-
+    Annotation qualifier = InjectAnnotationUtil.findQualifierAnnotation(annotations);
     if (qualifier == null) {
       return this;
     } else {

@@ -28,7 +28,9 @@ import jakarta.inject.Qualifier;
 import jakarta.inject.Scope;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.RetentionPolicy;
+import java.util.Arrays;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class InjectAnnotationUtil {
 
@@ -47,5 +49,37 @@ public final class InjectAnnotationUtil {
     return !hasProperties
       && retention == RetentionPolicy.RUNTIME
       && annotationType.isAnnotationPresent(Scope.class);
+  }
+
+  public static @Nullable Annotation findQualifierAnnotation(@NotNull Annotation[] annotations) {
+    Annotation qualifierAnnotation = null;
+    for (Annotation annotation : annotations) {
+      Class<? extends Annotation> annotationType = annotation.annotationType();
+      if (validQualifierAnnotation(annotationType)) {
+        if (qualifierAnnotation != null) {
+          throw new IllegalStateException("Detected duplicate qualifier annotation: " + Arrays.toString(annotations));
+        } else {
+          qualifierAnnotation = annotation;
+        }
+      }
+    }
+
+    return qualifierAnnotation;
+  }
+
+  public static @Nullable Class<? extends Annotation> findScopeAnnotation(@NotNull Annotation[] annotations) {
+    Class<? extends Annotation> scopeAnnotation = null;
+    for (Annotation annotation : annotations) {
+      Class<? extends Annotation> annotationType = annotation.annotationType();
+      if (validScopeAnnotation(annotationType)) {
+        if (scopeAnnotation != null) {
+          throw new IllegalStateException("Detected duplicate scope annotation: " + Arrays.toString(annotations));
+        } else {
+          scopeAnnotation = annotationType;
+        }
+      }
+    }
+
+    return scopeAnnotation;
   }
 }

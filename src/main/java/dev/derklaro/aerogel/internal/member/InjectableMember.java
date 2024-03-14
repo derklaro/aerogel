@@ -28,10 +28,10 @@ import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.provider.ParameterProviderFactory;
 import dev.derklaro.aerogel.internal.util.MethodHandleUtil;
+import dev.derklaro.aerogel.internal.util.UnreflectionUtil;
 import jakarta.inject.Provider;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -47,20 +47,16 @@ interface InjectableMember {
 
   class InjectableField implements InjectableMember {
 
+    private final Field field;
+    private final boolean isStatic;
+    private final MemberInjectionTracker tracker;
+
     private final BindingKey<?> key;
 
-    private final String name;
-    private final boolean isStatic;
-
-    private final Class<?> type;
-    private final Class<?> refClass;
-
     public InjectableField(@NotNull Field field) {
-      this.name = field.getName();
+      this.field = field;
       this.isStatic = Modifier.isStatic(field.getModifiers());
-
-      this.type = field.getType();
-      this.refClass = field.getDeclaringClass();
+      this.tracker = this.isStatic ? new MemberInjectionTracker() : null;
 
       this.key = BindingKey.of(field.getGenericType()).selectQualifier(field.getAnnotations());
     }
@@ -69,20 +65,15 @@ interface InjectableMember {
     public @NotNull MemberInjectionExecutor provideInjectionExecutor(
       @NotNull Injector injector,
       @NotNull MethodHandles.Lookup lookup
-    ) throws Exception {
+    ) {
       // resolve the setter method handle for the field
-      MethodHandle setter;
-      if (this.isStatic) {
-        setter = lookup.findStaticSetter(this.refClass, this.name, this.type);
-      } else {
-        setter = lookup.findSetter(this.refClass, this.name, this.type);
-      }
+      MethodHandle setter = UnreflectionUtil.unreflectFieldSetter(this.field, lookup);
 
       // resolve the provider for the field and generify the setter method handle
       Provider<?> fieldProvider = injector.binding(this.key).provider();
       MethodHandle genericSetter = MethodHandleUtil.generifyFieldSetter(setter, this.isStatic);
       return constructedInstance -> {
-        if (constructedInstance != null || this.isStatic) {
+        if ((!this.isStatic && constructedInstance != null) || (this.isStatic && this.tracker.markInjected())) {
           Object fieldValue = fieldProvider.get();
           genericSetter.invokeExact(constructedInstance, fieldValue);
         }
@@ -94,20 +85,16 @@ interface InjectableMember {
 
     private static final Object[] NO_PARAMS = new Object[0];
 
-    private final String name;
+    private final Method method;
     private final boolean isStatic;
-
-    private final Class<?> refClass;
-    private final MethodType methodType;
+    private final MemberInjectionTracker tracker;
 
     private final BindingKey<?>[] paramKeys;
 
     public InjectableMethod(@NotNull Method method) {
-      this.name = method.getName();
+      this.method = method;
       this.isStatic = Modifier.isStatic(method.getModifiers());
-
-      this.refClass = method.getDeclaringClass();
-      this.methodType = MethodType.methodType(method.getReturnType(), method.getParameterTypes());
+      this.tracker = this.isStatic ? new MemberInjectionTracker() : null;
 
       this.paramKeys = ParameterProviderFactory.resolveParameterKeys(method.getParameters());
     }
@@ -116,19 +103,14 @@ interface InjectableMember {
     public @NotNull MemberInjectionExecutor provideInjectionExecutor(
       @NotNull Injector injector,
       @NotNull MethodHandles.Lookup lookup
-    ) throws Exception {
+    ) {
       // find the method in the target class
-      MethodHandle invoker;
-      if (this.isStatic) {
-        invoker = lookup.findStatic(this.refClass, this.name, this.methodType);
-      } else {
-        invoker = lookup.findVirtual(this.refClass, this.name, this.methodType);
-      }
+      MethodHandle invoker = UnreflectionUtil.unreflectMethod(this.method, lookup);
 
       // resolve the providers for the parameters & generify the invoke method handle
       MethodHandle genericInvoker = MethodHandleUtil.generifyMethodInvoker(invoker, this.isStatic, true);
       return constructedInstance -> {
-        if (constructedInstance != null || this.isStatic) {
+        if ((!this.isStatic && constructedInstance != null) || (this.isStatic && this.tracker.markInjected())) {
           Object[] params = this.resolveParameterValues(injector);
           genericInvoker.invokeExact(constructedInstance, params);
         }

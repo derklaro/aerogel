@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,32 +22,24 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel;
+package dev.derklaro.aerogel.internal.member;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-public class UnbreakableCircularDependencyTest {
+final class MemberInjectionTracker {
 
-  @Test
-  void unbreakableCycleShouldThrowException() {
-    Injector injector = Injector.newInjector();
-    Assertions.assertThrows(AerogelException.class, () -> injector.instance(A.class));
-  }
+  private static final AtomicReferenceFieldUpdater<MemberInjectionTracker, Boolean> INJECTED_UPDATER
+    = AtomicReferenceFieldUpdater.newUpdater(MemberInjectionTracker.class, Boolean.class, "injected");
 
-  private static final class A {
+  private volatile Boolean injected = Boolean.FALSE;
 
-    @Inject
-    public A(B b) {
-
-    }
-  }
-
-  private static final class B {
-
-    @Inject
-    public B(A a) {
-
+  public boolean markInjected() {
+    if (this.injected == Boolean.TRUE) {
+      // field was already injected
+      return false;
+    } else {
+      // returns true if the current field value is FALSE
+      return INJECTED_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE);
     }
   }
 }

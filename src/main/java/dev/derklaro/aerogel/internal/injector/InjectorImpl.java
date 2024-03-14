@@ -35,10 +35,12 @@ import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.binding.builder.RootBindingBuilderImpl;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
+import dev.derklaro.aerogel.internal.scope.SingletonScopeApplier;
 import dev.derklaro.aerogel.internal.util.MapUtil;
 import dev.derklaro.aerogel.registry.Registry;
 import io.leangen.geantyref.TypeToken;
 import jakarta.inject.Provider;
+import jakarta.inject.Singleton;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
@@ -99,6 +101,9 @@ public final class InjectorImpl implements Injector {
     this.scopeRegistry = scopeRegistry;
     this.bindingRegistry = bindingRegistry;
     this.dynamicBindingRegistry = dynamicBindingRegistry;
+
+    // register the singleton scope into all injectors to reduce access time in the injection tree
+    this.scopeRegistry.register(Singleton.class, SingletonScopeApplier.INSTANCE);
   }
 
   @Override

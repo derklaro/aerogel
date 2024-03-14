@@ -30,6 +30,7 @@ import dev.derklaro.aerogel.internal.ConstructionException;
 import dev.derklaro.aerogel.internal.context.InjectionContext;
 import dev.derklaro.aerogel.internal.util.MethodHandleUtil;
 import dev.derklaro.aerogel.internal.util.RecordUtil;
+import dev.derklaro.aerogel.internal.util.UnreflectionUtil;
 import jakarta.inject.Inject;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -59,14 +60,10 @@ public final class ConstructorProviderFactory<T> implements ProviderFactory<T> {
     @NotNull Constructor<? extends T> constructor,
     @NotNull MethodHandles.Lookup lookup
   ) {
-    try {
-      MethodHandle directConstructorHandle = lookup.unreflectConstructor(constructor);
-      MethodHandle genericConstructorHandle = MethodHandleUtil.generifyConstructorInvoker(directConstructorHandle);
-      ParameterProviderFactory parameterProviderFactory = ParameterProviderFactory.fromConstructor(constructor);
-      return new ConstructorProviderFactory<>(constructor, genericConstructorHandle, parameterProviderFactory);
-    } catch (IllegalAccessException ex) {
-      throw new IllegalStateException("Unable to access constructor " + constructor + " from lookup " + lookup, ex);
-    }
+    MethodHandle directConstructorHandle = UnreflectionUtil.unreflectConstructor(constructor, lookup);
+    MethodHandle genericConstructorHandle = MethodHandleUtil.generifyConstructorInvoker(directConstructorHandle);
+    ParameterProviderFactory parameterProviderFactory = ParameterProviderFactory.fromConstructor(constructor);
+    return new ConstructorProviderFactory<>(constructor, genericConstructorHandle, parameterProviderFactory);
   }
 
   public static @NotNull <T> ConstructorProviderFactory<T> fromClass(

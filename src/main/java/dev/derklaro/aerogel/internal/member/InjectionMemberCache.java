@@ -25,10 +25,14 @@
 package dev.derklaro.aerogel.internal.member;
 
 import dev.derklaro.aerogel.internal.util.MapUtil;
-import java.util.List;
+import java.lang.reflect.Member;
+import java.lang.reflect.Modifier;
+import java.util.Collection;
 import java.util.Map;
+import java.util.function.Function;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
 /**
@@ -39,23 +43,42 @@ import org.jetbrains.annotations.Unmodifiable;
  * @since 2.0
  */
 @API(status = API.Status.INTERNAL, since = "2.0")
-final class MemberTreeCache {
+final class InjectionMemberCache {
 
-  private static final Map<Class<?>, List<InjectableMember>> CACHE = MapUtil.newConcurrentMap();
+  private static final Map<Member, InjectableMember> STATIC_MEMBER_CACHE = MapUtil.newConcurrentMap();
+  private static final Map<Class<?>, Collection<InjectableMember>> CACHE = MapUtil.newConcurrentMap();
 
-  private MemberTreeCache() {
+  private InjectionMemberCache() {
     throw new UnsupportedOperationException();
   }
 
+  public static @Nullable <M extends Member> InjectableMember getOrCreateStaticMember(
+    @NotNull M member,
+    @NotNull Function<M, InjectableMember> factory
+  ) {
+    if (!Modifier.isStatic(member.getModifiers())) {
+      throw new IllegalArgumentException("cache only used for static members");
+    }
+
+    InjectableMember cached = STATIC_MEMBER_CACHE.get(member);
+    if (cached == null) {
+      InjectableMember computed = factory.apply(member);
+      InjectableMember registered = STATIC_MEMBER_CACHE.putIfAbsent(member, computed);
+      cached = registered != null ? registered : computed;
+    }
+
+    return cached;
+  }
+
   @Unmodifiable
-  public static @NotNull List<InjectableMember> computeMemberTree(@NotNull Class<?> type) {
-    List<InjectableMember> tree = CACHE.get(type);
+  public static @NotNull Collection<InjectableMember> computeMemberTree(@NotNull Class<?> type) {
+    Collection<InjectableMember> tree = CACHE.get(type);
     if (tree == null) {
       MemberTreeProvider provider = new MemberTreeProvider(type);
       provider.resolveInjectableMembers();
 
-      List<InjectableMember> computedTree = provider.toMemberTree();
-      List<InjectableMember> registeredTree = CACHE.putIfAbsent(type, computedTree);
+      Collection<InjectableMember> computedTree = provider.toMemberTree();
+      Collection<InjectableMember> registeredTree = CACHE.putIfAbsent(type, computedTree);
       tree = registeredTree != null ? registeredTree : computedTree;
     }
 
