@@ -28,17 +28,36 @@ import dev.derklaro.aerogel.binding.DynamicBinding;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 
 public final class DynamicBindingImpl implements DynamicBinding {
 
-  @Override
-  public boolean supports(@NotNull BindingKey<?> key) {
-    return false;
+  private final Predicate<BindingKey<?>> filter;
+  private final Function<BindingKey<?>, UninstalledBinding<?>> bindingFactory;
+
+  public DynamicBindingImpl(
+    @NotNull Predicate<BindingKey<?>> filter,
+    @NotNull Function<BindingKey<?>, UninstalledBinding<?>> bindingFactory
+  ) {
+    this.filter = filter;
+    this.bindingFactory = bindingFactory;
   }
 
   @Override
+  public boolean supports(@NotNull BindingKey<?> key) {
+    return this.filter.test(key);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
   public @NotNull <T> Optional<UninstalledBinding<T>> tryMatch(@NotNull BindingKey<T> key) {
-    return Optional.empty();
+    if (this.filter.test(key)) {
+      UninstalledBinding<T> binding = (UninstalledBinding<T>) this.bindingFactory.apply(key);
+      return Optional.ofNullable(binding);
+    } else {
+      return Optional.empty();
+    }
   }
 }

@@ -84,7 +84,7 @@ public interface DynamicBindingBuilder {
    * @return this builder, for chaining.
    */
   @NotNull
-  DynamicBindingBuilder matchAnnotation(@NotNull Predicate<? extends Annotation> filter);
+  DynamicBindingBuilder matchAnnotation(@NotNull Predicate<Annotation> filter);
 
   /**
    * Ensures that a qualifier annotation with the given type is present on the element that is targeted by this builder,
