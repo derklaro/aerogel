@@ -90,14 +90,13 @@ final class BindingAnnotationProxy implements InvocationHandler {
     if (result == null) {
       result = 0;
       for (Map.Entry<String, Supplier<?>> memberEntry : this.propertyValueFactories.entrySet()) {
-        // append key hash
-        int keyHash = memberEntry.getKey().hashCode();
-        result = 31 * result + keyHash;
-
-        // append value hash
+        // get the hash code of the value
         Object suppliedValue = memberEntry.getValue().get();
         int valueHash = Arrays.deepHashCode(new Object[]{suppliedValue});
-        result = 31 * result + valueHash;
+
+        // get the hash code of the key & construct the member hash code as defined in java.lang.Annotation docs
+        int keyHash = memberEntry.getKey().hashCode();
+        result += (127 * keyHash) ^ (valueHash - 31);
       }
       this.hashCode = result;
     }
