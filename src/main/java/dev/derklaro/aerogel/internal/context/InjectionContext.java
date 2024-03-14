@@ -393,7 +393,7 @@ public final class InjectionContext {
     if (!knownProxies.isEmpty()) {
       for (InjectionTimeProxy itp : knownProxies) {
         InstalledBinding<?> proxyBinding = itp.binding;
-        if (proxyBinding == this.binding && itp.undelegated()) {
+        if (proxyBinding == this.binding) {
           // this provider and the proxy provider were called from the same context
           // this is the indication that the same delegate can be used for both proxies
           itp.setDelegate(singletonBindingValue);
@@ -555,7 +555,7 @@ public final class InjectionContext {
 
           // set the proxy delegate if needed
           InjectionTimeProxy itp = waitingContext.createdProxy;
-          if (itp != null) {
+          if (itp != null && itp.undelegated()) {
             itp.setDelegate(contextCreatedValue);
           }
         }
@@ -704,7 +704,9 @@ public final class InjectionContext {
     public void accept(@NotNull InjectionContext realContext, @Nullable Object constructedValue) {
       // set the delegate in the marker context we created
       InjectionTimeProxy itp = this.markerContext.createdProxy;
-      itp.setDelegate(constructedValue);
+      if (itp.undelegated()) {
+        itp.setDelegate(constructedValue);
+      }
 
       // remove the marker context from the tree
       InjectionContext markerNext = this.markerContext.next;

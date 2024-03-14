@@ -106,9 +106,7 @@ final class InjectionTimeProxy {
    * @param delegate the delegate to use for the created proxy.
    */
   public void setDelegate(@Nullable Object delegate) {
-    if (this.invocationHandler.delegate == null) {
-      this.invocationHandler.delegate = NullMask.mask(delegate);
-    }
+    this.invocationHandler.delegate = NullMask.mask(delegate);
   }
 
   /**
@@ -133,7 +131,6 @@ final class InjectionTimeProxy {
   @API(status = API.Status.INTERNAL, since = "2.0")
   static final class DelegatingInvocationHandler implements InvocationHandler {
 
-    // should only be written to once
     private Object delegate;
 
     /**
@@ -160,9 +157,8 @@ final class InjectionTimeProxy {
         // call the delegate method with the given arguments
         Object unmaskedDelegate = NullMask.unmask(delegate);
         return method.invoke(unmaskedDelegate, args);
-      } catch (InvocationTargetException invocationException) {
-        // rethrow the underlying exception
-        throw invocationException.getTargetException();
+      } catch (InvocationTargetException exception) {
+        throw exception.getTargetException();
       }
     }
   }

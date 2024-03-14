@@ -27,6 +27,7 @@ package dev.derklaro.aerogel.internal.provider;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.internal.ConstructionException;
+import dev.derklaro.aerogel.internal.PassthroughException;
 import dev.derklaro.aerogel.internal.context.InjectionContext;
 import dev.derklaro.aerogel.internal.util.MethodHandleUtil;
 import dev.derklaro.aerogel.internal.util.UnreflectionUtil;
@@ -89,6 +90,9 @@ public final class FactoryMethodProviderFactory<T> implements ProviderFactory<T>
         Object constructedInstance = this.methodHandle.invokeExact(paramValues);
         context.requestMemberInjectionSameBinding(constructedInstance);
         return (T) constructedInstance;
+      } catch (PassthroughException exception) {
+        // internal marker exception, pass back to the caller
+        throw exception;
       } catch (Throwable throwable) {
         throw ConstructionException.of(this.origMethod, throwable);
       }

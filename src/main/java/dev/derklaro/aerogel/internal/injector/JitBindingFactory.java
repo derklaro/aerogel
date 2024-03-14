@@ -93,9 +93,11 @@ final class JitBindingFactory {
 
       // get a binding for the implementation and bind construct a binding that
       // delegates to the provider of the implementation binding
-      BindingKey<?> implementationKey = BindingKey.of(implementation);
-      InstalledBinding<?> binding = this.injector.binding(implementationKey);
-      return this.createDelegatingBinding(key, binding.provider());
+      BindingKey<Object> objectKey = convertKeyUnchecked(key);
+      UninstalledBinding<?> uninstalledBinding = this.injector.createBindingBuilder()
+        .bind(objectKey)
+        .toConstructingClass(implementation);
+      return uninstalledBinding.prepareForInstallation(this.injector);
     }
 
     // create a binding that tries to construct the raw target type
