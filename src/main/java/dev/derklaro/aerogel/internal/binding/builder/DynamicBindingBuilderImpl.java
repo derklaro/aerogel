@@ -34,7 +34,7 @@ import dev.derklaro.aerogel.internal.binding.DynamicBindingImpl;
 import io.leangen.geantyref.GenericTypeReflector;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 
@@ -125,21 +125,27 @@ final class DynamicBindingBuilderImpl implements DynamicBindingBuilder {
 
   @Override
   public @NotNull DynamicBinding toKeyedBindingProvider(
-    @NotNull Function<ScopeableBindingBuilder<?>, UninstalledBinding<?>> bindingProvider
+    @NotNull BiFunction<BindingKey<Object>, ScopeableBindingBuilder<Object>, UninstalledBinding<?>> bindingProvider
   ) {
     this.checkFilterPresent();
     return new DynamicBindingImpl(this.bindingKeyMatcher, bindingKey -> {
-      ScopeableBindingBuilder<?> bindingBuilder = this.rootBindingBuilder.bind(bindingKey);
-      return bindingProvider.apply(bindingBuilder);
+      @SuppressWarnings("unchecked")
+      BindingKey<Object> objectBindingKey = (BindingKey<Object>) bindingKey;
+      ScopeableBindingBuilder<Object> bindingBuilder = this.rootBindingBuilder.bind(objectBindingKey);
+      return bindingProvider.apply(objectBindingKey, bindingBuilder);
     });
   }
 
   @Override
   public @NotNull DynamicBinding toBindingProvider(
-    @NotNull Function<RootBindingBuilder, UninstalledBinding<?>> bindingProvider
+    @NotNull BiFunction<BindingKey<Object>, RootBindingBuilder, UninstalledBinding<?>> bindingProvider
   ) {
     this.checkFilterPresent();
-    return new DynamicBindingImpl(this.bindingKeyMatcher, bindingKey -> bindingProvider.apply(this.rootBindingBuilder));
+    return new DynamicBindingImpl(this.bindingKeyMatcher, bindingKey -> {
+      @SuppressWarnings("unchecked")
+      BindingKey<Object> objectBindingKey = (BindingKey<Object>) bindingKey;
+      return bindingProvider.apply(objectBindingKey, this.rootBindingBuilder);
+    });
   }
 
   private void appendFilter(@NotNull Predicate<BindingKey<?>> filter) {

@@ -26,9 +26,10 @@ package dev.derklaro.aerogel.binding.builder;
 
 import dev.derklaro.aerogel.binding.DynamicBinding;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
+import dev.derklaro.aerogel.binding.key.BindingKey;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -169,7 +170,7 @@ public interface DynamicBindingBuilder {
    */
   @NotNull
   DynamicBinding toKeyedBindingProvider(
-    @NotNull Function<ScopeableBindingBuilder<?>, UninstalledBinding<?>> bindingProvider);
+    @NotNull BiFunction<BindingKey<Object>, ScopeableBindingBuilder<Object>, UninstalledBinding<?>> bindingProvider);
 
   /**
    * Constructs a new dynamic binding that check if all applied filters are met. If this is the case the given function
@@ -185,5 +186,6 @@ public interface DynamicBindingBuilder {
    * @throws IllegalStateException if no filters were applied to this builder yet.
    */
   @NotNull
-  DynamicBinding toBindingProvider(@NotNull Function<RootBindingBuilder, UninstalledBinding<?>> bindingProvider);
+  DynamicBinding toBindingProvider(
+    @NotNull BiFunction<BindingKey<Object>, RootBindingBuilder, UninstalledBinding<?>> bindingProvider);
 }
