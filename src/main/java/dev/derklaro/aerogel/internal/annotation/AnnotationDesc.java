@@ -61,7 +61,7 @@ public final class AnnotationDesc {
           // no other checks needed, no other methods than property declarations are allowed
           // see JLS chapter 9: https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html#jls-9.6.1
           Member member = new Member(method.getName(), method.getReturnType(), method.getDefaultValue());
-          members.put(member.toString(), member);
+          members.put(member.name(), member);
         }
       }
 
