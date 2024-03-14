@@ -265,7 +265,7 @@ final class MemberTreeProvider {
         return false;
       }
       MethodSignature that = (MethodSignature) o;
-      return Objects.equals(name, that.name) && Objects.deepEquals(parameters, that.parameters);
+      return Objects.equals(this.name, that.name) && Objects.deepEquals(this.parameters, that.parameters);
     }
   }
 }

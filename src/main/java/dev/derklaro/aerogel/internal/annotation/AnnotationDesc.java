@@ -124,15 +124,15 @@ public final class AnnotationDesc {
     }
 
     public String name() {
-      return name;
+      return this.name;
     }
 
     public Class<?> type() {
-      return type;
+      return this.type;
     }
 
     public Object defaultValue() {
-      return defaultValue;
+      return this.defaultValue;
     }
   }
 }

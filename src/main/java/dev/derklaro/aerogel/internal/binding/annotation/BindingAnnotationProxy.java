@@ -67,7 +67,6 @@ final class BindingAnnotationProxy implements InvocationHandler {
     @NotNull Method method,
     @NotNull Object[] args
   ) throws Throwable {
-    // implement base methods of Object and Annotation
     String methodName = method.getName();
     switch (methodName) {
       case "annotationType":
@@ -78,11 +77,10 @@ final class BindingAnnotationProxy implements InvocationHandler {
         return this.annotationHashCode();
       case "equals":
         return this.annotationEquals(args[0]);
+      default:
+        Supplier<?> valueSupplier = this.propertyValueFactories.get(methodName);
+        return valueSupplier.get();
     }
-
-    // other property method on the annotation type, use that value
-    Supplier<?> valueSupplier = this.propertyValueFactories.get(methodName);
-    return valueSupplier.get();
   }
 
   private @NotNull Integer annotationHashCode() {
