@@ -107,7 +107,7 @@ public final class ParameterProviderFactory implements ProviderFactory<Object[]>
         BindingKey<?> key = this.keys[keyIndex];
         InstalledBinding<?> binding = this.injector.binding(key);
         InjectionContextScope scope = context.enterSubcontextScope(binding);
-        Object paramInstance = scope.forceExecuteScoped(() -> scope.context().resolveInstance());
+        Object paramInstance = scope.executeScoped(() -> scope.context().resolveInstance());
         paramInstances[keyIndex] = paramInstance;
       }
 

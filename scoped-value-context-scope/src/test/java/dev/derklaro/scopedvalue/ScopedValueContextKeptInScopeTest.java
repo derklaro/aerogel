@@ -24,39 +24,60 @@
 
 package dev.derklaro.scopedvalue;
 
-import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
-import dev.derklaro.aerogel.Inject;
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.Name;
-import dev.derklaro.aerogel.binding.BindingBuilder;
-import dev.derklaro.aerogel.context.InjectionContext;
+import dev.derklaro.aerogel.binding.InstalledBinding;
+import dev.derklaro.aerogel.binding.UninstalledBinding;
+import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.context.InjectionContext;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
 import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
-import dev.derklaro.aerogel.internal.context.util.ContextInstanceResolveHelper;
-import dev.derklaro.aerogel.util.Qualifiers;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import java.util.HashMap;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class ScopedValueContextKeptInScopeTest {
 
+  @SuppressWarnings("unchecked")
+  private static @Nullable <T> T resolveInstanceScoped(@NotNull InjectionContextScope scope) {
+    // TODO: move this to some utility? might be useful for external users as well
+    InjectionContext context = scope.context();
+    return scope.executeScoped(() -> {
+      try {
+        return (T) context.resolveInstance();
+      } finally {
+        if (context.root()) {
+          context.finishConstruction();
+        }
+      }
+    });
+  }
+
   @Test
   void contextKeptDuringScopedOperations() {
-    Element element = Element.forType(String.class).requireAnnotation(Qualifiers.named("test"));
-
+    // add a global binding for "@Named("test") String"
     Injector injector = Injector.newInjector();
-    injector.install(BindingBuilder.create().bind(element).toInstance("Hello World!"));
+    UninstalledBinding<String> worldStringBinding = injector.createBindingBuilder()
+      .bind(String.class)
+      .qualifiedWithName("test")
+      .toInstance("Hello World!");
+    injector.installBinding(worldStringBinding);
 
     // with override
     {
-      Element someClassElement = Element.forType(SomeClass.class);
-      ContextualProvider<Object> provider = injector.binding(someClassElement).provider(someClassElement);
-      InjectionContextScope scope = InjectionContext.builder(SomeClass.class, provider)
-        .override(element, "World!")
-        .enterScope();
+      InstalledBinding<SomeClass> someClassBinding = injector.binding(BindingKey.of(SomeClass.class));
+      InjectionContextScope scope = InjectionContextProvider.provider().enterContextScope(
+        someClassBinding,
+        new HashMap<>() {{
+          this.put(worldStringBinding.key(), () -> "World!");
+        }}
+      );
 
-      Object constructed = ContextInstanceResolveHelper.resolveInstanceScoped(scope);
-      Assertions.assertNotNull(constructed);
-      SomeClass someClass = Assertions.assertInstanceOf(SomeClass.class, constructed);
+      SomeClass someClass = resolveInstanceScoped(scope);
+      Assertions.assertNotNull(someClass);
 
       // the overridden value
       Assertions.assertEquals("World!", someClass.world);
@@ -70,8 +91,7 @@ public class ScopedValueContextKeptInScopeTest {
 
     // without override
     {
-      Element someClassElement = Element.forType(SomeClass.class);
-      Object constructed = injector.instance(someClassElement);
+      Object constructed = injector.instance(SomeClass.class);
       Assertions.assertNotNull(constructed);
       SomeClass someClass = Assertions.assertInstanceOf(SomeClass.class, constructed);
 
@@ -94,13 +114,13 @@ public class ScopedValueContextKeptInScopeTest {
     private String helloWorld;
 
     @Inject
-    public SomeClass(@Name("test") String world, Injector injector) {
+    public SomeClass(@Named("test") String world, Injector injector) {
       this.world = world;
       this.otherClass = injector.instance(SomeOtherClass.class);
     }
 
     @Inject
-    public void injectHelloWorld(@Name("test") String helloWorld) {
+    public void injectHelloWorld(@Named("test") String helloWorld) {
       this.helloWorld = helloWorld;
     }
   }
@@ -110,11 +130,11 @@ public class ScopedValueContextKeptInScopeTest {
     private final String world;
 
     @Inject
-    @Name("test")
+    @Named("test")
     private String helloWorld;
 
     @Inject
-    public SomeOtherClass(@Name("test") String world) {
+    public SomeOtherClass(@Named("test") String world) {
       this.world = world;
     }
   }

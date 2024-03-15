@@ -24,7 +24,7 @@
 
 package dev.derklaro.aerogel.scopedvalue;
 
-import dev.derklaro.aerogel.context.InjectionContext;
+import dev.derklaro.aerogel.internal.context.InjectionContext;
 import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
 import java.util.function.Supplier;
 import org.apiguardian.api.API;
@@ -41,8 +41,7 @@ import org.jetbrains.annotations.UnknownNullability;
 final class ScopedValueInjectionContextScope implements InjectionContextScope {
 
   private final InjectionContext context;
-  private final ScopedValue.Carrier carrier;
-  private final ScopedValue<InjectionContextScope> scopeScopedValue;
+  private final ScopedValue.Carrier contextScopeCarrier;
 
   /**
    * Constructs a new injection context scope for the given context and scoped value.
@@ -55,8 +54,7 @@ final class ScopedValueInjectionContextScope implements InjectionContextScope {
     @NotNull ScopedValue<InjectionContextScope> scopeScopedValue
   ) {
     this.context = context;
-    this.scopeScopedValue = scopeScopedValue;
-    this.carrier = ScopedValue.where(scopeScopedValue, this);
+    this.contextScopeCarrier = ScopedValue.where(scopeScopedValue, this);
   }
 
   /**
@@ -72,22 +70,6 @@ final class ScopedValueInjectionContextScope implements InjectionContextScope {
    */
   @Override
   public <T> @UnknownNullability T executeScoped(@NotNull Supplier<T> operation) {
-    InjectionContextScope currentScope = this.scopeScopedValue.orElse(null);
-    if (currentScope == null || currentScope.context().obsolete()) {
-      // there is either no context currently bound or the current bound snapshot is obsolete
-      // we're using our own carrier with the mapping to our context for further actions
-      return this.carrier.get(operation);
-    } else {
-      // the current scope is still valid, use that one
-      return operation.get();
-    }
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public <T> @UnknownNullability T forceExecuteScoped(@NotNull Supplier<T> operation) {
-    return this.carrier.get(operation);
+    return this.contextScopeCarrier.get(operation);
   }
 }

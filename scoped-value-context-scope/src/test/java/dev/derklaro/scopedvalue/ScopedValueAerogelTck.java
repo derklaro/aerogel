@@ -24,12 +24,14 @@
 
 package dev.derklaro.scopedvalue;
 
-import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.binding.BindingBuilder;
-import dev.derklaro.aerogel.util.Qualifiers;
+import dev.derklaro.aerogel.binding.UninstalledBinding;
+import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
+import dev.derklaro.aerogel.scopedvalue.ScopedValueInjectionContextProvider;
 import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 import org.atinject.tck.Tck;
 import org.atinject.tck.auto.Car;
 import org.atinject.tck.auto.Convertible;
@@ -40,6 +42,7 @@ import org.atinject.tck.auto.Seat;
 import org.atinject.tck.auto.Tire;
 import org.atinject.tck.auto.V8Engine;
 import org.atinject.tck.auto.accessories.SpareTire;
+import org.junit.Assert;
 
 /**
  * Tests aerogel against <a href="https://github.com/eclipse-ee4j/injection-tck">the injection tck (Technology
@@ -48,20 +51,46 @@ import org.atinject.tck.auto.accessories.SpareTire;
 public class ScopedValueAerogelTck extends TestCase {
 
   public static Test suite() {
-    // set up the injector
+    // required bindings are described in the following document, everything else can be done dynamically:
+    // https://github.com/eclipse-ee4j/injection-tck/blob/master/README.adoc#configuring-the-di-environment
     Injector injector = Injector.newInjector();
-    // all bindings as described in https://github.com/eclipse-ee4j/injection-tck/blob/master/README.adoc#configuring-the-di-environment
-    // every other binding can be done dynamically during the runtime
+
+    RootBindingBuilder bindingBuilder = injector.createBindingBuilder();
+    UninstalledBinding<Car> carBinding = bindingBuilder
+      .bind(Car.class)
+      .toConstructingClass(Convertible.class);
+    UninstalledBinding<Engine> engineBinding = bindingBuilder
+      .bind(Engine.class)
+      .toConstructingClass(V8Engine.class);
+    UninstalledBinding<Tire> spareTireBinding = bindingBuilder
+      .bind(Tire.class)
+      .qualifiedWithName("spare")
+      .toConstructingClass(SpareTire.class);
+    UninstalledBinding<Seat> driversSeatBinding = bindingBuilder
+      .bind(Seat.class)
+      .qualifiedWith(Drivers.class)
+      .toConstructingClass(DriversSeat.class);
+
     injector
-      .install(BindingBuilder.create().bind(Car.class).toConstructing(Convertible.class))
-      .install(BindingBuilder.create().bind(Engine.class).toConstructing(V8Engine.class))
-      .install(BindingBuilder.create()
-        .bind(Element.forType(Tire.class).requireAnnotation(Qualifiers.named("spare")))
-        .toConstructing(SpareTire.class))
-      .install(BindingBuilder.create()
-        .bind(Element.forType(Seat.class).requireAnnotation(Drivers.class))
-        .toConstructing(DriversSeat.class));
-    // run the test
-    return Tck.testsFor(injector.instance(Car.class), true, true);
+      .installBinding(carBinding)
+      .installBinding(engineBinding)
+      .installBinding(spareTireBinding)
+      .installBinding(driversSeatBinding);
+    Car constructedCar = injector.instance(Car.class);
+
+    TestSuite testSuite = new TestSuite("ScopedValue Jakarta TCK");
+    testSuite.addTestSuite(ScopedValueDiscoveryTest.class);
+
+    Test tckSuite = Tck.testsFor(constructedCar, true, true);
+    testSuite.addTest(tckSuite);
+    return testSuite;
+  }
+
+  public static final class ScopedValueDiscoveryTest extends TestCase {
+
+    public void testScopedValueContextUsed() {
+      InjectionContextProvider contextProvider = InjectionContextProvider.provider();
+      Assert.assertSame(ScopedValueInjectionContextProvider.class, contextProvider.getClass());
+    }
   }
 }

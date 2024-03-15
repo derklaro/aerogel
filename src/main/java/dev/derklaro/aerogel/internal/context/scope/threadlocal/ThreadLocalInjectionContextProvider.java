@@ -54,12 +54,15 @@ public final class ThreadLocalInjectionContextProvider implements InjectionConte
     return this.scopeThreadLocal.get();
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NotNull InjectionContextScope enterContextScope(
     @NotNull InstalledBinding<?> binding,
     @NotNull Map<BindingKey<?>, Provider<?>> overrides
   ) {
-    InjectionContextScope currentScope = this.scopeThreadLocal.get();
+    InjectionContextScope currentScope = this.currentScope();
     if (currentScope != null) {
       InjectionContext currentContext = currentScope.context();
       if (currentScope.context().obsolete()) {

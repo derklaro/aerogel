@@ -192,19 +192,17 @@ public final class InjectionContext {
   public @NotNull InjectionContext copyAsRoot(
     @NotNull InstalledBinding<?> binding,
     @NotNull Map<BindingKey<?>, Provider<?>> overrides,
-    @Nullable InjectionContextProvider contextProvider
+    @NotNull InjectionContextProvider contextProvider
   ) {
-    InjectionContextProvider ctxProvider = contextProvider == null ? this.contextProvider : contextProvider;
-
     InjectionContext context;
     if (this.overrides == null || this.overrides.isEmpty()) {
       // if this context has no overrides just return a new context using the given overrides
-      context = new InjectionContext(binding, overrides, ctxProvider);
+      context = new InjectionContext(binding, overrides, contextProvider);
     } else {
       // copy this injection context into a new root context, preserving the given overrides
       Map<BindingKey<?>, Provider<?>> overriddenProviders = new HashMap<>(overrides);
       overriddenProviders.putAll(this.overrides);
-      context = new InjectionContext(binding, overriddenProviders, ctxProvider);
+      context = new InjectionContext(binding, overriddenProviders, contextProvider);
     }
 
     // check if the root context has an overridden value available if the associated element is known

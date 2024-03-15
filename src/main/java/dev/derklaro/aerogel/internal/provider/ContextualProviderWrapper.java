@@ -50,13 +50,15 @@ public final class ContextualProviderWrapper<T> implements Provider<T> {
     InjectionContextProvider provider = InjectionContextProvider.provider();
     InjectionContextScope scope = provider.enterContextScope(this.binding);
     InjectionContext context = scope.context();
-    try {
-      return (T) scope.forceExecuteScoped(context::resolveInstance);
-    } finally {
-      if (context.root()) {
-        context.finishConstruction();
+    return scope.executeScoped(() -> {
+      try {
+        return (T) context.resolveInstance();
+      } finally {
+        if (context.root()) {
+          context.finishConstruction();
+        }
       }
-    }
+    });
   }
 
   @Override

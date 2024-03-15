@@ -24,14 +24,13 @@
 
 package dev.derklaro.aerogel.scopedvalue;
 
-import dev.derklaro.aerogel.ContextualProvider;
-import dev.derklaro.aerogel.Element;
+import dev.derklaro.aerogel.binding.InstalledBinding;
+import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.context.InjectionContext;
 import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
 import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
-import dev.derklaro.aerogel.context.LazyContextualProvider;
-import dev.derklaro.aerogel.internal.context.InjectionContext;
-import java.lang.reflect.Type;
-import java.util.List;
+import jakarta.inject.Provider;
+import java.util.Map;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -60,35 +59,25 @@ public final class ScopedValueInjectionContextProvider implements InjectionConte
    */
   @Override
   public @NotNull InjectionContextScope enterContextScope(
-    @NotNull ContextualProvider<?> callingBinding,
-    @NotNull Type constructingType,
-    @NotNull List<LazyContextualProvider> overrides,
-    @Nullable Element associatedElement
+    @NotNull InstalledBinding<?> binding,
+    @NotNull Map<BindingKey<?>, Provider<?>> overrides
   ) {
-    InjectionContextScope currentScope = this.scopeScopedValue.orElse(null);
+    InjectionContextScope currentScope = this.currentScope();
     if (currentScope != null) {
+      InjectionContext currentContext = currentScope.context();
       if (currentScope.context().obsolete()) {
         // the current root context is obsolete, copy the necessary information from it into a new root context
-        dev.derklaro.aerogel.context.InjectionContext context = currentScope.context().copyAsRoot(
-          callingBinding,
-          constructingType,
-          overrides,
-          associatedElement,
-          this);
-        return new ScopedValueInjectionContextScope(context, this.scopeScopedValue);
+        InjectionContext newContext = currentContext.copyAsRoot(binding, overrides, this);
+        return new ScopedValueInjectionContextScope(newContext, this.scopeScopedValue);
       } else {
         // we're already in an existing root context, enter a subcontext of that one
-        dev.derklaro.aerogel.context.InjectionContext subcontext = currentScope.context().enterSubcontext(constructingType, callingBinding, null);
+        InjectionContext subcontext = currentContext.enterSubcontext(binding);
         return new ScopedValueInjectionContextScope(subcontext, this.scopeScopedValue);
       }
     } else {
       // no context yet, construct a new root context
-      dev.derklaro.aerogel.context.InjectionContext context = new InjectionContext(
-        callingBinding,
-        constructingType,
-        overrides,
-        this);
-      return new ScopedValueInjectionContextScope(context, this.scopeScopedValue);
+      InjectionContext newContext = new InjectionContext(binding, overrides, this);
+      return new ScopedValueInjectionContextScope(newContext, this.scopeScopedValue);
     }
   }
 }

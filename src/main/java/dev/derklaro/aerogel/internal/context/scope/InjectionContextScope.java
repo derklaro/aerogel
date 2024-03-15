@@ -48,18 +48,6 @@ public interface InjectionContextScope {
   InjectionContext context();
 
   /**
-   * Executes the given operation using the injection context of this scope, unless another non-obsolete context is
-   * already defined.
-   *
-   * @param operation the operation to execute.
-   * @param <T>       the type of value returned by the given operation.
-   * @return the value returned by the given operation.
-   * @throws NullPointerException if the given operation is null.
-   */
-  @UnknownNullability
-  <T> T executeScoped(@NotNull Supplier<T> operation);
-
-  /**
    * Executes the given operation using the injection context of this scope. This method overrides the current scoped
    * context for the lifetime of the operation and resets it to the previous value afterward.
    *
@@ -69,5 +57,5 @@ public interface InjectionContextScope {
    * @throws NullPointerException if the given operation is null.
    */
   @UnknownNullability
-  <T> T forceExecuteScoped(@NotNull Supplier<T> operation);
+  <T> T executeScoped(@NotNull Supplier<T> operation);
 }
