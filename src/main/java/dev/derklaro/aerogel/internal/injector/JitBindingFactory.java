@@ -77,8 +77,13 @@ final class JitBindingFactory {
       throw new IllegalStateException("Unable to create JIT binding for key with qualifier: " + key);
     }
 
-    // check for @ProvidedBy
+    // allow for injection of the current injector
     Class<?> rawTargetType = GenericTypeReflector.erase(targetType);
+    if (rawTargetType.equals(Injector.class)) {
+      return this.createStaticBinding(key, this.injector);
+    }
+
+    // check for @ProvidedBy
     ProvidedBy providedBy = rawTargetType.getAnnotation(ProvidedBy.class);
     if (providedBy != null) {
       Class<?> implementation = providedBy.value();
@@ -111,15 +116,6 @@ final class JitBindingFactory {
   private @NotNull InstalledBinding<?> createStaticBinding(@NotNull BindingKey<?> key, @NotNull Object wrappedValue) {
     BindingKey<Object> objectKey = convertKeyUnchecked(key);
     UninstalledBinding<?> uninstalled = this.injector.createBindingBuilder().bind(objectKey).toInstance(wrappedValue);
-    return uninstalled.prepareForInstallation(this.injector);
-  }
-
-  private @NotNull InstalledBinding<?> createDelegatingBinding(
-    @NotNull BindingKey<?> key,
-    @NotNull Provider<?> target
-  ) {
-    BindingKey<Object> objectKey = convertKeyUnchecked(key);
-    UninstalledBinding<?> uninstalled = this.injector.createBindingBuilder().bind(objectKey).toProvider(target);
     return uninstalled.prepareForInstallation(this.injector);
   }
 }
