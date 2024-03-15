@@ -53,7 +53,7 @@ final class BuilderAnnotationProxy<A extends Annotation> implements InvocationHa
     @NotNull Object proxy,
     @NotNull Method method,
     @NotNull Object[] args
-  ) throws Throwable {
+  ) {
     this.lastAccessedProperty = method.getName();
 
     // for primitives a default value must be returned, everything else can be null

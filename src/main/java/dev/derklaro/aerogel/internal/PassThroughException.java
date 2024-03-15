@@ -35,12 +35,12 @@ import org.jetbrains.annotations.Nullable;
  * @since 2.0
  */
 @API(status = API.Status.INTERNAL, since = "2.0")
-public class PassthroughException extends RuntimeException {
+public class PassThroughException extends RuntimeException {
 
   /**
    * Constructs a new instance of this exception, protected to ensure that only overrides are possible.
    */
-  protected PassthroughException() {
+  protected PassThroughException() {
   }
 
   /**
@@ -48,7 +48,7 @@ public class PassthroughException extends RuntimeException {
    *
    * @param cause the cause which should be available for later retrieval.
    */
-  protected PassthroughException(@NotNull Throwable cause) {
+  protected PassThroughException(@NotNull Throwable cause) {
     super(cause);
   }
 

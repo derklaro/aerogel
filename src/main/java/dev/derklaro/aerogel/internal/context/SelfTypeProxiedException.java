@@ -24,7 +24,7 @@
 
 package dev.derklaro.aerogel.internal.context;
 
-import dev.derklaro.aerogel.internal.PassthroughException;
+import dev.derklaro.aerogel.internal.PassThroughException;
 import org.apiguardian.api.API;
 
 /**
@@ -35,7 +35,7 @@ import org.apiguardian.api.API;
  * @since 2.0
  */
 @API(status = API.Status.INTERNAL, since = "2.0")
-final class SelfTypeProxiedException extends PassthroughException {
+final class SelfTypeProxiedException extends PassThroughException {
 
   /**
    * The jvm-static instance of this exception.
