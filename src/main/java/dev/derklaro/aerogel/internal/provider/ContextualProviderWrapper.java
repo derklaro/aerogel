@@ -58,4 +58,9 @@ public final class ContextualProviderWrapper<T> implements Provider<T> {
       }
     }
   }
+
+  @Override
+  public @NotNull String toString() {
+    return "ContextualWrapper(" + this.binding + ")";
+  }
 }

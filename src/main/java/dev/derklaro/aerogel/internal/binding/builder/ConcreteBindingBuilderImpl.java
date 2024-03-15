@@ -35,6 +35,7 @@ import dev.derklaro.aerogel.internal.annotation.InjectAnnotationUtil;
 import dev.derklaro.aerogel.internal.binding.BindingOptionsImpl;
 import dev.derklaro.aerogel.internal.binding.UninstalledBindingImpl;
 import dev.derklaro.aerogel.internal.binding.annotation.BindingAnnotationBuilderImpl;
+import dev.derklaro.aerogel.internal.provider.ConstructingDelegatingProviderFactory;
 import dev.derklaro.aerogel.internal.provider.ConstructorProviderFactory;
 import dev.derklaro.aerogel.internal.provider.DelegatingProviderFactory;
 import dev.derklaro.aerogel.internal.provider.FactoryMethodProviderFactory;
@@ -107,6 +108,7 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
   public @NotNull <A extends Annotation> BindingAnnotationBuilder<A, T> buildQualifier(
     @NotNull Class<A> qualifierAnnotationType
   ) {
+    // TODO: consider moving AnnotationDesc construction here and validating of annotation type to be qualifier
     return new BindingAnnotationBuilderImpl<>(qualifierAnnotationType, this);
   }
 
@@ -135,6 +137,7 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
 
   @Override
   public @NotNull AdvancedBindingBuilder<T> scopedWith(@NotNull Class<? extends Annotation> scopeAnnotationType) {
+    // TODO: validate scope annotation to be a scope annotation
     ScopeApplier scopeApplier = this.scopeRegistry
       .get(scopeAnnotationType)
       .orElseThrow(() -> new IllegalArgumentException("scope annotation has no registered applier"));
@@ -172,7 +175,10 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
 
   @Override
   public @NotNull UninstalledBinding<T> toProvider(@NotNull Class<? extends Provider<? extends T>> providerType) {
-    return null;
+    // TODO: should the scope apply to everything or just to the provider? how to handle scopes on the provider class?
+    MethodHandles.Lookup lookup = this.resolveMemberLookup();
+    ProviderFactory<T> providerFactory = ConstructingDelegatingProviderFactory.fromProviderClass(providerType, lookup);
+    return new UninstalledBindingImpl<>(this.bindingKey, this.scope, this.options, providerFactory);
   }
 
   @Override
