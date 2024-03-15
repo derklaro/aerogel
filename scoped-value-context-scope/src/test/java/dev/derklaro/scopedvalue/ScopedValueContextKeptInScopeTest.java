@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@ import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
 import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import java.util.HashMap;
+import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
@@ -71,10 +71,7 @@ public class ScopedValueContextKeptInScopeTest {
       InstalledBinding<SomeClass> someClassBinding = injector.binding(BindingKey.of(SomeClass.class));
       InjectionContextScope scope = InjectionContextProvider.provider().enterContextScope(
         someClassBinding,
-        new HashMap<>() {{
-          this.put(worldStringBinding.key(), () -> "World!");
-        }}
-      );
+        Collections.singletonMap(worldStringBinding.key(), () -> "World!"));
 
       SomeClass someClass = resolveInstanceScoped(scope);
       Assertions.assertNotNull(someClass);
