@@ -140,7 +140,7 @@ public final class BindingKey<T> {
   @CheckReturnValue
   public @NotNull BindingKey<T> withQualifier(@NotNull Annotation qualifierAnnotation) {
     Class<? extends Annotation> type = qualifierAnnotation.annotationType();
-    InjectAnnotationUtil.checkValidScopeAnnotation(type);
+    InjectAnnotationUtil.checkValidQualifierAnnotation(type);
 
     AnnotationMatcher matcher = AnnotationMatcher.matchingStrategyFor(qualifierAnnotation);
     return new BindingKey<>(this.type, matcher);
@@ -159,7 +159,7 @@ public final class BindingKey<T> {
    */
   @CheckReturnValue
   public @NotNull BindingKey<T> withQualifier(@NotNull Class<? extends Annotation> qualifierAnnotationType) {
-    InjectAnnotationUtil.checkValidScopeAnnotation(qualifierAnnotationType);
+    InjectAnnotationUtil.checkValidQualifierAnnotation(qualifierAnnotationType);
     AnnotationMatcher matcher = AnnotationMatcher.forMatchingType(qualifierAnnotationType);
     return new BindingKey<>(this.type, matcher);
   }
