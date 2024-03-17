@@ -30,6 +30,7 @@ import dev.derklaro.aerogel.binding.builder.DynamicBindingBuilder;
 import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.builder.ScopeableBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.annotation.InjectAnnotationUtil;
 import dev.derklaro.aerogel.internal.binding.DynamicBindingImpl;
 import io.leangen.geantyref.GenericTypeReflector;
 import java.lang.annotation.Annotation;
@@ -49,6 +50,7 @@ final class DynamicBindingBuilderImpl implements DynamicBindingBuilder {
 
   @Override
   public @NotNull DynamicBindingBuilder annotationPresent(@NotNull Class<? extends Annotation> annotationType) {
+    InjectAnnotationUtil.checkValidQualifierAnnotation(annotationType);
     this.appendFilter(bindingKey -> {
       Class<?> qualifierAnnotationType = bindingKey.qualifierAnnotationType().orElse(null);
       return qualifierAnnotationType != null && qualifierAnnotationType.equals(annotationType);
@@ -71,6 +73,7 @@ final class DynamicBindingBuilderImpl implements DynamicBindingBuilder {
     @NotNull Class<A> annotationType,
     @NotNull Predicate<A> filter
   ) {
+    InjectAnnotationUtil.checkValidQualifierAnnotation(annotationType);
     this.appendFilter(bindingKey -> {
       Annotation qualifierAnnotationInstance = bindingKey.qualifierAnnotation().orElse(null);
       if (qualifierAnnotationInstance != null) {
@@ -158,7 +161,7 @@ final class DynamicBindingBuilderImpl implements DynamicBindingBuilder {
 
   private void checkFilterPresent() {
     if (this.bindingKeyMatcher == null) {
-      throw new IllegalStateException("No filter present");
+      throw new IllegalStateException("No filters applied to builder");
     }
   }
 }

@@ -51,6 +51,20 @@ public final class InjectAnnotationUtil {
       && annotationType.isAnnotationPresent(Scope.class);
   }
 
+  public static void checkValidQualifierAnnotation(@NotNull Class<? extends Annotation> annotationType) {
+    boolean validQualifier = validQualifierAnnotation(annotationType);
+    if (!validQualifier) {
+      throw new IllegalStateException("@" + annotationType.getName() + " is not a valid qualifier annotation");
+    }
+  }
+
+  public static void checkValidScopeAnnotation(@NotNull Class<? extends Annotation> annotationType) {
+    boolean validScope = validScopeAnnotation(annotationType);
+    if (!validScope) {
+      throw new IllegalStateException("@" + annotationType.getName() + " is not a valid scope annotation");
+    }
+  }
+
   public static @Nullable Annotation findQualifierAnnotation(@NotNull Annotation[] annotations) {
     Annotation qualifierAnnotation = null;
     for (Annotation annotation : annotations) {

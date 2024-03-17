@@ -77,19 +77,6 @@ public final class BindingKey<T> {
   }
 
   /**
-   * Checks if the given annotation type is a valid qualifier annotation, throws an illegal argument exception if not.
-   *
-   * @param annotationType the annotation type that should be validated.
-   * @throws IllegalArgumentException if the given annotation type is not a valid qualifier annotation.
-   */
-  private static void checkValidQualifierAnnotation(@NotNull Class<? extends Annotation> annotationType) {
-    boolean validQualifier = InjectAnnotationUtil.validQualifierAnnotation(annotationType);
-    if (!validQualifier) {
-      throw new IllegalArgumentException("Annotation " + annotationType + " is not a qualifier annotation");
-    }
-  }
-
-  /**
    * Constructs a new binding key for the given generic type without matching any qualifier annotation. If possible, a
    * raw type or type token should be used instead, as the returned key is directly bound to the type in these cases.
    *
@@ -153,7 +140,7 @@ public final class BindingKey<T> {
   @CheckReturnValue
   public @NotNull BindingKey<T> withQualifier(@NotNull Annotation qualifierAnnotation) {
     Class<? extends Annotation> type = qualifierAnnotation.annotationType();
-    checkValidQualifierAnnotation(type);
+    InjectAnnotationUtil.checkValidScopeAnnotation(type);
 
     AnnotationMatcher matcher = AnnotationMatcher.matchingStrategyFor(qualifierAnnotation);
     return new BindingKey<>(this.type, matcher);
@@ -172,7 +159,7 @@ public final class BindingKey<T> {
    */
   @CheckReturnValue
   public @NotNull BindingKey<T> withQualifier(@NotNull Class<? extends Annotation> qualifierAnnotationType) {
-    checkValidQualifierAnnotation(qualifierAnnotationType);
+    InjectAnnotationUtil.checkValidScopeAnnotation(qualifierAnnotationType);
     AnnotationMatcher matcher = AnnotationMatcher.forMatchingType(qualifierAnnotationType);
     return new BindingKey<>(this.type, matcher);
   }

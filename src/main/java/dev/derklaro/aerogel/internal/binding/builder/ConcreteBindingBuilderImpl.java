@@ -44,6 +44,7 @@ import dev.derklaro.aerogel.internal.provider.ProviderFactory;
 import dev.derklaro.aerogel.internal.scope.SingletonScopeApplier;
 import dev.derklaro.aerogel.internal.scope.UnscopedScopeApplier;
 import dev.derklaro.aerogel.registry.Registry;
+import io.leangen.geantyref.GenericTypeReflector;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import java.lang.annotation.Annotation;
@@ -51,6 +52,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -108,7 +110,7 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
   public @NotNull <A extends Annotation> BindingAnnotationBuilder<A, T> buildQualifier(
     @NotNull Class<A> qualifierAnnotationType
   ) {
-    // TODO: consider moving AnnotationDesc construction here and validating of annotation type to be qualifier
+    InjectAnnotationUtil.checkValidQualifierAnnotation(qualifierAnnotationType);
     return new BindingAnnotationBuilderImpl<>(qualifierAnnotationType, this);
   }
 
@@ -137,7 +139,7 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
 
   @Override
   public @NotNull AdvancedBindingBuilder<T> scopedWith(@NotNull Class<? extends Annotation> scopeAnnotationType) {
-    // TODO: validate scope annotation to be a scope annotation
+    InjectAnnotationUtil.checkValidScopeAnnotation(scopeAnnotationType);
     ScopeApplier scopeApplier = this.scopeRegistry
       .get(scopeAnnotationType)
       .orElseThrow(() -> new IllegalArgumentException("scope annotation has no registered applier"));
@@ -152,18 +154,23 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
 
   @Override
   public @NotNull UninstalledBinding<T> toInstance(@NotNull T instance) {
-    ScopeApplier scope = this.resolveActualScopeApplier(instance.getClass());
+    ScopeApplier scope = this.resolveScopeApplier(instance.getClass().getAnnotations());
     ProviderFactory<T> providerFactory = InstanceProviderFactory.ofInstance(instance);
     return new UninstalledBindingImpl<>(this.bindingKey, scope, this.options, providerFactory);
   }
 
   @Override
   public @NotNull UninstalledBinding<T> toFactoryMethod(@NotNull Method factoryMethod) {
-    // TODO: a bit of validation...
+    Type targetType = this.bindingKey.type();
+    Type returnType = GenericTypeReflector.box(factoryMethod.getGenericReturnType());
+    if (!Modifier.isStatic(factoryMethod.getModifiers()) || !GenericTypeReflector.isSuperType(targetType, returnType)) {
+      throw new IllegalArgumentException("Factory method must be static and return a subtype of " + targetType);
+    }
+
     MethodHandles.Lookup lookup = this.resolveMemberLookup();
     ProviderFactory<T> providerFactory = FactoryMethodProviderFactory.fromMethod(factoryMethod, lookup);
 
-    ScopeApplier scope = this.resolveActualScopeApplier(factoryMethod.getReturnType());
+    ScopeApplier scope = this.resolveScopeApplier(factoryMethod);
     return new UninstalledBindingImpl<>(this.bindingKey, scope, this.options, providerFactory);
   }
 
@@ -175,7 +182,10 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
 
   @Override
   public @NotNull UninstalledBinding<T> toProvider(@NotNull Class<? extends Provider<? extends T>> providerType) {
-    // TODO: should the scope apply to everything or just to the provider? how to handle scopes on the provider class?
+    if (Modifier.isAbstract(providerType.getModifiers())) {
+      throw new IllegalArgumentException("Cannot construct abstract provider type " + providerType.getName());
+    }
+
     MethodHandles.Lookup lookup = this.resolveMemberLookup();
     ProviderFactory<T> providerFactory = ConstructingDelegatingProviderFactory.fromProviderClass(providerType, lookup);
     return new UninstalledBindingImpl<>(this.bindingKey, this.scope, this.options, providerFactory);
@@ -186,17 +196,20 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
     MethodHandles.Lookup lookup = this.resolveMemberLookup();
     ProviderFactory<T> providerFactory = ConstructorProviderFactory.fromConstructor(constructor, lookup);
 
-    ScopeApplier scope = this.resolveActualScopeApplier(constructor.getDeclaringClass());
+    ScopeApplier scope = this.resolveScopeApplier(constructor.getDeclaringClass().getAnnotations());
     return new UninstalledBindingImpl<>(this.bindingKey, scope, this.options, providerFactory);
   }
 
   @Override
   public @NotNull UninstalledBinding<T> toConstructingClass(@NotNull Class<? extends T> implementationType) {
-    // TODO: a bit of validation...
+    if (Modifier.isAbstract(implementationType.getModifiers())) {
+      throw new IllegalArgumentException("Cannot construct abstract type " + implementationType.getName());
+    }
+
     MethodHandles.Lookup lookup = this.resolveMemberLookup();
     ProviderFactory<T> providerFactory = ConstructorProviderFactory.fromClass(implementationType, lookup);
 
-    ScopeApplier scope = this.resolveActualScopeApplier(implementationType);
+    ScopeApplier scope = this.resolveScopeApplier(implementationType.getAnnotations());
     return new UninstalledBindingImpl<>(this.bindingKey, scope, this.options, providerFactory);
   }
 
@@ -204,21 +217,36 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
     return this.options.memberLookup().orElse(LOOKUP);
   }
 
-  private @Nullable ScopeApplier resolveActualScopeApplier(@NotNull Class<?> target) {
+  private @Nullable ScopeApplier resolveScopeApplier(@NotNull Method method) {
     // prefer overridden scope annotation
     if (this.scope != null) {
       return this.scope;
     }
 
-    // scope annotations are not allowed on abstract types
-    if (target.isInterface() || Modifier.isAbstract(target.getModifiers())) {
-      return null;
+    // first check directly on the method, then fall back to the return type
+    // unless the returned type is abstract (includes interfaces)
+    ScopeApplier methodScope = this.resolveScopeApplier(method.getAnnotations());
+    if (methodScope == null) {
+      Class<?> returnType = method.getReturnType();
+      if (!Modifier.isAbstract(returnType.getModifiers())) {
+        methodScope = this.resolveScopeApplier(returnType.getAnnotations());
+      }
+    }
+
+    return methodScope;
+  }
+
+  private @Nullable ScopeApplier resolveScopeApplier(@NotNull Annotation[] targetAnnotations) {
+    // prefer overridden scope annotation
+    if (this.scope != null) {
+      return this.scope;
     }
 
     // try to find a scope annotation and resolve the associated applier
-    Class<? extends Annotation> boundScope = InjectAnnotationUtil.findScopeAnnotation(target.getAnnotations());
+    Class<? extends Annotation> boundScope = InjectAnnotationUtil.findScopeAnnotation(targetAnnotations);
     if (boundScope != null) {
-      return this.scopeRegistry.get(boundScope)
+      return this.scopeRegistry
+        .get(boundScope)
         .orElseThrow(() -> new IllegalStateException("Scope @" + boundScope.getName() + " has no registered applier"));
     }
 
