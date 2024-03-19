@@ -220,6 +220,14 @@ public final class BindingAnnotationBuilderImpl<A extends Annotation, T> impleme
         throw new IllegalStateException("Unable to get value for annotation property " + this.annotationMember.name());
       }
 
+      // ensure that the return type is actually of the required type
+      Class<?> valueType = value.getClass();
+      Class<?> requiredType = this.annotationMember.type();
+      if (!requiredType.isAssignableFrom(valueType)) {
+        throw new IllegalStateException("Invalid return type for annotation member " + this.annotationMember.name()
+          + ". Expected " + requiredType.getName() + ", got " + valueType.getName());
+      }
+
       return value;
     }
 
