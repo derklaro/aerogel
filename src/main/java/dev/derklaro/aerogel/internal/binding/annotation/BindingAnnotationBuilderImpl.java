@@ -64,12 +64,22 @@ public final class BindingAnnotationBuilderImpl<A extends Annotation, T> impleme
     A proxy = this.annotationProxy.proxyInstance();
     accessor.apply(proxy);
 
-    // validate the called property
+    // ensure a property was actually called
     String property = this.annotationProxy.getAndRemoveLastAccessedProperty();
     if (property == null) {
       throw new IllegalStateException("Accessor did not call any annotation method");
     }
 
+    // disallow custom implementations of equals/hashCode/toString/annotationType
+    // as these methods are required for internal stability
+    if (property.equals("equals")
+      || property.equals("hashCode")
+      || property.equals("toString")
+      || property.equals("annotationType")) {
+      throw new IllegalArgumentException("Custom impl of equals/hashCode/toString/annotationType is not allowed");
+    }
+
+    // ensure that the method was not implemented before
     if (this.propertyValueFactories.containsKey(property)) {
       throw new IllegalStateException("Annotation method impl already set for " + property);
     }
