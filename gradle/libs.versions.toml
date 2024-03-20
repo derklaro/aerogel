@@ -14,7 +14,7 @@ jakartaInject = "2.0.1"
 
 # testing
 junit = "5.10.1"
-lombok = "1.18.30"
+lombok = "1.18.32"
 javapoet = "1.13.0"
 geantyref = "1.3.14"
 compileTesting = "0.21.0"
