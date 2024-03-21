@@ -34,7 +34,7 @@ import org.apiguardian.api.API;
 /**
  * The order annotation can be used to configure the order in which method injection happens. If the annotation is not
  * defined the {@link Order#DEFAULT} value will be applied to the element. If multiple elements have the same order, the
- * natural ordering is applied to them.
+ * methods are compared based on their name.
  *
  * @author Pasqual K.
  * @since 2.0
@@ -46,7 +46,7 @@ import org.apiguardian.api.API;
 public @interface Order {
 
   /**
-   * The default order applied to injectable methods which are not annotated with {@code @Order}.
+   * The default order applied to injectable methods which are not annotated with an explicit order.
    */
   int DEFAULT = Integer.MAX_VALUE / 2;
 

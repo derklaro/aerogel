@@ -30,28 +30,43 @@ import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.registry.Registry;
+import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 final class TargetedInjectorBuilderImpl implements TargetedInjectorBuilder {
 
-  private final TargetedInjectorImpl injector;
+  private final AtomicReference<TargetedInjectorImpl> injectorRef;
   private final Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry;
 
   /* trusted */
   TargetedInjectorBuilderImpl(@NotNull Injector parent, @NotNull Injector nonTargetedInjector) {
     this.bindingRegistry = parent.bindingRegistry().createChildRegistry();
-    this.injector = new TargetedInjectorImpl(parent, nonTargetedInjector, this.bindingRegistry);
+
+    TargetedInjectorImpl injector = new TargetedInjectorImpl(parent, nonTargetedInjector, this.bindingRegistry);
+    this.injectorRef = new AtomicReference<>(injector);
+  }
+
+  private static @NotNull TargetedInjectorImpl validateInjectorPresence(@Nullable TargetedInjectorImpl maybeInjector) {
+    if (maybeInjector == null) {
+      throw new IllegalStateException("specific injector builder already targeted.");
+    }
+    return maybeInjector;
   }
 
   @Override
   public @NotNull <T> TargetedInjectorBuilder installBinding(@NotNull UninstalledBinding<T> binding) {
-    InstalledBinding<?> installedBinding = binding.prepareForInstallation(this.injector);
+    TargetedInjectorImpl refInjector = this.injectorRef.get();
+    TargetedInjectorImpl injector = validateInjectorPresence(refInjector);
+
+    InstalledBinding<?> installedBinding = binding.prepareForInstallation(injector);
     this.bindingRegistry.register(binding.key(), installedBinding);
     return this;
   }
 
   @Override
   public @NotNull Injector build() {
-    return this.injector;
+    TargetedInjectorImpl refInjector = this.injectorRef.getAndSet(null);
+    return validateInjectorPresence(refInjector);
   }
 }

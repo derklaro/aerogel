@@ -60,7 +60,17 @@ public interface MemberInjector<T> {
    * process is executed automatically. Therefore, if all class instances are created automatically, there is no need to
    * call this method manually.
    * <p>
-   * If the given instance is null, only static members will be injected in the target class.
+   * If the given instance is null, only static members will be injected in the target class, unless they were already
+   * injected once by a different injector.
+   * <p>
+   * Member injection follows these ordering rules:
+   * <ol>
+   *   <li>supertype members are injected before subtype members.
+   *   <li>static members are injected before instance members.
+   *   <li>fields are injected before methods.
+   *   <li>fields with the same modifier are sorted by name.
+   *   <li>methods with the same modifier are sorted by {@link Order} or name for methods with the same ordering.
+   * </ol>
    *
    * @param instance the instance to inject members in.
    */

@@ -32,13 +32,9 @@ import java.lang.annotation.Target;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
-// TODO: fix these docs
 /**
- * Defines which implementation should be used when injecting a type instance of the given class. In fact the injector
- * will only use the type this annotation references and ignores every other manually bound value to the class.
- * Interfaces and abstract classes which you want to injection need at least one bound instance. You can define them
- * using one of: {@code Provides}, {@link ProvidedBy} or {@code Factory}. Binding an instance manually is possible as
- * well.
+ * Defines the implementation class for a type which will be used when a JIT binding is created. The annotation must be
+ * present on the type that is being injected, not on the implementation type.
  *
  * @author Pasqual K.
  * @since 1.0
@@ -50,8 +46,7 @@ import org.jetbrains.annotations.NotNull;
 public @interface ProvidedBy {
 
   /**
-   * Get the implementation class to which the annotated class is bound. Every other instance bound manually to the
-   * injecting interface will be ignored by the injector in favor of this method's return value.
+   * Get the implementation class to which the annotated class is bound.
    *
    * @return the implementation class to which the annotated class is bound.
    */

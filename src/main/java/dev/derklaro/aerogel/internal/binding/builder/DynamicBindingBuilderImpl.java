@@ -121,7 +121,7 @@ final class DynamicBindingBuilderImpl implements DynamicBindingBuilder {
   }
 
   @Override
-  public @NotNull DynamicBinding toBinding(@NotNull DynamicBinding binding) {
+  public @NotNull DynamicBinding delegateTo(@NotNull DynamicBinding binding) {
     this.checkFilterPresent();
     return new DynamicBindingImpl(this.bindingKeyMatcher, bindingKey -> binding.tryMatch(bindingKey).orElse(null));
   }

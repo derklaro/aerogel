@@ -153,7 +153,7 @@ public interface DynamicBindingBuilder {
    * @throws IllegalStateException if no filters were applied to this builder yet.
    */
   @NotNull
-  DynamicBinding toBinding(@NotNull DynamicBinding binding);
+  DynamicBinding delegateTo(@NotNull DynamicBinding binding);
 
   /**
    * Constructs a new dynamic binding that check if all applied filters are met. If this is the case the given function

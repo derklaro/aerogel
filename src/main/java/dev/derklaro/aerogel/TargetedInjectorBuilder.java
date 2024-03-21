@@ -25,13 +25,43 @@
 package dev.derklaro.aerogel;
 
 import dev.derklaro.aerogel.binding.UninstalledBinding;
+import org.apiguardian.api.API;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A builder for an injector which only has very specific bindings present, and does not allow binding registration
+ * during runtime. This means that bindings created by a targeted injector have access to specific bindings, but are
+ * registered into the parent injector.
+ * <p>
+ * An example use case could be a module system which needs configuration bindings for the current module, but wants to
+ * allow modules to access classes defined in other modules.
+ *
+ * @author Pasqual Koschmieder
+ * @since 3.0
+ */
+@API(status = API.Status.STABLE, since = "3.0")
 public interface TargetedInjectorBuilder {
 
+  /**
+   * Installs a binding which will be specific to the constructed injector.
+   *
+   * @param binding the binding to install.
+   * @param <T>     the type of values handled by the given binding.
+   * @return this builder, for chaining.
+   * @throws IllegalStateException if {@code build()} was already called on this builder.
+   */
   @NotNull
+  @Contract("_ -> this")
   <T> TargetedInjectorBuilder installBinding(@NotNull UninstalledBinding<T> binding);
 
+  /**
+   * Builds the targeted injector instance from the bindings applied to this builder. The builder instance cannot be
+   * reused after calling this method.
+   *
+   * @return the constructed injector using the bindings previously applied to this builder.
+   * @throws IllegalStateException if {@code build()} was already called on this builder.
+   */
   @NotNull
   Injector build();
 }
