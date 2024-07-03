@@ -55,6 +55,7 @@ allprojects {
     "compileOnlyApi"(rootProject.libs.annotations)
 
     // testing
+    "testRuntimeOnly"(rootProject.libs.junitLauncher)
     "testImplementation"(rootProject.libs.bundles.junit)
     "testImplementation"(rootProject.libs.jakartaInjectTck)
   }

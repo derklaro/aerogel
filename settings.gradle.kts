@@ -26,19 +26,19 @@ enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
-  includeBuild("build-extensions")
+  includeBuild("build-logic")
   repositories {
     gradlePluginPortal()
   }
 }
 
 plugins {
-  id("org.gradle.toolchains.foojay-resolver-convention") version "0.7.0"
+  id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
 }
 
 rootProject.name = "aerogel"
 include("scoped-value-context-scope")
-// include("auto", "kotlin-extensions", "scoped-value-context-scope")
+// include("auto")
 
 // prefixes each subproject with 'aerogel-'
 rootProject.children.forEach {

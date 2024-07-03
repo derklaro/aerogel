@@ -33,8 +33,8 @@ tasks.withType<Test> {
 }
 
 tasks.withType<JavaCompile> {
-  sourceCompatibility = JavaVersion.VERSION_21.toString()
-  targetCompatibility = JavaVersion.VERSION_21.toString()
+  sourceCompatibility = JavaVersion.VERSION_22.toString()
+  targetCompatibility = JavaVersion.VERSION_22.toString()
 
   options.compilerArgs.add("-Xlint:-preview")
   options.compilerArgs.add("--enable-preview")
@@ -49,7 +49,7 @@ tasks.withType<Javadoc> {
 extensions.configure<JavaPluginExtension> {
   toolchain {
     vendor = JvmVendorSpec.AZUL
-    languageVersion = JavaLanguageVersion.of(21)
+    languageVersion = JavaLanguageVersion.of(22)
   }
 }
 
