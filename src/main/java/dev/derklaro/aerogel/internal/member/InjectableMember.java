@@ -45,7 +45,7 @@ interface InjectableMember {
     @NotNull MethodHandles.Lookup lookup
   ) throws Exception;
 
-  class InjectableField implements InjectableMember {
+  final class InjectableField implements InjectableMember {
 
     private final Field field;
     private final boolean isStatic;
@@ -81,7 +81,7 @@ interface InjectableMember {
     }
   }
 
-  class InjectableMethod implements InjectableMember {
+  final class InjectableMethod implements InjectableMember {
 
     private static final Object[] NO_PARAMS = new Object[0];
 

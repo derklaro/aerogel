@@ -101,6 +101,10 @@ public interface Injector {
   <T> Injector installBinding(@NotNull UninstalledBinding<T> binding);
 
   @NotNull
+  @Contract("_ -> this")
+  Injector standardMemberLookup(@Nullable MethodHandles.Lookup standardMemberLookup);
+
+  @NotNull
   Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry();
 
   @NotNull

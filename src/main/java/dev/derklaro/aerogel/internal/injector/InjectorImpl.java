@@ -33,6 +33,7 @@ import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.binding.BindingOptionsImpl;
 import dev.derklaro.aerogel.internal.binding.builder.RootBindingBuilderImpl;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
 import dev.derklaro.aerogel.internal.scope.SingletonScopeApplier;
@@ -64,9 +65,12 @@ public final class InjectorImpl implements Injector {
   private final Registry.WithoutKeyMapping<BindingKey<?>, DynamicBinding> dynamicBindingRegistry;
   private final Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry;
 
+  private MethodHandles.Lookup standardMemberLookup;
+
   public InjectorImpl() {
     this(
       null,
+      LOOKUP,
       Registry.createRegistryWithKeys(),
       Registry.createRegistryWithKeys(),
       Registry.createRegistryWithoutKeys((key, binding) -> binding.supports(key)));
@@ -75,6 +79,7 @@ public final class InjectorImpl implements Injector {
   private InjectorImpl(@NotNull InjectorImpl parent) {
     this(
       parent,
+      parent.standardMemberLookup,
       parent.bindingRegistry.createChildRegistry(),
       parent.scopeRegistry.createChildRegistry(),
       parent.dynamicBindingRegistry.createChildRegistry());
@@ -84,6 +89,7 @@ public final class InjectorImpl implements Injector {
   InjectorImpl(@NotNull TargetedInjectorImpl targetedInjector) {
     this(
       targetedInjector,
+      targetedInjector.standardMemberLookup,
       targetedInjector.bindingRegistry.createChildRegistry(),
       targetedInjector.parent.scopeRegistry().createChildRegistry(),
       targetedInjector.parent.dynamicBindingRegistry().createChildRegistry());
@@ -91,11 +97,13 @@ public final class InjectorImpl implements Injector {
 
   private InjectorImpl(
     @Nullable Injector parent,
+    @NotNull MethodHandles.Lookup standardMemberLookup,
     @NotNull Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry,
     @NotNull Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry,
     @NotNull Registry.WithoutKeyMapping<BindingKey<?>, DynamicBinding> dynamicBindingRegistry
   ) {
     this.parent = parent;
+    this.standardMemberLookup = standardMemberLookup;
     this.jitBindingFactory = new JitBindingFactory(this);
 
     this.scopeRegistry = scopeRegistry;
@@ -118,17 +126,18 @@ public final class InjectorImpl implements Injector {
 
   @Override
   public @NotNull TargetedInjectorBuilder createTargetedInjectorBuilder() {
-    return new TargetedInjectorBuilderImpl(this, this);
+    return new TargetedInjectorBuilderImpl(this, this, this.standardMemberLookup);
   }
 
   @Override
   public @NotNull RootBindingBuilder createBindingBuilder() {
-    return new RootBindingBuilderImpl(this.scopeRegistry);
+    BindingOptionsImpl standardBindingOptions = new BindingOptionsImpl(this.standardMemberLookup);
+    return new RootBindingBuilderImpl(standardBindingOptions, this.scopeRegistry);
   }
 
   @Override
   public @NotNull <T> MemberInjector<T> memberInjector(@NotNull Class<T> memberHolderClass) {
-    return this.memberInjector(memberHolderClass, null);
+    return this.memberInjector(memberHolderClass, this.standardMemberLookup);
   }
 
   @Override
@@ -213,6 +222,12 @@ public final class InjectorImpl implements Injector {
   public @NotNull <T> Injector installBinding(@NotNull UninstalledBinding<T> binding) {
     InstalledBinding<?> installedBinding = binding.prepareForInstallation(this);
     this.bindingRegistry.register(binding.key(), installedBinding);
+    return this;
+  }
+
+  @Override
+  public @NotNull Injector standardMemberLookup(@Nullable MethodHandles.Lookup standardMemberLookup) {
+    this.standardMemberLookup = standardMemberLookup;
     return this;
   }
 

@@ -30,6 +30,7 @@ import dev.derklaro.aerogel.binding.builder.QualifiableBindingBuilder;
 import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.builder.ScopeableBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.binding.BindingOptionsImpl;
 import dev.derklaro.aerogel.registry.Registry;
 import io.leangen.geantyref.TypeToken;
 import java.lang.annotation.Annotation;
@@ -38,9 +39,14 @@ import org.jetbrains.annotations.NotNull;
 
 public final class RootBindingBuilderImpl implements RootBindingBuilder {
 
+  private final BindingOptionsImpl standardBindingOptions;
   private final Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry;
 
-  public RootBindingBuilderImpl(@NotNull Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopes) {
+  public RootBindingBuilderImpl(
+    @NotNull BindingOptionsImpl standardBindingOptions,
+    @NotNull Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopes
+  ) {
+    this.standardBindingOptions = standardBindingOptions;
     this.scopeRegistry = scopes;
   }
 
@@ -52,23 +58,23 @@ public final class RootBindingBuilderImpl implements RootBindingBuilder {
   @Override
   public @NotNull <T> QualifiableBindingBuilder<T> bind(@NotNull Type type) {
     BindingKey<T> key = BindingKey.of(type);
-    return new ConcreteBindingBuilderImpl<>(key, this.scopeRegistry);
+    return new ConcreteBindingBuilderImpl<>(key, this.standardBindingOptions, this.scopeRegistry);
   }
 
   @Override
   public @NotNull <T> QualifiableBindingBuilder<T> bind(@NotNull Class<T> type) {
     BindingKey<T> key = BindingKey.of(type);
-    return new ConcreteBindingBuilderImpl<>(key, this.scopeRegistry);
+    return new ConcreteBindingBuilderImpl<>(key, this.standardBindingOptions, this.scopeRegistry);
   }
 
   @Override
   public @NotNull <T> QualifiableBindingBuilder<T> bind(@NotNull TypeToken<T> typeToken) {
     BindingKey<T> key = BindingKey.of(typeToken);
-    return new ConcreteBindingBuilderImpl<>(key, this.scopeRegistry);
+    return new ConcreteBindingBuilderImpl<>(key, this.standardBindingOptions, this.scopeRegistry);
   }
 
   @Override
   public @NotNull <T> ScopeableBindingBuilder<T> bind(@NotNull BindingKey<T> bindingKey) {
-    return new ConcreteBindingBuilderImpl<>(bindingKey, this.scopeRegistry);
+    return new ConcreteBindingBuilderImpl<>(bindingKey, this.standardBindingOptions, this.scopeRegistry);
   }
 }

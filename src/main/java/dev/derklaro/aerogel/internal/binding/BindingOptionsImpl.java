@@ -32,8 +32,6 @@ import org.jetbrains.annotations.Nullable;
 
 public final class BindingOptionsImpl implements BindingOptions {
 
-  public static final BindingOptionsImpl EMPTY = new BindingOptionsImpl(null);
-
   private final MethodHandles.Lookup memberLookup;
 
   public BindingOptionsImpl(@Nullable MethodHandles.Lookup memberLookup) {

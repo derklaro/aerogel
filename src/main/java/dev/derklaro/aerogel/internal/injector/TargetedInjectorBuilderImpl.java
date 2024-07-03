@@ -30,6 +30,7 @@ import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.registry.Registry;
+import java.lang.invoke.MethodHandles;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,10 +41,18 @@ final class TargetedInjectorBuilderImpl implements TargetedInjectorBuilder {
   private final Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry;
 
   /* trusted */
-  TargetedInjectorBuilderImpl(@NotNull Injector parent, @NotNull Injector nonTargetedInjector) {
+  TargetedInjectorBuilderImpl(
+    @NotNull Injector parent,
+    @NotNull Injector nonTargetedInjector,
+    @Nullable MethodHandles.Lookup parentStandardMemberLookup
+  ) {
     this.bindingRegistry = parent.bindingRegistry().createChildRegistry();
 
-    TargetedInjectorImpl injector = new TargetedInjectorImpl(parent, nonTargetedInjector, this.bindingRegistry);
+    TargetedInjectorImpl injector = new TargetedInjectorImpl(
+      parent,
+      nonTargetedInjector,
+      parentStandardMemberLookup,
+      this.bindingRegistry);
     this.injectorRef = new AtomicReference<>(injector);
   }
 

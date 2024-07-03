@@ -70,9 +70,10 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
 
   public ConcreteBindingBuilderImpl(
     @NotNull BindingKey<T> bindingKey,
+    @NotNull BindingOptionsImpl bindingOptions,
     @NotNull Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry
   ) {
-    this(bindingKey, scopeRegistry, null, BindingOptionsImpl.EMPTY);
+    this(bindingKey, scopeRegistry, null, bindingOptions);
   }
 
   public ConcreteBindingBuilderImpl(

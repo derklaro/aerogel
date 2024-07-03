@@ -33,6 +33,8 @@ import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.binding.BindingOptionsImpl;
+import dev.derklaro.aerogel.internal.binding.builder.RootBindingBuilderImpl;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
 import dev.derklaro.aerogel.internal.util.MapUtil;
 import dev.derklaro.aerogel.registry.Registry;
@@ -56,13 +58,17 @@ final class TargetedInjectorImpl implements Injector {
 
   private final Map<Class<?>, MemberInjector<?>> memberInjectorCache = MapUtil.newConcurrentMap();
 
+  MethodHandles.Lookup standardMemberLookup;
+
   TargetedInjectorImpl(
     @NotNull Injector parent,
     @NotNull Injector nonTargetedInjector,
+    @Nullable MethodHandles.Lookup parentStandardMemberLookup,
     @NotNull Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry
   ) {
     this.parent = parent;
     this.bindingRegistry = bindingRegistry.freeze();
+    this.standardMemberLookup = parentStandardMemberLookup;
 
     this.nonTargetedInjector = nonTargetedInjector;
     this.jitBindingFactory = new JitBindingFactory(this);
@@ -80,17 +86,18 @@ final class TargetedInjectorImpl implements Injector {
 
   @Override
   public @NotNull TargetedInjectorBuilder createTargetedInjectorBuilder() {
-    return new TargetedInjectorBuilderImpl(this, this.nonTargetedInjector);
+    return new TargetedInjectorBuilderImpl(this, this.nonTargetedInjector, this.standardMemberLookup);
   }
 
   @Override
   public @NotNull RootBindingBuilder createBindingBuilder() {
-    return this.parent.createBindingBuilder();
+    BindingOptionsImpl standardBindingOptions = new BindingOptionsImpl(this.standardMemberLookup);
+    return new RootBindingBuilderImpl(standardBindingOptions, this.parent.scopeRegistry());
   }
 
   @Override
   public @NotNull <T> MemberInjector<T> memberInjector(@NotNull Class<T> memberHolderClass) {
-    return this.memberInjector(memberHolderClass, null);
+    return this.memberInjector(memberHolderClass, this.standardMemberLookup);
   }
 
   @Override
@@ -179,6 +186,12 @@ final class TargetedInjectorImpl implements Injector {
   @Override
   public @NotNull <T> Injector installBinding(@NotNull UninstalledBinding<T> binding) {
     this.parent.installBinding(binding);
+    return this;
+  }
+
+  @Override
+  public @NotNull Injector standardMemberLookup(@Nullable MethodHandles.Lookup standardMemberLookup) {
+    this.parent.standardMemberLookup(standardMemberLookup);
     return this;
   }
 
