@@ -22,9 +22,8 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.scopedvalue;
+package dev.derklaro.aerogel;
 
-import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
@@ -39,7 +38,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class ScopedValueContextKeptInScopeTest {
+public class ThreadLocalContextKeptInScopeTest {
 
   @SuppressWarnings("unchecked")
   private static @Nullable <T> T resolveInstanceScoped(@NotNull InjectionContextScope scope) {

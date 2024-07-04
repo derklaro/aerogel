@@ -26,8 +26,11 @@ package dev.derklaro.aerogel;
 
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
+import dev.derklaro.aerogel.internal.context.scope.threadlocal.ThreadLocalInjectionContextProvider;
 import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 import org.atinject.tck.Tck;
 import org.atinject.tck.auto.Car;
 import org.atinject.tck.auto.Convertible;
@@ -38,6 +41,7 @@ import org.atinject.tck.auto.Seat;
 import org.atinject.tck.auto.Tire;
 import org.atinject.tck.auto.V8Engine;
 import org.atinject.tck.auto.accessories.SpareTire;
+import org.junit.Assert;
 
 /**
  * Tests aerogel against <a href="https://github.com/eclipse-ee4j/injection-tck">the injection tck (Technology
@@ -72,6 +76,20 @@ public class AerogelTck extends TestCase {
       .installBinding(spareTireBinding)
       .installBinding(driversSeatBinding);
     Car constructedCar = injector.instance(Car.class);
-    return Tck.testsFor(constructedCar, true, true);
+
+    TestSuite testSuite = new TestSuite("ScopedValue Jakarta TCK");
+    testSuite.addTestSuite(ThreadLocalDiscoveryTest.class);
+
+    Test tckSuite = Tck.testsFor(constructedCar, true, true);
+    testSuite.addTest(tckSuite);
+    return testSuite;
+  }
+
+  public static final class ThreadLocalDiscoveryTest extends TestCase {
+
+    public void testThreadLocalContextUsed() {
+      InjectionContextProvider contextProvider = InjectionContextProvider.provider();
+      Assert.assertSame(ThreadLocalInjectionContextProvider.class, contextProvider.getClass());
+    }
   }
 }
