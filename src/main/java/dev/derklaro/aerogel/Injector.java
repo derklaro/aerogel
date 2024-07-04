@@ -43,13 +43,53 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * The main part of aerogel. The injector keeps track of all known bindings and shared them with their child injectors.
- * Every injector has always a binding for itself as long as the injector element was not overridden with another
- * biding. In normal cases a developer only interacts once with this injector - to bind all elements he will need later
- * and then to create the main instance of his application. From this point every injection should be done and the main
- * class constructed so that the application can get started. Create a new injector by using {@link #newInjector()}.
+ * An injector is the main entry point for dependency injection with aerogel. Each injector holds a set of bindings,
+ * which are used to resolve class instances during injection. An injector doesn't need bindings for all types that
+ * should be injected. If a binding is needed for a type without an explicit binding, a new binding is created on the
+ * fly.
+ * <p>
+ * Injectors can be used in a tree structure by creating a child from an injector. Each injector can have an unlimited
+ * amount of child injectors. The power of child injectors comes from the fact that each of them can access the bindings
+ * from all parents, but also have their on bindings. Therefore, specific overrides can be made in a child injector,
+ * that do not reflect into the parent injector(s). However, as explained before, changes made to one of the parent
+ * injectors will reflect into the child injectors as they are able to retrieve the newly registered value.
+ * <p>
+ * Take the following example how the relation between child and parent injectors work:
+ * <pre>
+ * {@code
+ * void main() {
+ *   var parentInjector = Injector.newInjector();
+ *   var childInjector = parentInjector.createChildInjector();
  *
- * @author Pasqual K.
+ *   // installs a binding for a string into the parent injector
+ *   var helloWorldBinding = parentInjector.createBindingBuilder()
+ *     .bind(String.class)
+ *     .toInstance("Hello World");
+ *   injector.install(helloWorldBinding);
+ *
+ *   // retrieve the value for the string from the child injector, which
+ *   // will be the exact value registered in the parent injector - the child
+ *   // gets the value from the parent as no local override is registered
+ *   // in the child injector
+ *   var stringValue = childInjector.instance(String.class);
+ *   assertEquals("Hello World", stringValue);
+ * }
+ * }
+ * </pre>
+ * <p>
+ * On the other hand there are targeted injectors. This type of injector has specific bindings present that were set
+ * during construction once and can never change. When an attempt is made to register something in that type of
+ * injector, the call is actually delegated to the parent injector until an injector in the tree is found that is not
+ * targeted. So, as a general rule of thumb: a targeted injector is an injector that can return bindings, but has no
+ * registered bindings itself. Jit bindings created from the injector will have access to the bindings specifically
+ * registered in the targeted injector.
+ * <p>
+ * As previously stated, everything that can be registered into an injector is shared with all child injector
+ * automatically, but can be overridden on a per-child basis. There is one exception from this: the injector options
+ * that are supplied to the root injector are always used for all child injectors and cannot be overridden. Options for
+ * an injector can be defined using an injector builder which can be obtained by {@link #builder()}.
+ *
+ * @author Pasqual Koschmieder
  * @since 1.0
  */
 @API(status = API.Status.STABLE, since = "1.0")
