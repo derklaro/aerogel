@@ -52,11 +52,8 @@ import org.jetbrains.annotations.Nullable;
 
 public final class InjectorImpl implements Injector {
 
-  // fallback lookup for member injection, only works if the injector
-  // has access to the target classes to inject in (best-effort)
-  static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-
   private final Injector parent;
+  private final InjectorOptions injectorOptions;
   private final JitBindingFactory jitBindingFactory;
 
   private final Map<Class<?>, MemberInjector<?>> memberInjectorCache = MapUtil.newConcurrentMap();
@@ -65,31 +62,33 @@ public final class InjectorImpl implements Injector {
   private final Registry.WithoutKeyMapping<BindingKey<?>, DynamicBinding> dynamicBindingRegistry;
   private final Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry;
 
-  private MethodHandles.Lookup standardMemberLookup;
-
   public InjectorImpl() {
-    this(
-      null,
-      LOOKUP,
-      Registry.createRegistryWithKeys(),
-      Registry.createRegistryWithKeys(),
-      Registry.createRegistryWithoutKeys((key, binding) -> binding.supports(key)));
+    this(InjectorOptions.DEFAULT);
   }
 
   private InjectorImpl(@NotNull InjectorImpl parent) {
     this(
       parent,
-      parent.standardMemberLookup,
+      parent.injectorOptions,
       parent.bindingRegistry.createChildRegistry(),
       parent.scopeRegistry.createChildRegistry(),
       parent.dynamicBindingRegistry.createChildRegistry());
+  }
+
+  InjectorImpl(@NotNull InjectorOptions options) {
+    this(
+      null,
+      options,
+      Registry.createRegistryWithKeys(),
+      Registry.createRegistryWithKeys(),
+      Registry.createRegistryWithoutKeys((key, binding) -> binding.supports(key)));
   }
 
   /* trusted */
   InjectorImpl(@NotNull TargetedInjectorImpl targetedInjector) {
     this(
       targetedInjector,
-      targetedInjector.standardMemberLookup,
+      targetedInjector.injectorOptions,
       targetedInjector.bindingRegistry.createChildRegistry(),
       targetedInjector.parent.scopeRegistry().createChildRegistry(),
       targetedInjector.parent.dynamicBindingRegistry().createChildRegistry());
@@ -97,13 +96,13 @@ public final class InjectorImpl implements Injector {
 
   private InjectorImpl(
     @Nullable Injector parent,
-    @NotNull MethodHandles.Lookup standardMemberLookup,
+    @NotNull InjectorOptions injectorOptions,
     @NotNull Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry,
     @NotNull Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry,
     @NotNull Registry.WithoutKeyMapping<BindingKey<?>, DynamicBinding> dynamicBindingRegistry
   ) {
     this.parent = parent;
-    this.standardMemberLookup = standardMemberLookup;
+    this.injectorOptions = injectorOptions;
     this.jitBindingFactory = new JitBindingFactory(this);
 
     this.scopeRegistry = scopeRegistry;
@@ -126,18 +125,18 @@ public final class InjectorImpl implements Injector {
 
   @Override
   public @NotNull TargetedInjectorBuilder createTargetedInjectorBuilder() {
-    return new TargetedInjectorBuilderImpl(this, this, this.standardMemberLookup);
+    return new TargetedInjectorBuilderImpl(this, this, this.injectorOptions);
   }
 
   @Override
   public @NotNull RootBindingBuilder createBindingBuilder() {
-    BindingOptionsImpl standardBindingOptions = new BindingOptionsImpl(this.standardMemberLookup);
+    BindingOptionsImpl standardBindingOptions = new BindingOptionsImpl(this.injectorOptions.memberLookup());
     return new RootBindingBuilderImpl(standardBindingOptions, this.scopeRegistry);
   }
 
   @Override
   public @NotNull <T> MemberInjector<T> memberInjector(@NotNull Class<T> memberHolderClass) {
-    return this.memberInjector(memberHolderClass, this.standardMemberLookup);
+    return this.memberInjector(memberHolderClass, null);
   }
 
   @Override
@@ -153,7 +152,7 @@ public final class InjectorImpl implements Injector {
     }
 
     // create a new member injector
-    MethodHandles.Lookup lookup = givenLookup != null ? givenLookup : LOOKUP;
+    MethodHandles.Lookup lookup = givenLookup != null ? givenLookup : this.injectorOptions.memberLookup();
     MemberInjector<T> newMemberInjector = new DefaultMemberInjector<>(memberHolderClass, this, lookup);
     this.memberInjectorCache.put(memberHolderClass, newMemberInjector);
     return newMemberInjector;
@@ -187,9 +186,13 @@ public final class InjectorImpl implements Injector {
   @SuppressWarnings("unchecked")
   public @NotNull <T> InstalledBinding<T> binding(@NotNull BindingKey<T> key) {
     return this.existingBinding(key).orElseGet(() -> {
-      InstalledBinding<?> jitBinding = this.jitBindingFactory.createJitBinding(key);
-      this.bindingRegistry.register(key, jitBinding);
-      return (InstalledBinding<T>) jitBinding;
+      if (this.injectorOptions.shouldConstructJitBinding(key)) {
+        InstalledBinding<?> jitBinding = this.jitBindingFactory.createJitBinding(key);
+        this.bindingRegistry.register(key, jitBinding);
+        return (InstalledBinding<T>) jitBinding;
+      } else {
+        throw new IllegalStateException("Creating of jit binding for key " + key + " is explicitly disabled");
+      }
     });
   }
 
@@ -222,12 +225,6 @@ public final class InjectorImpl implements Injector {
   public @NotNull <T> Injector installBinding(@NotNull UninstalledBinding<T> binding) {
     InstalledBinding<?> installedBinding = binding.prepareForInstallation(this);
     this.bindingRegistry.register(binding.key(), installedBinding);
-    return this;
-  }
-
-  @Override
-  public @NotNull Injector standardMemberLookup(@Nullable MethodHandles.Lookup standardMemberLookup) {
-    this.standardMemberLookup = standardMemberLookup;
     return this;
   }
 

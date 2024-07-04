@@ -51,6 +51,7 @@ import org.jetbrains.annotations.Nullable;
 final class TargetedInjectorImpl implements Injector {
 
   final Injector parent;
+  final InjectorOptions injectorOptions;
   final Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry;
 
   private final Injector nonTargetedInjector;
@@ -58,17 +59,15 @@ final class TargetedInjectorImpl implements Injector {
 
   private final Map<Class<?>, MemberInjector<?>> memberInjectorCache = MapUtil.newConcurrentMap();
 
-  MethodHandles.Lookup standardMemberLookup;
-
   TargetedInjectorImpl(
     @NotNull Injector parent,
     @NotNull Injector nonTargetedInjector,
-    @Nullable MethodHandles.Lookup parentStandardMemberLookup,
+    @NotNull InjectorOptions injectorOptions,
     @NotNull Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry
   ) {
     this.parent = parent;
+    this.injectorOptions = injectorOptions;
     this.bindingRegistry = bindingRegistry.freeze();
-    this.standardMemberLookup = parentStandardMemberLookup;
 
     this.nonTargetedInjector = nonTargetedInjector;
     this.jitBindingFactory = new JitBindingFactory(this);
@@ -86,18 +85,18 @@ final class TargetedInjectorImpl implements Injector {
 
   @Override
   public @NotNull TargetedInjectorBuilder createTargetedInjectorBuilder() {
-    return new TargetedInjectorBuilderImpl(this, this.nonTargetedInjector, this.standardMemberLookup);
+    return new TargetedInjectorBuilderImpl(this, this.nonTargetedInjector, this.injectorOptions);
   }
 
   @Override
   public @NotNull RootBindingBuilder createBindingBuilder() {
-    BindingOptionsImpl standardBindingOptions = new BindingOptionsImpl(this.standardMemberLookup);
+    BindingOptionsImpl standardBindingOptions = new BindingOptionsImpl(this.injectorOptions.memberLookup());
     return new RootBindingBuilderImpl(standardBindingOptions, this.parent.scopeRegistry());
   }
 
   @Override
   public @NotNull <T> MemberInjector<T> memberInjector(@NotNull Class<T> memberHolderClass) {
-    return this.memberInjector(memberHolderClass, this.standardMemberLookup);
+    return this.memberInjector(memberHolderClass, null);
   }
 
   @Override
@@ -113,7 +112,7 @@ final class TargetedInjectorImpl implements Injector {
     }
 
     // create a new member injector
-    MethodHandles.Lookup lookup = givenLookup != null ? givenLookup : InjectorImpl.LOOKUP;
+    MethodHandles.Lookup lookup = givenLookup != null ? givenLookup : this.injectorOptions.memberLookup();
     MemberInjector<T> newMemberInjector = new DefaultMemberInjector<>(memberHolderClass, this, lookup);
     this.memberInjectorCache.put(memberHolderClass, newMemberInjector);
     return newMemberInjector;
@@ -158,6 +157,11 @@ final class TargetedInjectorImpl implements Injector {
       return existingParentBinding;
     }
 
+    // check if creating of jit binding for key was explicitly disabled
+    if (!this.injectorOptions.shouldConstructJitBinding(key)) {
+      throw new IllegalStateException("Creating of jit binding for key " + key + " is explicitly disabled");
+    }
+
     // construct a new jit binding for the type and register it to the non-targeted injector in the hierarchy
     InstalledBinding<?> jitBinding = this.jitBindingFactory.createJitBinding(key);
     this.nonTargetedInjector.bindingRegistry().register(key, jitBinding);
@@ -186,12 +190,6 @@ final class TargetedInjectorImpl implements Injector {
   @Override
   public @NotNull <T> Injector installBinding(@NotNull UninstalledBinding<T> binding) {
     this.parent.installBinding(binding);
-    return this;
-  }
-
-  @Override
-  public @NotNull Injector standardMemberLookup(@Nullable MethodHandles.Lookup standardMemberLookup) {
-    this.parent.standardMemberLookup(standardMemberLookup);
     return this;
   }
 

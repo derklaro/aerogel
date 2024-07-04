@@ -29,6 +29,7 @@ import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.injector.InjectorBuilderImpl;
 import dev.derklaro.aerogel.internal.injector.InjectorImpl;
 import dev.derklaro.aerogel.registry.Registry;
 import io.leangen.geantyref.TypeToken;
@@ -57,6 +58,11 @@ public interface Injector {
   @Contract(pure = true)
   static @NotNull Injector newInjector() {
     return new InjectorImpl();
+  }
+
+  @Contract(pure = true)
+  static @NotNull InjectorBuilder builder() {
+    return new InjectorBuilderImpl();
   }
 
   @NotNull
@@ -99,10 +105,6 @@ public interface Injector {
 
   @NotNull
   <T> Injector installBinding(@NotNull UninstalledBinding<T> binding);
-
-  @NotNull
-  @Contract("_ -> this")
-  Injector standardMemberLookup(@Nullable MethodHandles.Lookup standardMemberLookup);
 
   @NotNull
   Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry();
