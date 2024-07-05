@@ -247,13 +247,12 @@ public class ScopingTest {
     UninstalledBinding<?> binding = injector.createBindingBuilder().bind(ASingletonClass.class).toConstructingSelf();
     injector.installBinding(binding);
 
-    try (ExecutorService service = Executors.newFixedThreadPool(2)) {
-      Future<ASingletonClass> f1 = service.submit(() -> injector.createChildInjector().instance(ASingletonClass.class));
-      Future<ASingletonClass> f2 = service.submit(() -> injector.createChildInjector().instance(ASingletonClass.class));
-      ASingletonClass instance1 = f1.get(10, TimeUnit.SECONDS);
-      ASingletonClass instance2 = f2.get(10, TimeUnit.SECONDS);
-      Assertions.assertSame(instance1, instance2);
-    }
+    ExecutorService service = Executors.newFixedThreadPool(2);
+    Future<ASingletonClass> f1 = service.submit(() -> injector.createChildInjector().instance(ASingletonClass.class));
+    Future<ASingletonClass> f2 = service.submit(() -> injector.createChildInjector().instance(ASingletonClass.class));
+    ASingletonClass instance1 = f1.get(10, TimeUnit.SECONDS);
+    ASingletonClass instance2 = f2.get(10, TimeUnit.SECONDS);
+    Assertions.assertSame(instance1, instance2);
   }
 
   @Test
@@ -268,25 +267,24 @@ public class ScopingTest {
       .toConstructingClass(SomeServiceBImpl.class);
     injector.installBinding(bindingServiceA).installBinding(bindingServiceB);
 
-    try (ExecutorService service = Executors.newFixedThreadPool(2)) {
-      Future<SomeServiceA> f1 = service.submit(() -> injector.createChildInjector().instance(SomeServiceA.class));
-      Future<SomeServiceA> f2 = service.submit(() -> injector.createChildInjector().instance(SomeServiceA.class));
-      SomeServiceA instance1 = f1.get(10, TimeUnit.SECONDS);
-      SomeServiceA instance2 = f2.get(10, TimeUnit.SECONDS);
+    ExecutorService service = Executors.newFixedThreadPool(2);
+    Future<SomeServiceA> f1 = service.submit(() -> injector.createChildInjector().instance(SomeServiceA.class));
+    Future<SomeServiceA> f2 = service.submit(() -> injector.createChildInjector().instance(SomeServiceA.class));
+    SomeServiceA instance1 = f1.get(10, TimeUnit.SECONDS);
+    SomeServiceA instance2 = f2.get(10, TimeUnit.SECONDS);
 
-      Assertions.assertSame(instance1, instance2);
-      Assertions.assertSame(instance1.serviceB(), instance2.serviceB());
-      Assertions.assertSame(instance1, instance2.serviceB().serviceA());
+    Assertions.assertSame(instance1, instance2);
+    Assertions.assertSame(instance1.serviceB(), instance2.serviceB());
+    Assertions.assertSame(instance1, instance2.serviceB().serviceA());
 
-      Assertions.assertTrue(Proxy.isProxyClass(instance1.serviceB().getClass()));
-      Assertions.assertTrue(Proxy.isProxyClass(instance2.serviceB().getClass()));
-      Assertions.assertSame(instance1.serviceB(), instance2.serviceB());
+    Assertions.assertTrue(Proxy.isProxyClass(instance1.serviceB().getClass()));
+    Assertions.assertTrue(Proxy.isProxyClass(instance2.serviceB().getClass()));
+    Assertions.assertSame(instance1.serviceB(), instance2.serviceB());
 
-      SomeServiceB serviceB = injector.instance(SomeServiceB.class);
-      Assertions.assertFalse(Proxy.isProxyClass(serviceB.getClass()));
-      Assertions.assertEquals(serviceB.hashCode(), instance1.serviceB().hashCode());
-      Assertions.assertEquals(serviceB.hashCode(), instance2.serviceB().hashCode());
-    }
+    SomeServiceB serviceB = injector.instance(SomeServiceB.class);
+    Assertions.assertFalse(Proxy.isProxyClass(serviceB.getClass()));
+    Assertions.assertEquals(serviceB.hashCode(), instance1.serviceB().hashCode());
+    Assertions.assertEquals(serviceB.hashCode(), instance2.serviceB().hashCode());
   }
 
   // @formatter:off
