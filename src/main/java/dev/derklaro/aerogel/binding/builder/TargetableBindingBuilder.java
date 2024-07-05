@@ -137,4 +137,16 @@ public interface TargetableBindingBuilder<T> {
    */
   @NotNull
   UninstalledBinding<T> toConstructingClass(@NotNull Class<? extends T> implementationType);
+
+  /**
+   * Constructs a new binding that calls the injectable constructor in the class that is currently targeted by this
+   * binding builder. The raw target type of the underlying binding key is used to resolve the class which should be
+   * constructed.
+   *
+   * @return a new binding that calls the injectable constructor defined in the target class of this builder.
+   * @throws IllegalArgumentException if no accessible, injectable constructor is present in the target class.
+   * @see #toConstructingClass(Class)
+   */
+  @NotNull
+  UninstalledBinding<T> toConstructingSelf();
 }

@@ -214,6 +214,13 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
     return new UninstalledBindingImpl<>(this.bindingKey, scope, this.options, providerFactory);
   }
 
+  @Override
+  public @NotNull UninstalledBinding<T> toConstructingSelf() {
+    //noinspection unchecked
+    Class<? extends T> rawTargetClass = (Class<? extends T>) GenericTypeReflector.erase(this.bindingKey.type());
+    return this.toConstructingClass(rawTargetClass);
+  }
+
   private @NotNull MethodHandles.Lookup resolveMemberLookup() {
     return this.options.memberLookup().orElse(LOOKUP);
   }
