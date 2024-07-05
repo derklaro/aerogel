@@ -118,6 +118,7 @@ allprojects {
 
   extensions.configure<CheckstyleExtension> {
     toolVersion = rootProject.libs.versions.checkstyleTools.get()
+    sourceSets = setOf(project.the<JavaPluginExtension>().sourceSets["main"])
   }
 }
 
