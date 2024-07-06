@@ -28,6 +28,7 @@ import dev.derklaro.aerogel.binding.builder.BindingAnnotationBuilder;
 import dev.derklaro.aerogel.binding.builder.QualifiableBindingBuilder;
 import dev.derklaro.aerogel.binding.builder.ScopeableBindingBuilder;
 import dev.derklaro.aerogel.internal.annotation.AnnotationDesc;
+import io.leangen.geantyref.GenericTypeReflector;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashMap;
@@ -220,12 +221,15 @@ public final class BindingAnnotationBuilderImpl<A extends Annotation, T> impleme
         throw new IllegalStateException("Unable to get value for annotation property " + this.annotationMember.name());
       }
 
-      // ensure that the return type is actually of the required type
+      // ensure that the return type is actually of the required type, boxing the required
+      // type is needed as passing of primitive values is not possible and therefore all
+      // values for the members are actually boxed and will be unboxed on method invocation
       Class<?> valueType = value.getClass();
       Class<?> requiredType = this.annotationMember.type();
-      if (!requiredType.isAssignableFrom(valueType)) {
+      Class<?> boxedRequiredType = (Class<?>) GenericTypeReflector.box(requiredType);
+      if (!boxedRequiredType.isAssignableFrom(valueType)) {
         throw new IllegalStateException("Invalid return type for annotation member " + this.annotationMember.name()
-          + ". Expected " + requiredType.getName() + ", got " + valueType.getName());
+          + ". Expected " + boxedRequiredType.getName() + ", got " + valueType.getName());
       }
 
       return value;
