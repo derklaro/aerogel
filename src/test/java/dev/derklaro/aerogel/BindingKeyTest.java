@@ -42,6 +42,33 @@ import org.junit.jupiter.api.Test;
 public class BindingKeyTest {
 
   @Test
+  void testPrimitiveTypesAreBoxedOnKeyCreation() {
+    BindingKey<?> byteKey = BindingKey.of(byte.class);
+    Assertions.assertEquals(Byte.class, byteKey.type());
+
+    BindingKey<?> shortKey = BindingKey.of(short.class);
+    Assertions.assertEquals(Short.class, shortKey.type());
+
+    BindingKey<?> intKey = BindingKey.of(int.class);
+    Assertions.assertEquals(Integer.class, intKey.type());
+
+    BindingKey<?> longKey = BindingKey.of(long.class);
+    Assertions.assertEquals(Long.class, longKey.type());
+
+    BindingKey<?> floatKey = BindingKey.of(float.class);
+    Assertions.assertEquals(Float.class, floatKey.type());
+
+    BindingKey<?> doubleKey = BindingKey.of(double.class);
+    Assertions.assertEquals(Double.class, doubleKey.type());
+
+    BindingKey<?> booleanKey = BindingKey.of(boolean.class);
+    Assertions.assertEquals(Boolean.class, booleanKey.type());
+
+    BindingKey<?> charKey = BindingKey.of(char.class);
+    Assertions.assertEquals(Character.class, charKey.type());
+  }
+
+  @Test
   void testBindingKeyForSameRawTypeHasSameHashAndIsEqual() {
     BindingKey<?> key1 = BindingKey.of(String.class);
     BindingKey<?> key2 = BindingKey.of(String.class);
