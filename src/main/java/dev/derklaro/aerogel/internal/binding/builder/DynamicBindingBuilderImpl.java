@@ -89,9 +89,10 @@ final class DynamicBindingBuilderImpl implements DynamicBindingBuilder {
 
   @Override
   public @NotNull DynamicBindingBuilder exactRawType(@NotNull Class<?> type) {
+    Class<?> boxedType = (Class<?>) GenericTypeReflector.box(type);
     this.appendFilter(bindingKey -> {
       Class<?> rawMatchedType = GenericTypeReflector.erase(bindingKey.type());
-      return rawMatchedType.equals(type);
+      return rawMatchedType.equals(boxedType);
     });
     return this;
   }

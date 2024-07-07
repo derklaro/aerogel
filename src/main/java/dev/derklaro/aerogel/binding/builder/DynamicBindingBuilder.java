@@ -69,7 +69,7 @@ public interface DynamicBindingBuilder {
    *
    * @param annotationType the annotation type to check for.
    * @return this builder, for chaining.
-   * @throws IllegalArgumentException if the given annotation is not a qualifier annotation or not retained at runtime.
+   * @throws IllegalStateException if the given annotation is not a qualifier annotation or not retained at runtime.
    * @see #matchAnnotation(Class, Predicate)
    */
   @NotNull
@@ -96,7 +96,7 @@ public interface DynamicBindingBuilder {
    * @param filter         the filter to apply to the annotation.
    * @param <A>            the type of the annotation.
    * @return this builder, for chaining.
-   * @throws IllegalArgumentException if the given annotation is not a qualifier annotation or not retained at runtime.
+   * @throws IllegalStateException if the given annotation is not a qualifier annotation or not retained at runtime.
    * @see #annotationPresent(Class)
    */
   @NotNull
