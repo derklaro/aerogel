@@ -90,7 +90,6 @@ public class ThreadLocalContextKeptInScopeTest {
       Assertions.assertNotNull(constructed);
       SomeClass someClass = Assertions.assertInstanceOf(SomeClass.class, constructed);
 
-      // the overridden value
       Assertions.assertEquals("Hello World!", someClass.world);
       Assertions.assertNotNull(someClass.otherClass);
       Assertions.assertEquals("Hello World!", someClass.otherClass.world);
