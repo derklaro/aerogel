@@ -24,6 +24,81 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.internal.util.UnreflectionUtil;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
+
+@EnabledForJreRange(min = JRE.JAVA_16, disabledReason = "Cannot test for illegal access on those")
 public class UnreflectionUtilTest {
 
+  @Test
+  void testFieldUnreflectionWithLookupThatHasAccess() throws Throwable {
+    MethodHandles.Lookup lookup = MethodHandles.lookup().in(MemberTestClass.class);
+    Field nonStaticField = MemberTestClass.class.getDeclaredField("nonStaticField");
+    Assertions.assertFalse(nonStaticField.isAccessible());
+    Assertions.assertDoesNotThrow(() -> lookup.unreflectSetter(nonStaticField));
+    Assertions.assertDoesNotThrow(() -> UnreflectionUtil.unreflectFieldSetter(nonStaticField, lookup));
+  }
+
+  @Test
+  void testFieldUnreflectionWithLookupThatDoesNotHaveAccess() throws Throwable {
+    MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+    Field nonStaticField = MemberTestClass.class.getDeclaredField("nonStaticField");
+    Assertions.assertFalse(nonStaticField.isAccessible());
+    Assertions.assertThrows(IllegalAccessException.class, () -> lookup.unreflectSetter(nonStaticField));
+    Assertions.assertDoesNotThrow(() -> UnreflectionUtil.unreflectFieldSetter(nonStaticField, lookup));
+    Assertions.assertFalse(nonStaticField.isAccessible());
+  }
+
+  @Test
+  void testMethodUnreflectionWithLookupThatHasAccess() throws Throwable {
+    MethodHandles.Lookup lookup = MethodHandles.lookup().in(MemberTestClass.class);
+    Method nonStaticMethod = MemberTestClass.class.getDeclaredMethod("nonStaticMethod", int.class);
+    Assertions.assertFalse(nonStaticMethod.isAccessible());
+    Assertions.assertDoesNotThrow(() -> lookup.unreflect(nonStaticMethod));
+    Assertions.assertDoesNotThrow(() -> UnreflectionUtil.unreflectMethod(nonStaticMethod, lookup));
+  }
+
+  @Test
+  void testMethodUnreflectionWithLookupThatDoesNotHaveAccess() throws Throwable {
+    MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+    Method nonStaticMethod = MemberTestClass.class.getDeclaredMethod("nonStaticMethod", int.class);
+    Assertions.assertFalse(nonStaticMethod.isAccessible());
+    Assertions.assertThrows(IllegalAccessException.class, () -> lookup.unreflect(nonStaticMethod));
+    Assertions.assertDoesNotThrow(() -> UnreflectionUtil.unreflectMethod(nonStaticMethod, lookup));
+    Assertions.assertFalse(nonStaticMethod.isAccessible());
+  }
+
+  @Test
+  void testConstructorUnreflectionWithLookupThatHasAccess() throws Throwable {
+    MethodHandles.Lookup lookup = MethodHandles.lookup().in(MemberTestClass.class);
+    Constructor<?> constructor = MemberTestClass.class.getDeclaredConstructor(int.class);
+    Assertions.assertFalse(constructor.isAccessible());
+    Assertions.assertDoesNotThrow(() -> lookup.unreflectConstructor(constructor));
+    Assertions.assertDoesNotThrow(() -> UnreflectionUtil.unreflectConstructor(constructor, lookup));
+  }
+
+  @Test
+  void testConstructorUnreflectionWithLookupThatDoesNotHaveAccess() throws Throwable {
+    MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+    Constructor<?> constructor = MemberTestClass.class.getDeclaredConstructor(int.class);
+    Assertions.assertFalse(constructor.isAccessible());
+    Assertions.assertThrows(IllegalAccessException.class, () -> lookup.unreflectConstructor(constructor));
+    Assertions.assertDoesNotThrow(() -> UnreflectionUtil.unreflectConstructor(constructor, lookup));
+    Assertions.assertFalse(constructor.isAccessible());
+  }
+
+  // @formatter:off
+  public static final class MemberTestClass {
+    private String nonStaticField = "world";
+    private String nonStaticMethod(int abc) { return "" + abc; }
+    private MemberTestClass(int abc) {}
+  }
+  // @formatter:on
 }

@@ -24,6 +24,57 @@
 
 package dev.derklaro.aerogel;
 
+import dev.derklaro.aerogel.internal.util.PrimitiveUtil;
+import java.util.Collection;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 public class PrimitiveUtilTest {
 
+  @Test
+  void testDefaultBoolean() {
+    Assertions.assertFalse(PrimitiveUtil.defaultValue(boolean.class));
+  }
+
+  @Test
+  void testDefaultChar() {
+    Assertions.assertEquals('\0', PrimitiveUtil.defaultValue(char.class));
+  }
+
+  @Test
+  void testDefaultByte() {
+    Assertions.assertEquals((byte) 0, PrimitiveUtil.defaultValue(byte.class));
+  }
+
+  @Test
+  void testDefaultShort() {
+    Assertions.assertEquals((short) 0, PrimitiveUtil.defaultValue(short.class));
+  }
+
+  @Test
+  void testDefaultInt() {
+    Assertions.assertEquals(0, PrimitiveUtil.defaultValue(int.class));
+  }
+
+  @Test
+  void testDefaultLong() {
+    Assertions.assertEquals(0L, PrimitiveUtil.defaultValue(long.class));
+  }
+
+  @Test
+  void testDefaultFloat() {
+    Assertions.assertEquals(0f, PrimitiveUtil.defaultValue(float.class));
+  }
+
+  @Test
+  void testDefaultDouble() {
+    Assertions.assertEquals(0d, PrimitiveUtil.defaultValue(double.class));
+  }
+
+  @Test
+  void testNonPrimitiveTypeThrowsException() {
+    Assertions.assertThrows(AssertionError.class, () -> PrimitiveUtil.defaultValue(Object.class));
+    Assertions.assertThrows(AssertionError.class, () -> PrimitiveUtil.defaultValue(String.class));
+    Assertions.assertThrows(AssertionError.class, () -> PrimitiveUtil.defaultValue(Collection.class));
+  }
 }

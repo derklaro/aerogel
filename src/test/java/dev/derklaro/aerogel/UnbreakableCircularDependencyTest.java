@@ -24,33 +24,32 @@
 
 package dev.derklaro.aerogel;
 
-import dev.derklaro.aerogel.internal.util.NullMask;
+import dev.derklaro.aerogel.internal.ConstructionException;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class NullMaskTest {
+public class UnbreakableCircularDependencyTest {
 
   @Test
-  void testMaskedValueIsProperlyUnmasked() {
-    Object o = new Object();
-    Object masked = NullMask.mask(o);
-    Assertions.assertNotNull(masked);
-    Assertions.assertEquals(o, NullMask.unmask(masked));
-
-    Object masked2 = NullMask.mask(null);
-    Assertions.assertNotNull(masked2);
-    Assertions.assertNull(NullMask.unmask(masked2));
+  void unbreakableCycleShouldThrowException() {
+    Injector injector = Injector.newInjector();
+    Assertions.assertThrows(ConstructionException.class, () -> injector.instance(A.class));
   }
 
-  @Test
-  void testMaskedObjectIsDetected() {
-    Object o = new Object();
-    Assertions.assertFalse(NullMask.masked(o));
+  private static final class A {
 
-    Object masked1 = NullMask.mask(o);
-    Assertions.assertFalse(NullMask.masked(masked1));
+    @Inject
+    public A(B b) {
 
-    Object masked2 = NullMask.mask(null);
-    Assertions.assertTrue(NullMask.masked(masked2));
+    }
+  }
+
+  private static final class B {
+
+    @Inject
+    public B(A a) {
+
+    }
   }
 }
