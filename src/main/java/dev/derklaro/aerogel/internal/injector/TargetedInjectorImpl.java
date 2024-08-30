@@ -114,8 +114,8 @@ final class TargetedInjectorImpl implements Injector {
     // create a new member injector
     MethodHandles.Lookup lookup = givenLookup != null ? givenLookup : this.injectorOptions.memberLookup();
     MemberInjector<T> newMemberInjector = new DefaultMemberInjector<>(memberHolderClass, this, lookup);
-    this.memberInjectorCache.put(memberHolderClass, newMemberInjector);
-    return newMemberInjector;
+    MemberInjector<?> knownInjector = this.memberInjectorCache.putIfAbsent(memberHolderClass, newMemberInjector);
+    return (MemberInjector<T>) (knownInjector != null ? knownInjector : newMemberInjector);
   }
 
   @Override
