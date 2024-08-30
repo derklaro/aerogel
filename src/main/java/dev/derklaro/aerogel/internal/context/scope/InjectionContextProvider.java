@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel.internal.context.scope;
 
+import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import jakarta.inject.Provider;
@@ -60,12 +61,13 @@ public interface InjectionContextProvider {
   InjectionContextScope currentScope();
 
   @NotNull
-  default InjectionContextScope enterContextScope(@NotNull InstalledBinding<?> binding) {
-    return this.enterContextScope(binding, Collections.emptyMap());
+  default InjectionContextScope enterContextScope(@NotNull Injector injector, @NotNull InstalledBinding<?> binding) {
+    return this.enterContextScope(injector, binding, Collections.emptyMap());
   }
 
   @NotNull
   InjectionContextScope enterContextScope(
+    @NotNull Injector injector,
     @NotNull InstalledBinding<?> binding,
     @NotNull Map<BindingKey<?>, Provider<?>> overrides);
 }

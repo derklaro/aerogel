@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel.internal.provider;
 
-import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.internal.context.InjectionContext;
 import jakarta.inject.Provider;
@@ -49,8 +48,8 @@ public final class ConstructingDelegatingProviderFactory<T> implements ProviderF
   }
 
   @Override
-  public @NotNull ProviderWithContext<T> constructProvider(@NotNull Injector injector) {
-    ProviderWithContext<Provider<? extends T>> provider = this.providerFactory.constructProvider(injector);
+  public @NotNull ProviderWithContext<T> constructProvider() {
+    ProviderWithContext<Provider<? extends T>> provider = this.providerFactory.constructProvider();
     return new ConstructingDelegatingProvider<>(provider);
   }
 

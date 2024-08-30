@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel.internal.provider;
 
-import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.key.BindingKey;
@@ -79,17 +78,15 @@ public final class ParameterProviderFactory implements ProviderFactory<Object[]>
   }
 
   @Override
-  public @NotNull ProviderWithContext<Object[]> constructProvider(@NotNull Injector injector) {
-    return new ParameterProvider(injector, this.keys);
+  public @NotNull ProviderWithContext<Object[]> constructProvider() {
+    return new ParameterProvider(this.keys);
   }
 
   private static final class ParameterProvider implements ProviderWithContext<Object[]> {
 
-    private final Injector injector;
     private final BindingKey<?>[] keys;
 
-    public ParameterProvider(@NotNull Injector injector, @NotNull BindingKey<?>[] keys) {
-      this.injector = injector;
+    public ParameterProvider(@NotNull BindingKey<?>[] keys) {
       this.keys = keys;
     }
 
@@ -105,7 +102,7 @@ public final class ParameterProviderFactory implements ProviderFactory<Object[]>
       Object[] paramInstances = new Object[paramKeyCount];
       for (int keyIndex = 0; keyIndex < paramKeyCount; keyIndex++) {
         BindingKey<?> key = this.keys[keyIndex];
-        InstalledBinding<?> binding = this.injector.binding(key);
+        InstalledBinding<?> binding = context.injector().binding(key);
         InjectionContextScope scope = context.enterSubcontextScope(binding);
         Object paramInstance = scope.executeScoped(() -> scope.context().resolveInstance());
         paramInstances[keyIndex] = paramInstance;

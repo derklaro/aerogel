@@ -58,12 +58,12 @@ public interface InstalledBinding<T> {
   BindingKey<T> key();
 
   /**
-   * Get the injector to which this binding is bound.
+   * Get the injector into which this binding was installed.
    *
-   * @return the injector to which this binding is bound.
+   * @return the injector into which this binding was installed.
    */
   @NotNull
-  Injector injector();
+  Injector installedInjector();
 
   /**
    * Get the advanced options that were supplied to the binding.

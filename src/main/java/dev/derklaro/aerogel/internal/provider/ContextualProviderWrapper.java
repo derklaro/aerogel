@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel.internal.provider;
 
+import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.internal.context.InjectionContext;
 import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
@@ -44,11 +45,10 @@ public final class ContextualProviderWrapper<T> implements Provider<T> {
     return new ContextualProviderWrapper<>(binding);
   }
 
-  @Override
   @SuppressWarnings("unchecked")
-  public @Nullable T get() {
+  public static @Nullable <T> T resolveInstance(@NotNull Injector injector, @NotNull InstalledBinding<T> binding) {
     InjectionContextProvider provider = InjectionContextProvider.provider();
-    InjectionContextScope scope = provider.enterContextScope(this.binding);
+    InjectionContextScope scope = provider.enterContextScope(injector, binding);
     InjectionContext context = scope.context();
     return scope.executeScoped(() -> {
       try {
@@ -59,6 +59,11 @@ public final class ContextualProviderWrapper<T> implements Provider<T> {
         }
       }
     });
+  }
+
+  @Override
+  public @Nullable T get() {
+    return resolveInstance(this.binding.installedInjector(), this.binding);
   }
 
   @Override

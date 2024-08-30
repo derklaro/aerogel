@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel.internal.provider;
 
-import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.internal.ConstructionException;
 import dev.derklaro.aerogel.internal.PassThroughException;
@@ -61,8 +60,8 @@ public final class FactoryMethodProviderFactory<T> implements ProviderFactory<T>
   }
 
   @Override
-  public @NotNull ProviderWithContext<T> constructProvider(@NotNull Injector injector) {
-    ProviderWithContext<Object[]> paramProvider = this.parameterProvider.constructProvider(injector);
+  public @NotNull ProviderWithContext<T> constructProvider() {
+    ProviderWithContext<Object[]> paramProvider = this.parameterProvider.constructProvider();
     return new FactoryMethodProvider<>(this.origMethod, this.methodHandle, paramProvider);
   }
 

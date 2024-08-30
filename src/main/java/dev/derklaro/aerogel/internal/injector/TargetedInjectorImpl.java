@@ -36,10 +36,10 @@ import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.binding.BindingOptionsImpl;
 import dev.derklaro.aerogel.internal.binding.builder.RootBindingBuilderImpl;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
+import dev.derklaro.aerogel.internal.provider.ContextualProviderWrapper;
 import dev.derklaro.aerogel.internal.util.MapUtil;
 import dev.derklaro.aerogel.registry.Registry;
 import io.leangen.geantyref.TypeToken;
-import jakarta.inject.Provider;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
@@ -138,8 +138,8 @@ final class TargetedInjectorImpl implements Injector {
 
   @Override
   public @Nullable <T> T instance(@NotNull BindingKey<T> key) {
-    Provider<T> binding = this.binding(key).provider();
-    return binding.get();
+    InstalledBinding<T> binding = this.binding(key);
+    return ContextualProviderWrapper.resolveInstance(this, binding);
   }
 
   @Override

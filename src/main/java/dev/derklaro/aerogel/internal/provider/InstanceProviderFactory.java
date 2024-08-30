@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel.internal.provider;
 
-import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.internal.context.InjectionContext;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -44,7 +43,7 @@ public final class InstanceProviderFactory<T> implements ProviderFactory<T> {
   }
 
   @Override
-  public @NotNull ProviderWithContext<T> constructProvider(@NotNull Injector injector) {
+  public @NotNull ProviderWithContext<T> constructProvider() {
     return new InstanceProvider<>(this.instance);
   }
 

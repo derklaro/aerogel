@@ -78,7 +78,7 @@ public final class UninstalledBindingImpl<T> implements UninstalledBinding<T> {
 
   @Override
   public @NotNull InstalledBinding<T> prepareForInstallation(@NotNull Injector injector) {
-    ProviderWithContext<T> provider = this.providerFactory.constructProvider(injector);
+    ProviderWithContext<T> provider = this.providerFactory.constructProvider();
     if (this.scopeApplier != null) {
       provider = this.scopeApplier.applyScope(this.bindingKey, provider);
     }

@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel.internal.context;
 
+import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.key.BindingKey;
@@ -79,6 +80,11 @@ public final class InjectionContext {
    * the root context.
    */
   private final InjectionContext root;
+  /**
+   * The injector that requested the root creation of the injection context. Only present in the root injection
+   * context.
+   */
+  private final Injector injector;
   /**
    * The binding instance that requested the construction of the element.
    */
@@ -155,10 +161,12 @@ public final class InjectionContext {
    * @param contextProvider the context provider that is tracking the context.
    */
   public InjectionContext(
+    @NotNull Injector injector,
     @NotNull InstalledBinding<?> binding,
     @NotNull Map<BindingKey<?>, Provider<?>> overrides,
     @NotNull InjectionContextProvider contextProvider
   ) {
+    this.injector = injector;
     this.binding = binding;
     this.contextProvider = contextProvider;
 
@@ -184,12 +192,14 @@ public final class InjectionContext {
     this.contextProvider = contextProvider;
 
     // just use the empty variants as we're not the root
+    this.injector = null;
     this.overrides = null;
     this.knownProxies = Collections.emptyList();
     this.requestedMemberInjections = Collections.emptySet();
   }
 
   public @NotNull InjectionContext copyAsRoot(
+    @NotNull Injector injector,
     @NotNull InstalledBinding<?> binding,
     @NotNull Map<BindingKey<?>, Provider<?>> overrides,
     @NotNull InjectionContextProvider contextProvider
@@ -197,12 +207,12 @@ public final class InjectionContext {
     InjectionContext context;
     if (this.overrides == null || this.overrides.isEmpty()) {
       // if this context has no overrides just return a new context using the given overrides
-      context = new InjectionContext(binding, overrides, contextProvider);
+      context = new InjectionContext(injector, binding, overrides, contextProvider);
     } else {
       // copy this injection context into a new root context, preserving the given overrides
       Map<BindingKey<?>, Provider<?>> overriddenProviders = new HashMap<>(overrides);
       overriddenProviders.putAll(this.overrides);
-      context = new InjectionContext(binding, overriddenProviders, contextProvider);
+      context = new InjectionContext(injector, binding, overriddenProviders, contextProvider);
     }
 
     // check if the root context has an overridden value available if the associated element is known
@@ -217,7 +227,7 @@ public final class InjectionContext {
   }
 
   public @NotNull InjectionContextScope enterSubcontextScope(@NotNull InstalledBinding<?> binding) {
-    return this.contextProvider.enterContextScope(binding);
+    return this.contextProvider.enterContextScope(this.injector(), binding);
   }
 
   // Note: only for calls from InjectionContextProvider, use enterSubcontextScope elsewhere
@@ -424,7 +434,7 @@ public final class InjectionContext {
     @Nullable Object instance,
     @Nullable MethodHandles.Lookup lookup
   ) {
-    MemberInjectionRequest request = new MemberInjectionRequest(this.binding.injector(), type, instance, lookup);
+    MemberInjectionRequest request = new MemberInjectionRequest(this.injector(), type, instance, lookup);
     this.root.requestedMemberInjections.add(request);
   }
 
@@ -595,12 +605,32 @@ public final class InjectionContext {
     return this.root.overrides.get(key);
   }
 
+  /**
+   * Get if this context was marked as obsolete. While the context can still be used as usual, it should be avoided to
+   * use an obsolete context and a new one should be created instead.
+   *
+   * @return if this context was marked as obsolete.
+   */
   public boolean obsolete() {
     return this.obsolete;
   }
 
+  /**
+   * Get if this injection context is the root context of an injection context tree.
+   *
+   * @return if this injection context is the root context of an injection context tree.
+   */
   public boolean root() {
     return this.root == this;
+  }
+
+  /**
+   * Get the injector for which the injection context tree was originally created.
+   *
+   * @return the injector for which the injection context tree was originally created.
+   */
+  public @NotNull Injector injector() {
+    return this.root.injector;
   }
 
   /**

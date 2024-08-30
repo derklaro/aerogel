@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel.internal.context.scope.threadlocal;
 
+import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.context.InjectionContext;
@@ -59,6 +60,7 @@ public final class ThreadLocalInjectionContextProvider implements InjectionConte
    */
   @Override
   public @NotNull InjectionContextScope enterContextScope(
+    @NotNull Injector injector,
     @NotNull InstalledBinding<?> binding,
     @NotNull Map<BindingKey<?>, Provider<?>> overrides
   ) {
@@ -67,7 +69,7 @@ public final class ThreadLocalInjectionContextProvider implements InjectionConte
       InjectionContext currentContext = currentScope.context();
       if (currentScope.context().obsolete()) {
         // the current root context is obsolete, copy the necessary information from it into a new root context
-        InjectionContext newContext = currentContext.copyAsRoot(binding, overrides, this);
+        InjectionContext newContext = currentContext.copyAsRoot(injector, binding, overrides, this);
         return new ThreadLocalInjectionContextScope(newContext, this.scopeThreadLocal);
       } else {
         // we're already in an existing root context, enter a subcontext of that one
@@ -76,7 +78,7 @@ public final class ThreadLocalInjectionContextProvider implements InjectionConte
       }
     } else {
       // no context yet, construct a new root context
-      InjectionContext newContext = new InjectionContext(binding, overrides, this);
+      InjectionContext newContext = new InjectionContext(injector, binding, overrides, this);
       return new ThreadLocalInjectionContextScope(newContext, this.scopeThreadLocal);
     }
   }

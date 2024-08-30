@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel.internal.provider;
 
-import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
@@ -34,5 +33,5 @@ import org.jetbrains.annotations.NotNull;
 public interface ProviderFactory<V> {
 
   @NotNull
-  ProviderWithContext<V> constructProvider(@NotNull Injector injector);
+  ProviderWithContext<V> constructProvider();
 }

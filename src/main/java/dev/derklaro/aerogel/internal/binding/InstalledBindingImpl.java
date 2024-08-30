@@ -61,7 +61,7 @@ final class InstalledBindingImpl<T> implements InstalledBinding<T> {
   }
 
   @Override
-  public @NotNull Injector injector() {
+  public @NotNull Injector installedInjector() {
     return this.injector;
   }
 
