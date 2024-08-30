@@ -57,7 +57,7 @@ final class TargetedInjectorBuilderImpl implements TargetedInjectorBuilder {
 
   private static @NotNull TargetedInjectorImpl validateInjectorPresence(@Nullable TargetedInjectorImpl maybeInjector) {
     if (maybeInjector == null) {
-      throw new IllegalStateException("specific injector builder already targeted.");
+      throw new IllegalStateException("specific injector builder already targeted");
     }
     return maybeInjector;
   }

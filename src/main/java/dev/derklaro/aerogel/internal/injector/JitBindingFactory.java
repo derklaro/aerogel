@@ -88,7 +88,7 @@ final class JitBindingFactory {
     if (providedBy != null) {
       Class<?> implementation = providedBy.value();
       if (targetType.equals(implementation)) {
-        throw new IllegalArgumentException("@ProvideBy: implementation " + implementation + " is the same as target");
+        throw new IllegalArgumentException("@ProvidedBy: implementation " + implementation + " is the same as target");
       }
 
       if (!rawTargetType.isAssignableFrom(implementation)) {
