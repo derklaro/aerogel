@@ -73,7 +73,7 @@ final class JitBindingFactory {
 
     // at this point we actually need to create a binding, which cannot be done when
     // a special binding is requested that is using a qualifier annotation
-    if (key.qualifierAnnotation().isPresent()) {
+    if (key.qualifierAnnotationType().isPresent()) {
       throw new IllegalStateException("Unable to create JIT binding for key with qualifier: " + key);
     }
 
