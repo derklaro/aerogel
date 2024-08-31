@@ -28,8 +28,10 @@ import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjector;
 import dev.derklaro.aerogel.ProvidedBy;
 import dev.derklaro.aerogel.binding.InstalledBinding;
+import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.context.InjectionContext;
 import io.leangen.geantyref.GenericTypeReflector;
 import jakarta.inject.Provider;
 import java.lang.reflect.ParameterizedType;
@@ -58,16 +60,14 @@ final class JitBindingFactory {
         // target is a provider
         Type componentType = parameterized.getActualTypeArguments()[0];
         BindingKey<?> componentKey = key.withType(componentType);
-        InstalledBinding<?> componentBinding = this.injector.binding(componentKey);
-        return this.createStaticBinding(key, componentBinding.provider());
+        return this.createBinding(key, context -> (Provider<Object>) () -> context.injector().instance(componentKey));
       }
 
       if (parameterized.getRawType().equals(MemberInjector.class)) {
         // target is a member injector
         Type componentType = parameterized.getActualTypeArguments()[0];
         Class<?> rawComponentType = GenericTypeReflector.erase(componentType);
-        MemberInjector<?> componentMemberInjector = this.injector.memberInjector(rawComponentType);
-        return this.createStaticBinding(key, componentMemberInjector);
+        return this.createBinding(key, context -> context.injector().memberInjector(rawComponentType));
       }
     }
 
@@ -80,7 +80,7 @@ final class JitBindingFactory {
     // allow for injection of the current injector
     Class<?> rawTargetType = GenericTypeReflector.erase(targetType);
     if (rawTargetType.equals(Injector.class)) {
-      return this.createStaticBinding(key, this.injector);
+      return this.createBinding(key, InjectionContext::injector);
     }
 
     // check for @ProvidedBy
@@ -113,9 +113,12 @@ final class JitBindingFactory {
     return binding.prepareForInstallation(this.injector);
   }
 
-  private @NotNull InstalledBinding<?> createStaticBinding(@NotNull BindingKey<?> key, @NotNull Object wrappedValue) {
+  private @NotNull InstalledBinding<?> createBinding(
+    @NotNull BindingKey<?> key,
+    @NotNull ProviderWithContext<Object> provider
+  ) {
     BindingKey<Object> objectKey = convertKeyUnchecked(key);
-    UninstalledBinding<?> uninstalled = this.injector.createBindingBuilder().bind(objectKey).toInstance(wrappedValue);
+    UninstalledBinding<?> uninstalled = this.injector.createBindingBuilder().bind(objectKey).toProvider(provider);
     return uninstalled.prepareForInstallation(this.injector);
   }
 }
