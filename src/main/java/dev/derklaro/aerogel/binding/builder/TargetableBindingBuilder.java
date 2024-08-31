@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel.binding.builder;
 
+import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import jakarta.inject.Provider;
 import java.lang.reflect.Constructor;
@@ -96,6 +97,17 @@ public interface TargetableBindingBuilder<T> {
    */
   @NotNull
   UninstalledBinding<T> toProvider(@NotNull Class<? extends Provider<? extends T>> providerType);
+
+  /**
+   * Constructs a new binding that calls the given provider to construct the return value of the binding. Scopes and
+   * qualifiers are only resolved from this builder, or if missing, from the return type of the binding. No methods and
+   * fields are injected in the given provider instance.
+   *
+   * @param provider the provider to call to get the return value of the returned binding.
+   * @return a new uninstalled binding that calls the given provider to get the return value for the binding.
+   */
+  @NotNull
+  UninstalledBinding<T> toProvider(@NotNull ProviderWithContext<? extends T> provider);
 
   /**
    * Constructs a new binding that calls the given constructor to get the return value of the binding. The given

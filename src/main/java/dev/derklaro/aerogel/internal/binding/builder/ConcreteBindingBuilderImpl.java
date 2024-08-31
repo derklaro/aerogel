@@ -25,6 +25,7 @@
 package dev.derklaro.aerogel.internal.binding.builder;
 
 import dev.derklaro.aerogel.ScopeApplier;
+import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.AdvancedBindingBuilder;
 import dev.derklaro.aerogel.binding.builder.BindingAnnotationBuilder;
@@ -37,6 +38,7 @@ import dev.derklaro.aerogel.internal.binding.UninstalledBindingImpl;
 import dev.derklaro.aerogel.internal.binding.annotation.BindingAnnotationBuilderImpl;
 import dev.derklaro.aerogel.internal.provider.ConstructingDelegatingProviderFactory;
 import dev.derklaro.aerogel.internal.provider.ConstructorProviderFactory;
+import dev.derklaro.aerogel.internal.provider.DelegatingContextualProviderFactory;
 import dev.derklaro.aerogel.internal.provider.DelegatingProviderFactory;
 import dev.derklaro.aerogel.internal.provider.FactoryMethodProviderFactory;
 import dev.derklaro.aerogel.internal.provider.InstanceProviderFactory;
@@ -189,6 +191,12 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
 
     MethodHandles.Lookup lookup = this.resolveMemberLookup();
     ProviderFactory<T> providerFactory = ConstructingDelegatingProviderFactory.fromProviderClass(providerType, lookup);
+    return new UninstalledBindingImpl<>(this.bindingKey, this.scope, this.options, providerFactory);
+  }
+
+  @Override
+  public @NotNull UninstalledBinding<T> toProvider(@NotNull ProviderWithContext<? extends T> provider) {
+    ProviderFactory<T> providerFactory = DelegatingContextualProviderFactory.toProvider(provider);
     return new UninstalledBindingImpl<>(this.bindingKey, this.scope, this.options, providerFactory);
   }
 
