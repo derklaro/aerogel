@@ -27,19 +27,14 @@ package dev.derklaro.aerogel.binding;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.ScopeApplier;
 import dev.derklaro.aerogel.binding.key.BindingKey;
-import jakarta.inject.Provider;
 import java.util.Optional;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A binding that is installed to an injector and ready to provide instances for injection requests. Instances should be
- * obtained by using the {@link Provider} returned by {@link #provider()}. Note that instances are always returned based
- * on the current construction context, therefore the value returned by the given provider might vary depending on the
- * context.
- * <p>
- * Installed bindings are constructed when an {@link UninstalledBinding} is being installed in an {@link Injector}.
+ * A binding that is installed to an injector and ready to provide instances for injection requests. Installed bindings
+ * are constructed when an {@link UninstalledBinding} is being installed in an {@link Injector}.
  *
  * @param <T> the type of values handled by this binding.
  * @author Pasqual Koschmieder
@@ -80,14 +75,6 @@ public interface InstalledBinding<T> {
    */
   @NotNull
   Optional<ScopeApplier> scope();
-
-  /**
-   * Get a provider that can provide a value for this binding.
-   *
-   * @return a provider that can provide a value for this binding.
-   */
-  @NotNull
-  Provider<T> provider();
 
   /**
    * Get a provider that can provide a value for this binding, but also takes the current injection context into

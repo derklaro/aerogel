@@ -70,7 +70,7 @@ interface InjectableMember {
       MethodHandle setter = UnreflectionUtil.unreflectFieldSetter(this.field, lookup);
 
       // resolve the provider for the field and generify the setter method handle
-      Provider<?> fieldProvider = injector.binding(this.key).provider();
+      Provider<?> fieldProvider = injector.provider(this.key);
       MethodHandle genericSetter = MethodHandleUtil.generifyFieldSetter(setter, this.isStatic);
       return constructedInstance -> {
         if ((!this.isStatic && constructedInstance != null) || (this.isStatic && this.tracker.markInjected())) {
@@ -128,7 +128,7 @@ interface InjectableMember {
       Object[] paramInstances = new Object[paramKeyCount];
       for (int keyIndex = 0; keyIndex < paramKeyCount; keyIndex++) {
         BindingKey<?> key = this.paramKeys[keyIndex];
-        Provider<?> paramProvider = injector.binding(key).provider();
+        Provider<?> paramProvider = injector.provider(key);
         paramInstances[keyIndex] = paramProvider.get();
       }
 

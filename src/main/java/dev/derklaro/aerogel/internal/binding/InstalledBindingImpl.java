@@ -31,8 +31,6 @@ import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
-import dev.derklaro.aerogel.internal.provider.ContextualProviderWrapper;
-import jakarta.inject.Provider;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,7 +39,6 @@ final class InstalledBindingImpl<T> implements InstalledBinding<T> {
   private final Injector injector;
   private final UninstalledBinding<T> source;
 
-  private final Provider<T> provider;
   private final ProviderWithContext<T> providerWithContext;
 
   public InstalledBindingImpl(
@@ -52,7 +49,6 @@ final class InstalledBindingImpl<T> implements InstalledBinding<T> {
     this.source = source;
     this.injector = injector;
     this.providerWithContext = providerWithContext;
-    this.provider = ContextualProviderWrapper.wrapBinding(this);
   }
 
   @Override
@@ -73,11 +69,6 @@ final class InstalledBindingImpl<T> implements InstalledBinding<T> {
   @Override
   public @NotNull Optional<ScopeApplier> scope() {
     return this.source.scope();
-  }
-
-  @Override
-  public @NotNull Provider<T> provider() {
-    return this.provider;
   }
 
   @Override

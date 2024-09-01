@@ -22,33 +22,32 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal.provider;
+package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.InstalledBinding;
-import dev.derklaro.aerogel.internal.context.InjectionContext;
 import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
 import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
 import jakarta.inject.Provider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class ContextualProviderWrapper<T> implements Provider<T> {
+public final class ContextualBindingResolver {
 
-  private final InstalledBinding<T> binding;
+  private final Injector targetInjector;
 
-  private ContextualProviderWrapper(@NotNull InstalledBinding<T> binding) {
-    this.binding = binding;
+  public ContextualBindingResolver(@NotNull Injector targetInjector) {
+    this.targetInjector = targetInjector;
   }
 
-  public static @NotNull <T> ContextualProviderWrapper<T> wrapBinding(@NotNull InstalledBinding<T> binding) {
-    return new ContextualProviderWrapper<>(binding);
+  public @NotNull <T> Provider<T> constructProvider(@NotNull InstalledBinding<T> binding) {
+    return () -> this.resolveInstance(binding);
   }
 
   @SuppressWarnings("unchecked")
-  public static @Nullable <T> T resolveInstance(@NotNull Injector injector, @NotNull InstalledBinding<T> binding) {
+  public @Nullable <T> T resolveInstance(@NotNull InstalledBinding<T> binding) {
     InjectionContextProvider provider = InjectionContextProvider.provider();
-    InjectionContextScope scope = provider.enterContextScope(injector, binding);
+    InjectionContextScope scope = provider.enterContextScope(this.targetInjector, binding);
     InjectionContext context = scope.context();
     return scope.executeScoped(() -> {
       try {
@@ -59,15 +58,5 @@ public final class ContextualProviderWrapper<T> implements Provider<T> {
         }
       }
     });
-  }
-
-  @Override
-  public @Nullable T get() {
-    return resolveInstance(this.binding.installedInjector(), this.binding);
-  }
-
-  @Override
-  public @NotNull String toString() {
-    return "ContextualWrapper(" + this.binding + ")";
   }
 }

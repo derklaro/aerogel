@@ -35,11 +35,12 @@ import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.binding.BindingOptionsImpl;
 import dev.derklaro.aerogel.internal.binding.builder.RootBindingBuilderImpl;
+import dev.derklaro.aerogel.internal.context.ContextualBindingResolver;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
-import dev.derklaro.aerogel.internal.provider.ContextualProviderWrapper;
 import dev.derklaro.aerogel.internal.util.MapUtil;
 import dev.derklaro.aerogel.registry.Registry;
 import io.leangen.geantyref.TypeToken;
+import jakarta.inject.Provider;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
@@ -56,6 +57,7 @@ final class TargetedInjectorImpl implements Injector {
 
   private final Injector nonTargetedInjector;
   private final JitBindingFactory jitBindingFactory;
+  private final ContextualBindingResolver contextualBindingResolver;
 
   private final Map<Class<?>, MemberInjector<?>> memberInjectorCache = MapUtil.newConcurrentMap();
 
@@ -71,6 +73,7 @@ final class TargetedInjectorImpl implements Injector {
 
     this.nonTargetedInjector = nonTargetedInjector;
     this.jitBindingFactory = new JitBindingFactory(this);
+    this.contextualBindingResolver = new ContextualBindingResolver(this);
   }
 
   @Override
@@ -139,7 +142,13 @@ final class TargetedInjectorImpl implements Injector {
   @Override
   public @Nullable <T> T instance(@NotNull BindingKey<T> key) {
     InstalledBinding<T> binding = this.binding(key);
-    return ContextualProviderWrapper.resolveInstance(this, binding);
+    return this.contextualBindingResolver.resolveInstance(binding);
+  }
+
+  @Override
+  public @NotNull <T> Provider<T> provider(@NotNull BindingKey<T> key) {
+    InstalledBinding<T> binding = this.binding(key);
+    return this.contextualBindingResolver.constructProvider(binding);
   }
 
   @Override

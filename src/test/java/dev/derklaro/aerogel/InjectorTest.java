@@ -323,6 +323,25 @@ public class InjectorTest {
   }
 
   @Test
+  void testReconstructOfJitBindingInChildInjectorPrefersChildBindingsWithProvider() throws AnnotationFormatException {
+    Injector injector = Injector.newInjector();
+    Injector childInjector = injector.createChildInjector();
+
+    Named named = TypeFactory.annotation(Named.class, Collections.singletonMap("value", "test"));
+    BindingKey<String> key = BindingKey.of(String.class).withQualifier(named);
+    UninstalledBinding<String> rootBinding = injector.createBindingBuilder().bind(key).toInstance("World!");
+    injector.installBinding(rootBinding);
+
+    UninstalledBinding<String> childBinding = childInjector.createBindingBuilder().bind(key).toInstance("Hello!");
+    childInjector.installBinding(childBinding);
+
+    Provider<InjectableClass> rootProvider = injector.provider(BindingKey.of(InjectableClass.class));
+    Provider<InjectableClass> childProvider = childInjector.provider(BindingKey.of(InjectableClass.class));
+    Assertions.assertEquals("World!", rootProvider.get().test);
+    Assertions.assertEquals("Hello!", childProvider.get().test);
+  }
+
+  @Test
   void testReuseOfTargetedInjectorBuilderIsPermitted() {
     Injector injector = Injector.newInjector();
     UninstalledBinding<String> binding = injector.createBindingBuilder().bind(String.class).toInstance("world!");
@@ -410,6 +429,15 @@ public class InjectorTest {
 
     MemberInjector<InjectableClass> fromChild = childInjector.instance(memberInjectorTypeToken);
     Assertions.assertSame(childInjector, fromChild.injector());
+  }
+
+  @Test
+  void testInjectorProviderAlwaysReturnsFreshInstanceForNonSingleton() {
+    Injector injector = Injector.newInjector();
+    Provider<TestItfImpl> provider = injector.provider(BindingKey.of(TestItfImpl.class));
+    TestItfImpl instance1 = provider.get();
+    TestItfImpl instance2 = provider.get();
+    Assertions.assertNotSame(instance1, instance2);
   }
 
   // @formatter:off
