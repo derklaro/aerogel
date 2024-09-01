@@ -42,7 +42,7 @@ tasks.withType<JavaCompile> {
 
 tasks.withType<Javadoc> {
   val options = options as? StandardJavadocDocletOptions ?: return@withType
-  options.addStringOption("-release", "21")
+  options.addStringOption("-release", "22")
   options.addBooleanOption("-enable-preview", true)
 }
 
