@@ -27,16 +27,51 @@ package dev.derklaro.aerogel;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import java.lang.invoke.MethodHandles;
 import java.util.function.Predicate;
+import org.apiguardian.api.API;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A builder for an injector which allows to fine-tune an injector instance. A new builder instance can be obtained by
+ * using {@link Injector#builder()}. Using {@code Injector.builder().build()} would create an injector instance
+ * identical to {@link Injector#newInjector()}.
+ *
+ * @author Pasqual Koschmieder
+ * @since 3.0
+ */
+@API(status = API.Status.STABLE, since = "3.0")
 public interface InjectorBuilder {
 
+  /**
+   * Sets the member lookup that will be used to resolve reflective members of classes when needed (such as constructors
+   * when resolving injection points and field/methods for member injection). If not explicitly set a default lookup
+   * will be used instead.
+   *
+   * @param lookup the lookup instance to use for member lookups.
+   * @return this builder, for chaining.
+   */
   @NotNull
+  @Contract("_ -> this")
   InjectorBuilder memberLookup(@NotNull MethodHandles.Lookup lookup);
 
+  /**
+   * Sets the filter for jit bindings to use. By default, a jit binding can be created for all binding keys. The given
+   * filter will be called for every key for which a jit binding would be necessary. If the filter indicates that no jit
+   * binding should be created for a key an exception is thrown during the injection process.
+   *
+   * @param filter the filter to use for jit bindings.
+   * @return this builder, for chaining.
+   */
   @NotNull
+  @Contract("_ -> this")
   InjectorBuilder jitBindingFilter(@NotNull Predicate<BindingKey<?>> filter);
 
+  /**
+   * Constructs a new injector instance based on the options provided to this builder.
+   *
+   * @return a new injector instance based on the options provided to this builder.
+   */
   @NotNull
+  @Contract(value = " -> new", pure = true)
   Injector build();
 }
