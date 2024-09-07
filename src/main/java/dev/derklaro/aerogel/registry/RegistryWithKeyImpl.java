@@ -146,7 +146,7 @@ final class RegistryWithKeyImpl<K, V> implements Registry.WithKeyMapping<K, V> {
    */
   @Override
   public void unregisterByValue(@NotNull V value) {
-    this.backingMap.values().remove(value);
+    this.backingMap.values().removeIf(value::equals);
   }
 
   /**
