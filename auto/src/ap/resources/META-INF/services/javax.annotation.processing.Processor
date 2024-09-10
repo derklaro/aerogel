@@ -22,5 +22,5 @@
 # THE SOFTWARE.
 #
 
-dev.derklaro.aerogel.auto.internal.processing.FactoryAutoProcessingEntry
-dev.derklaro.aerogel.auto.internal.processing.ProvidesAutoProcessingEntry
+dev.derklaro.aerogel.auto.ap.FactoryAutoProcessor
+dev.derklaro.aerogel.auto.ap.ProvidesAutoProcessor

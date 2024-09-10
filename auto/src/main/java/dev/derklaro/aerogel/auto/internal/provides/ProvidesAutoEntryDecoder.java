@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,30 +22,30 @@
  * THE SOFTWARE.
  */
 
-description = "Extension for aerogel supporting automatic binding creation compile and runtime based"
+package dev.derklaro.aerogel.auto.internal.provides;
 
-dependencies {
-  api(projects.aerogel)
-  testImplementation(libs.lombok)
-  testImplementation(libs.javapoet)
-  testImplementation(libs.compileTesting)
-}
+import dev.derklaro.aerogel.auto.AutoEntryDecoder;
+import dev.derklaro.aerogel.auto.LazyBindingCollection;
+import dev.derklaro.aerogel.auto.annotation.Provides;
+import dev.derklaro.aerogel.auto.internal.util.AutoDecodingUtil;
+import java.io.DataInput;
+import java.io.IOException;
+import org.jetbrains.annotations.NotNull;
 
-java {
-  sourceSets["main"].java {
-    srcDir("src/ap/java")
+public final class ProvidesAutoEntryDecoder implements AutoEntryDecoder {
+
+  @Override
+  public @NotNull String id() {
+    return Provides.CODEC_ID;
   }
-  sourceSets["main"].resources {
-    srcDir("src/ap/resources")
+
+  @Override
+  public @NotNull LazyBindingCollection decodeEntry(
+    @NotNull DataInput dataInput,
+    @NotNull ClassLoader loader
+  ) throws IOException {
+    Class<?> implementation = AutoDecodingUtil.decodeType(dataInput, loader);
+    Class<?>[] providedTypes = AutoDecodingUtil.decodeTypes(dataInput, loader);
+    return new ProvidesLazyBindingCollection(implementation, providedTypes);
   }
 }
-
-tasks.withType<Test> {
-  if (JavaVersion.current().isJava9Compatible) {
-    doFirst {
-      jvmArgs = listOf("--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED")
-    }
-  }
-}
-
-configurePublishing("java", true)

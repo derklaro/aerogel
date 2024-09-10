@@ -38,7 +38,7 @@ plugins {
 
 rootProject.name = "aerogel"
 include("scoped-value-context-scope")
-// include("auto")
+include("auto")
 
 // prefixes each subproject with 'aerogel-'
 rootProject.children.forEach {

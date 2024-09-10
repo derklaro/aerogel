@@ -33,6 +33,7 @@ import com.google.common.reflect.TypeToken;
 import com.google.testing.compile.Compilation;
 import com.squareup.javapoet.ParameterSpec;
 import dev.derklaro.aerogel.AerogelException;
+import dev.derklaro.aerogel.auto.annotation.Factory;
 import dev.derklaro.aerogel.auto.runtime.AutoAnnotationRegistry;
 import java.io.InputStream;
 import java.lang.reflect.Type;

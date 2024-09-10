@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,36 +22,11 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto.runtime;
+package dev.derklaro.aerogel.auto.ap;
 
-import org.apiguardian.api.API;
-import org.jetbrains.annotations.NotNull;
+final class TypeEncodingUtil {
 
-/**
- * An abstract implementation of an auto annotation reader which takes over the handling of the reader name.
- *
- * @author Pasqual K.
- * @since 2.0
- */
-@API(status = API.Status.STABLE, since = "2.0")
-public abstract class AbstractAutoAnnotationReader implements AutoAnnotationReader {
-
-  private final String name;
-
-  /**
-   * Constructs a new abstract auto annotation reader instance.
-   *
-   * @param name the name of this reader.
-   */
-  public AbstractAutoAnnotationReader(@NotNull String name) {
-    this.name = name;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull String name() {
-    return this.name;
+  private TypeEncodingUtil() {
+    throw new UnsupportedOperationException();
   }
 }

@@ -32,6 +32,7 @@ import com.google.testing.compile.Compilation;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.TypeSpec;
 import dev.derklaro.aerogel.AerogelException;
+import dev.derklaro.aerogel.auto.annotation.Provides;
 import dev.derklaro.aerogel.auto.runtime.AutoAnnotationRegistry;
 import java.io.InputStream;
 import javax.tools.JavaFileObject;

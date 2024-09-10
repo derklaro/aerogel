@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,30 +22,21 @@
  * THE SOFTWARE.
  */
 
-description = "Extension for aerogel supporting automatic binding creation compile and runtime based"
+package dev.derklaro.aerogel.auto.ap;
 
-dependencies {
-  api(projects.aerogel)
-  testImplementation(libs.lombok)
-  testImplementation(libs.javapoet)
-  testImplementation(libs.compileTesting)
-}
+import dev.derklaro.aerogel.auto.annotation.Provides;
+import java.util.Set;
+import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.element.TypeElement;
 
-java {
-  sourceSets["main"].java {
-    srcDir("src/ap/java")
+public final class ProvidesAutoProcessor extends AutoEntryProcessor {
+
+  public ProvidesAutoProcessor() {
+    super(Provides.class);
   }
-  sourceSets["main"].resources {
-    srcDir("src/ap/resources")
-  }
-}
 
-tasks.withType<Test> {
-  if (JavaVersion.current().isJava9Compatible) {
-    doFirst {
-      jvmArgs = listOf("--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED")
-    }
+  @Override
+  public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    return false;
   }
 }
-
-configurePublishing("java", true)
