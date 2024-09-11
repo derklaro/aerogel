@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,30 +22,17 @@
  * THE SOFTWARE.
  */
 
-description = "Extension for aerogel supporting automatic binding creation compile and runtime based"
+package dev.derklaro.aerogel.auto.processing.internal.factory;
 
-dependencies {
-  api(projects.aerogel)
-  testImplementation(libs.lombok)
-  testImplementation(libs.javapoet)
-  testImplementation(libs.compileTesting)
-}
+import dev.derklaro.aerogel.auto.processing.AutoEntryProcessor;
+import dev.derklaro.aerogel.auto.processing.AutoEntryProcessorFactory;
+import javax.annotation.processing.ProcessingEnvironment;
+import org.jetbrains.annotations.NotNull;
 
-java {
-  sourceSets["main"].java {
-    srcDir("src/processing/java")
-  }
-  sourceSets["main"].resources {
-    srcDir("src/processing/resources")
+public final class FactoryAutoEntryProcessorFactory implements AutoEntryProcessorFactory {
+
+  @Override
+  public @NotNull AutoEntryProcessor constructProcessor(@NotNull ProcessingEnvironment environment) {
+    return new FactoryAutoEntryProcessor();
   }
 }
-
-tasks.withType<Test> {
-  if (JavaVersion.current().isJava9Compatible) {
-    doFirst {
-      jvmArgs = listOf("--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED")
-    }
-  }
-}
-
-configurePublishing("java", true)

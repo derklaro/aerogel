@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,30 +22,29 @@
  * THE SOFTWARE.
  */
 
-description = "Extension for aerogel supporting automatic binding creation compile and runtime based"
+package dev.derklaro.aerogel.auto.processing.internal.provides;
 
-dependencies {
-  api(projects.aerogel)
-  testImplementation(libs.lombok)
-  testImplementation(libs.javapoet)
-  testImplementation(libs.compileTesting)
-}
+import dev.derklaro.aerogel.auto.annotation.Provides;
+import dev.derklaro.aerogel.auto.processing.AutoEntryProcessor;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.util.Collection;
+import javax.lang.model.element.Element;
+import org.jetbrains.annotations.NotNull;
 
-java {
-  sourceSets["main"].java {
-    srcDir("src/processing/java")
+final class ProvidesAutoEntryProcessor implements AutoEntryProcessor {
+
+  @Override
+  public @NotNull Class<? extends Annotation> handledAnnotation() {
+    return Provides.class;
   }
-  sourceSets["main"].resources {
-    srcDir("src/processing/resources")
+
+  @Override
+  public void emitEntries(
+    @NotNull DataOutput output,
+    @NotNull Collection<? extends Element> annotatedElements
+  ) throws IOException {
+
   }
 }
-
-tasks.withType<Test> {
-  if (JavaVersion.current().isJava9Compatible) {
-    doFirst {
-      jvmArgs = listOf("--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED")
-    }
-  }
-}
-
-configurePublishing("java", true)

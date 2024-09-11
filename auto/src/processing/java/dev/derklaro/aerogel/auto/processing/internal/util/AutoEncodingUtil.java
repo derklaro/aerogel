@@ -22,21 +22,11 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto.ap;
+package dev.derklaro.aerogel.auto.processing.internal.util;
 
-import dev.derklaro.aerogel.auto.annotation.Provides;
-import java.util.Set;
-import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.element.TypeElement;
+public final class AutoEncodingUtil {
 
-public final class ProvidesAutoProcessor extends AutoEntryProcessor {
-
-  public ProvidesAutoProcessor() {
-    super(Provides.class);
-  }
-
-  @Override
-  public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-    return false;
+  private AutoEncodingUtil() {
+    throw new UnsupportedOperationException();
   }
 }

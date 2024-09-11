@@ -22,11 +22,22 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto.ap;
+package dev.derklaro.aerogel.auto.processing;
 
-final class TypeEncodingUtil {
+import java.io.DataOutput;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.util.Collection;
+import javax.lang.model.element.Element;
+import org.jetbrains.annotations.NotNull;
 
-  private TypeEncodingUtil() {
-    throw new UnsupportedOperationException();
-  }
+public interface AutoEntryProcessor {
+
+  @NotNull
+  Class<? extends Annotation> handledAnnotation();
+
+  void emitEntries(
+      @NotNull DataOutput output,
+      @NotNull Collection<? extends Element> annotatedElements
+  ) throws IOException;
 }

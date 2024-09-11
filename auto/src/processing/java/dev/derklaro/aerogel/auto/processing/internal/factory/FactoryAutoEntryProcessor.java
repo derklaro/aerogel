@@ -22,24 +22,29 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto.ap;
+package dev.derklaro.aerogel.auto.processing.internal.factory;
 
 import dev.derklaro.aerogel.auto.annotation.Factory;
-import java.util.Set;
-import javax.annotation.processing.RoundEnvironment;
+import dev.derklaro.aerogel.auto.processing.AutoEntryProcessor;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.util.Collection;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.TypeElement;
 import org.jetbrains.annotations.NotNull;
 
-public final class FactoryAutoProcessor extends AutoEntryProcessor {
+final class FactoryAutoEntryProcessor implements AutoEntryProcessor {
 
-  public FactoryAutoProcessor() {
-    super(Factory.class);
+  @Override
+  public @NotNull Class<? extends Annotation> handledAnnotation() {
+    return Factory.class;
   }
 
   @Override
-  public boolean process(@NotNull Set<? extends TypeElement> annotations, @NotNull RoundEnvironment roundEnv) {
-    Set<? extends Element> factoryElements = roundEnv.getElementsAnnotatedWith(Factory.class);
-    return false;
+  public void emitEntries(
+    @NotNull DataOutput output,
+    @NotNull Collection<? extends Element> annotatedElements
+  ) throws IOException {
+
   }
 }

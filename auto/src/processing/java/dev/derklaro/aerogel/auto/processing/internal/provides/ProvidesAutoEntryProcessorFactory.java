@@ -22,45 +22,17 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto.ap;
+package dev.derklaro.aerogel.auto.processing.internal.provides;
 
-import java.lang.annotation.Annotation;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
-import javax.annotation.processing.AbstractProcessor;
-import javax.lang.model.SourceVersion;
+import dev.derklaro.aerogel.auto.processing.AutoEntryProcessor;
+import dev.derklaro.aerogel.auto.processing.AutoEntryProcessorFactory;
+import javax.annotation.processing.ProcessingEnvironment;
 import org.jetbrains.annotations.NotNull;
 
-abstract class AutoEntryProcessor extends AbstractProcessor {
-
-  protected static final String FILE_NAME_OPTION = "aerogelAutoFileName";
-
-  private final Set<String> supportedAnnotations;
-  private final Set<String> supportedOptions;
-
-  public AutoEntryProcessor(@NotNull Class<? extends Annotation> processedAnnotation) {
-    this.supportedAnnotations = Collections.singleton(processedAnnotation.getCanonicalName());
-    this.supportedOptions = Collections.singleton(FILE_NAME_OPTION);
-  }
+public final class ProvidesAutoEntryProcessorFactory implements AutoEntryProcessorFactory {
 
   @Override
-  public @NotNull SourceVersion getSupportedSourceVersion() {
-    return SourceVersion.latestSupported();
-  }
-
-  @Override
-  public @NotNull Set<String> getSupportedAnnotationTypes() {
-    return this.supportedAnnotations;
-  }
-
-  @Override
-  public @NotNull Set<String> getSupportedOptions() {
-    return this.supportedOptions;
-  }
-
-  protected @NotNull Optional<String> optionValue(@NotNull String optionKey) {
-    String optionValue = this.processingEnv.getOptions().get(optionKey);
-    return Optional.ofNullable(optionValue);
+  public @NotNull AutoEntryProcessor constructProcessor(@NotNull ProcessingEnvironment environment) {
+    return new ProvidesAutoEntryProcessor();
   }
 }
