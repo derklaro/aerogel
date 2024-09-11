@@ -26,6 +26,7 @@ package dev.derklaro.aerogel.auto.processing.internal.provides;
 
 import dev.derklaro.aerogel.auto.processing.AutoEntryProcessor;
 import dev.derklaro.aerogel.auto.processing.AutoEntryProcessorFactory;
+import dev.derklaro.aerogel.auto.processing.internal.util.AutoTypeEncoder;
 import javax.annotation.processing.ProcessingEnvironment;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,6 +34,7 @@ public final class ProvidesAutoEntryProcessorFactory implements AutoEntryProcess
 
   @Override
   public @NotNull AutoEntryProcessor constructProcessor(@NotNull ProcessingEnvironment environment) {
-    return new ProvidesAutoEntryProcessor();
+    AutoTypeEncoder typeEncoder = AutoTypeEncoder.forProcessingEnvironment(environment);
+    return new ProvidesAutoEntryProcessor(typeEncoder);
   }
 }

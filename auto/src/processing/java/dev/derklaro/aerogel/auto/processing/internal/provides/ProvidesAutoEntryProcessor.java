@@ -26,14 +26,25 @@ package dev.derklaro.aerogel.auto.processing.internal.provides;
 
 import dev.derklaro.aerogel.auto.annotation.Provides;
 import dev.derklaro.aerogel.auto.processing.AutoEntryProcessor;
+import dev.derklaro.aerogel.auto.processing.internal.util.AutoTypeEncoder;
+import dev.derklaro.aerogel.auto.processing.internal.util.AutoTypeEncodingUtil;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
+import java.util.List;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 import org.jetbrains.annotations.NotNull;
 
 final class ProvidesAutoEntryProcessor implements AutoEntryProcessor {
+
+  private final AutoTypeEncoder typeEncoder;
+
+  public ProvidesAutoEntryProcessor(@NotNull AutoTypeEncoder typeEncoder) {
+    this.typeEncoder = typeEncoder;
+  }
 
   @Override
   public @NotNull Class<? extends Annotation> handledAnnotation() {
@@ -45,6 +56,30 @@ final class ProvidesAutoEntryProcessor implements AutoEntryProcessor {
     @NotNull DataOutput output,
     @NotNull Collection<? extends Element> annotatedElements
   ) throws IOException {
+    for (Element annotatedElement : annotatedElements) {
+      if (!(annotatedElement instanceof TypeElement)) {
+        throw new IllegalStateException(
+          "@Provides is applied to " + annotatedElement.getKind() + " but can only be applied to types");
+      }
 
+      // extract the provided types and validate their presence
+      Provides annotation = annotatedElement.getAnnotation(Provides.class);
+      List<? extends TypeMirror> providedTypes = AutoTypeEncodingUtil.getTypesFromAnnotationProperty(annotation::value);
+      if (providedTypes.isEmpty()) {
+        throw new IllegalStateException("Provided types in @Provides annotation is empty on " + annotatedElement);
+      }
+
+      // write the provides codec id and binary name of the annotated type (implementation)
+      String annotatedTypeBinaryName = this.typeEncoder.getBinaryName(annotatedElement.asType());
+      output.writeUTF(Provides.CODEC_ID);
+      output.writeUTF(annotatedTypeBinaryName);
+
+      // write the amount of types that are implemented by the annotated type and the binary names of them
+      output.writeInt(providedTypes.size());
+      for (TypeMirror providedType : providedTypes) {
+        String providedTypeBinaryName = this.typeEncoder.getBinaryName(providedType);
+        output.writeUTF(providedTypeBinaryName);
+      }
+    }
   }
 }

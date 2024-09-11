@@ -24,9 +24,29 @@
 
 package dev.derklaro.aerogel.auto.processing.internal.util;
 
-public final class AutoEncodingUtil {
+import java.util.Collections;
+import java.util.List;
+import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.type.MirroredTypesException;
+import javax.lang.model.type.TypeMirror;
+import org.jetbrains.annotations.NotNull;
 
-  private AutoEncodingUtil() {
+public final class AutoTypeEncodingUtil {
+
+  private AutoTypeEncodingUtil() {
     throw new UnsupportedOperationException();
+  }
+
+  public static @NotNull List<? extends TypeMirror> getTypesFromAnnotationProperty(@NotNull Runnable extractor) {
+    try {
+      extractor.run();
+      throw new IllegalStateException("Extractor did not access type(s) from annotation property");
+    } catch (MirroredTypeException exception) {
+      // single type was mirrored (Class)
+      return Collections.singletonList(exception.getTypeMirror());
+    } catch (MirroredTypesException exception) {
+      // multiple types were mirrored (Class[])
+      return exception.getTypeMirrors();
+    }
   }
 }
