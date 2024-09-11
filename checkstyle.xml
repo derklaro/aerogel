@@ -347,7 +347,6 @@
         value="${org.checkstyle.google.suppressionxpathfilter.config}"/>
       <property name="optional" value="true"/>
     </module>
-    <module name="AvoidDoubleBraceInitialization"/>
     <module name="AvoidNoArgumentSuperConstructorCall"/>
     <module name="ConstantName"/>
     <module name="EmptyStatement"/>

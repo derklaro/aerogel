@@ -56,10 +56,12 @@ public final class AutoEntryAnnotationProcessor extends AbstractProcessor {
   // options that are used by this processor
   private static final String OPTION_NAME_OUTPUT_FILE = "aerogelAutoFileName";
   private static final String OPTION_NAME_EMIT_OUTPUT_FILE_IF_EMPTY = "aerogelEmitAutoFileIfEmpty";
-  private static final Set<String> SUPPORTED_OPTIONS = new HashSet<String>(2, 1.0f) {{
-    this.add(OPTION_NAME_OUTPUT_FILE);
-    this.add(OPTION_NAME_EMIT_OUTPUT_FILE_IF_EMPTY);
-  }};
+  private static final Set<String> SUPPORTED_OPTIONS = new HashSet<String>(2, 1.0f) {
+    {
+      this.add(OPTION_NAME_OUTPUT_FILE);
+      this.add(OPTION_NAME_EMIT_OUTPUT_FILE_IF_EMPTY);
+    }
+  };
 
   // supportedAnnotationTypes - the annotation types for which a processor was loaded
   // loadedProcessors - the auto entry processors that were loaded
@@ -69,7 +71,7 @@ public final class AutoEntryAnnotationProcessor extends AbstractProcessor {
   // dataHolderStream - holds the data that was actually written
   // dataWriterStream - the target stream for data written during the encoding process
   private final ByteArrayOutputStream dataHolderStream = new ByteArrayOutputStream();
-  private final DataOutputStream dataWriterStream = new DataOutputStream(dataHolderStream);
+  private final DataOutputStream dataWriterStream = new DataOutputStream(this.dataHolderStream);
 
   // option values that are retrieved from the processing environment
   // non-null if this processor was initialized (and the option has a default value in case it's not provided)
