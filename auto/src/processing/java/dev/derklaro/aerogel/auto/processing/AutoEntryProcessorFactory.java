@@ -25,11 +25,26 @@
 package dev.derklaro.aerogel.auto.processing;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A factory for auto entry processors. The factories are discovered using SPI when the annotation processing
+ * environment is initialized.
+ *
+ * @author Pasqual Koschmieder
+ * @since 3.0
+ */
 @FunctionalInterface
+@API(status = API.Status.STABLE, since = "3.0")
 public interface AutoEntryProcessorFactory {
 
+  /**
+   * Constructs an auto entry processor for the given processing environment.
+   *
+   * @param environment the current annotation processing environment.
+   * @return the constructed auto entry processor.
+   */
   @NotNull
   AutoEntryProcessor constructProcessor(@NotNull ProcessingEnvironment environment);
 }

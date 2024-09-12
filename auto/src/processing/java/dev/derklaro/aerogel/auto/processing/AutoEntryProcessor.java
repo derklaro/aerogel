@@ -29,15 +29,39 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import javax.lang.model.element.Element;
+import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * A processor for a specific auto annotation. When, during an annotation processing round, an element with the
+ * supported annotation of this processor is found, this processor is invoked. It can, based on the given elements, emit
+ * information into the provided data output which can be used for deserialization in runtime.
+ *
+ * @author Pasqual Koschmieder
+ * @since 3.0
+ */
+@API(status = API.Status.STABLE, since = "3.0")
 public interface AutoEntryProcessor {
 
+  /**
+   * Get the annotation type that is handled by this auto entry processor.
+   *
+   * @return the annotation type that is handled by this auto entry processor.
+   */
   @NotNull
   Class<? extends Annotation> handledAnnotation();
 
+  /**
+   * Called if elements annotated with the handled annotations are found in a processing round. Based on the elements
+   * the processor can write none, one or multiple entries into the given data output which will be available in runtime
+   * for deserialization.
+   *
+   * @param output            the output to write serialized data about the annotated elements into.
+   * @param annotatedElements the elements that are annotated with the handled annotation.
+   * @throws IOException if an I/O error occurs while serializing the information into the data output.
+   */
   void emitEntries(
-      @NotNull DataOutput output,
-      @NotNull Collection<? extends Element> annotatedElements
+    @NotNull DataOutput output,
+    @NotNull Collection<? extends Element> annotatedElements
   ) throws IOException;
 }
