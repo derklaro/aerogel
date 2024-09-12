@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto;
+package dev.derklaro.aerogel.auto.util;
 
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -30,11 +30,11 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import javax.tools.JavaFileObject;
 
-final class TestJavaClassBuilder {
+public final class TestJavaClassBuilder {
 
   private final TypeSpec.Builder typeSpec;
 
-  public TestJavaClassBuilder(TypeSpec.Builder typeSpec) {
+  private TestJavaClassBuilder(TypeSpec.Builder typeSpec) {
     this.typeSpec = typeSpec;
   }
 
@@ -46,12 +46,12 @@ final class TestJavaClassBuilder {
     return new TestJavaClassBuilder(typeSpec);
   }
 
-  public TestJavaClassBuilder visitField(FieldSpec.Builder spec) {
+  public TestJavaClassBuilder withField(FieldSpec.Builder spec) {
     this.typeSpec.addField(spec.build());
     return this;
   }
 
-  public TestJavaClassBuilder visitMethod(MethodSpec.Builder spec) {
+  public TestJavaClassBuilder withMethod(MethodSpec.Builder spec) {
     this.typeSpec.addMethod(spec.build());
     return this;
   }
@@ -61,6 +61,8 @@ final class TestJavaClassBuilder {
   }
 
   public JavaFileObject build(String packageName) {
-    return JavaFile.builder(packageName, this.typeSpec.build()).build().toJavaFileObject();
+    return JavaFile.builder(packageName, this.typeSpec.build())
+      .build()
+      .toJavaFileObject();
   }
 }

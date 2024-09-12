@@ -31,6 +31,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -168,7 +169,9 @@ public final class AutoEntryAnnotationProcessor extends AbstractProcessor {
 
   @Override
   public @NotNull Set<String> getSupportedAnnotationTypes() {
-    return this.supportedAnnotationTypes;
+    // accept all annotation types to be able to emit an empty file if
+    // no elements with one of the supported annotations were present
+    return Collections.singleton("*");
   }
 
   @Override

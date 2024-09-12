@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,18 +22,18 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.auto;
+package dev.derklaro.aerogel.auto.util;
 
 import com.google.testing.compile.Compiler;
-import dev.derklaro.aerogel.auto.internal.processing.AutoInjectAnnotationProcessor;
+import dev.derklaro.aerogel.auto.processing.internal.AutoEntryAnnotationProcessor;
 
-final class CompilationUtil {
+public final class CompilationUtil {
 
   private CompilationUtil() {
     throw new UnsupportedOperationException();
   }
 
-  public static Compiler javacWithProcessor() {
-    return Compiler.javac().withProcessors(new AutoInjectAnnotationProcessor());
+  public static Compiler javacCompilerWithAerogelProcessor() {
+    return Compiler.javac().withProcessors(new AutoEntryAnnotationProcessor());
   }
 }

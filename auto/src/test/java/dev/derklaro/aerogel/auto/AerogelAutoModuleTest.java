@@ -1,7 +1,7 @@
 /*
  * This file is part of aerogel, licensed under the MIT License (MIT).
  *
- * Copyright (c) 2021-2023 Pasqual K. and contributors
+ * Copyright (c) 2021-2024 Pasqual K. and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,28 +22,22 @@
  * THE SOFTWARE.
  */
 
-description = "Extension for aerogel supporting automatic binding creation compile and runtime based"
+package dev.derklaro.aerogel.auto;
 
-dependencies {
-  api(projects.aerogel)
-  testImplementation(libs.lombok)
-  testImplementation(libs.javapoet)
-  testImplementation(libs.compileTesting)
-}
+import dev.derklaro.aerogel.auto.annotation.Factory;
+import dev.derklaro.aerogel.auto.annotation.Provides;
+import dev.derklaro.aerogel.registry.Registry;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-java {
-  sourceSets["main"].java {
-    srcDir("src/processing/java")
-  }
-  sourceSets["main"].resources {
-    srcDir("src/processing/resources")
-  }
-}
+public class AerogelAutoModuleTest {
 
-tasks.withType<Test> {
-  if (JavaVersion.current().isJava9Compatible) {
-    jvmArgs("--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED")
+  @Test
+  void testDecodersAreDetectedViaSPI() {
+    AerogelAutoModule module = AerogelAutoModule.newInstance();
+    Registry.WithKeyMapping<String, AutoEntryDecoder> decoderRegistry = module.decoderRegistry();
+    Assertions.assertEquals(2, decoderRegistry.entryCount());
+    Assertions.assertTrue(decoderRegistry.get(Factory.CODEC_ID).isPresent());
+    Assertions.assertTrue(decoderRegistry.get(Provides.CODEC_ID).isPresent());
   }
 }
-
-configurePublishing("java", true)

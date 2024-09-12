@@ -29,7 +29,7 @@ dependencies {
 }
 
 tasks.withType<Test> {
-  jvmArgs = listOf("--enable-preview")
+  jvmArgs("--enable-preview")
 }
 
 tasks.withType<JavaCompile> {
