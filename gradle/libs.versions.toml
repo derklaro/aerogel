@@ -2,20 +2,20 @@
 
 # plugins
 nexusPublish = "2.0.0"
-spotless = "7.0.0.BETA1"
-checkstyleTools = "10.17.0"
+spotless = "7.0.0.BETA2"
+checkstyleTools = "10.18.1"
 
 # dependencies
-geantyref = "1.3.15"
+geantyref = "1.3.16"
 apiGuardian = "1.1.2"
 annotations = "24.1.0"
 jakartaInject = "2.0.1"
 
 # testing
-junit = "5.10.3"
+junit = "5.11.0"
 lombok = "1.18.34"
 javapoet = "1.13.0"
-junitLauncher = "1.10.3"
+junitLauncher = "1.11.0"
 compileTesting = "0.21.0"
 
 
