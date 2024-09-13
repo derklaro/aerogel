@@ -23,6 +23,7 @@
  */
 
 import com.diffplug.gradle.spotless.SpotlessExtension
+import com.diffplug.spotless.LineEnding
 
 plugins {
   id("build-logic")
@@ -107,10 +108,12 @@ allprojects {
   }
 
   extensions.configure<SpotlessExtension> {
+    // we explicitly use unix line ending everywhere and don't want to depend on the git configuration
+    lineEndings = LineEnding.UNIX
+
     java {
       licenseHeaderFile(rootProject.file("license_header.txt"))
     }
-
     kotlin {
       licenseHeaderFile(rootProject.file("license_header.txt"))
     }
