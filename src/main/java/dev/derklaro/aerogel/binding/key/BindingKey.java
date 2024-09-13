@@ -45,10 +45,8 @@ import org.jetbrains.annotations.Nullable;
  * Creating a binding key with the type {@code PaymentService} and the qualifier annotation {@code PayPal} created by
  * {@code BindingKey.of(PaymentService.class).withQualifier(PayPal.class)} would for example match:
  * <pre>
- * {@code
- * @Paypal
+ * &#064;Paypal
  * private PaymentService paymentService;
- * }
  * </pre>
  *
  * @param <T> the type that is matched by this key.

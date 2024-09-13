@@ -91,9 +91,11 @@ allprojects {
     options.encoding = "UTF-8"
     options.memberLevel = JavadocMemberLevel.PRIVATE
     options.links(
-      "https://javadoc.io/doc/org.jetbrains/annotations/",
-      "https://javadoc.io/doc/org.apiguardian/apiguardian-api/",
-      "https://javadoc.io/doc/jakarta.inject/jakarta.inject-api/"
+      "https://docs.oracle.com/en/java/javase/22/docs/api/",
+      "https://javadoc.io/doc/org.jetbrains/annotations/${rootProject.libs.versions.annotations.get()}/",
+      "https://javadoc.io/doc/io.leangen.geantyref/geantyref/${rootProject.libs.versions.geantyref.get()}/",
+      "https://javadoc.io/doc/org.apiguardian/apiguardian-api/${rootProject.libs.versions.apiGuardian.get()}/",
+      "https://javadoc.io/doc/jakarta.inject/jakarta.inject-api/${rootProject.libs.versions.jakartaInject.get()}/",
     )
   }
 

@@ -156,6 +156,7 @@ public final class InjectionContext {
   /**
    * Constructs a new root injection context.
    *
+   * @param injector        the injector that is associated with the context.
    * @param binding         the binding that requested this context.
    * @param overrides       the overridden instances whose delegates are present immediately.
    * @param contextProvider the context provider that is tracking the context.
@@ -179,8 +180,9 @@ public final class InjectionContext {
   /**
    * Constructs a new sub injection context of the given root context.
    *
-   * @param root    the root context.
-   * @param binding the binding that requested this context.
+   * @param root            the root context.
+   * @param binding         the binding that requested this context.
+   * @param contextProvider the provider that constructed this context.
    */
   private InjectionContext(
     @NotNull InjectionContext root,

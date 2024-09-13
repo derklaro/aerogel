@@ -297,6 +297,7 @@ public interface Injector {
    * injection calls. There can only be one binding for a binding key registered in an injector.
    *
    * @param binding the binding to install into this injector.
+   * @param <T>     the type of values handled by the given binding.
    * @return this injector, for chaining.
    * @throws NullPointerException          if the given binding is null.
    * @throws IllegalArgumentException      if a binding for the key used by the given binding already exists.

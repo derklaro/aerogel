@@ -33,7 +33,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * A class to support record classes on Java >= 16.
+ * A class to support record classes on Java &gt;= 16.
  *
  * @author Pasqual K.
  * @since 2.0

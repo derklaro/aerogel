@@ -51,6 +51,7 @@ final class MemberInjectionRequest {
    * @param injector         the injector which should be used as the parent of the member injector.
    * @param targetClass      the target class to resolve the fields and methods to call from.
    * @param constructedValue the value that was constructed and should receive member injection.
+   * @param lookup           the lookup to use to access members during member injection.
    */
   public MemberInjectionRequest(
     @NotNull Injector injector,
