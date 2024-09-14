@@ -26,14 +26,11 @@ package dev.derklaro.aerogel.auto;
 
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.Compiler;
-import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterSpec;
 import dev.derklaro.aerogel.auto.annotation.Factory;
 import dev.derklaro.aerogel.auto.util.CompilationUtil;
 import dev.derklaro.aerogel.auto.util.TestJavaClassBuilder;
 import io.leangen.geantyref.TypeFactory;
-import jakarta.inject.Named;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -66,9 +63,7 @@ public class FactoryAutoEntryProcessorTest {
       .addParameter(Map[][][].class, "f")
       .addParameter(listStringType, "g")
       .addParameter(arrayListStringType, "h", Modifier.FINAL)
-      .addParameter(ParameterSpec.builder(String[][][][][][].class, "i")
-        .addAnnotation(AnnotationSpec.builder(Named.class).addMember("value", "$S", "test").build())
-        .build())
+      .addParameter(String[][][][][][].class, "i")
       .addException(IOException.class)
       .addCode("return $S;", "Hello, World!");
     JavaFileObject sourceObject = TestJavaClassBuilder.of("FactoryTest")

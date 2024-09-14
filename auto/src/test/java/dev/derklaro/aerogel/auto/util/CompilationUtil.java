@@ -26,6 +26,8 @@ package dev.derklaro.aerogel.auto.util;
 
 import com.google.testing.compile.Compiler;
 import dev.derklaro.aerogel.auto.processing.internal.AutoEntryAnnotationProcessor;
+import java.io.File;
+import java.util.List;
 
 public final class CompilationUtil {
 
@@ -34,6 +36,9 @@ public final class CompilationUtil {
   }
 
   public static Compiler javacCompilerWithAerogelProcessor() {
-    return Compiler.javac().withProcessors(new AutoEntryAnnotationProcessor());
+    return Compiler.javac()
+      .withProcessors(new AutoEntryAnnotationProcessor())
+      // relative to the auto module root path
+      .withClasspath(List.of(new File("build/classes/java/main")));
   }
 }

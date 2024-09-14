@@ -28,6 +28,7 @@ import com.diffplug.spotless.LineEnding
 plugins {
   id("build-logic")
   alias(libs.plugins.spotless)
+  alias(libs.plugins.modularity)
   alias(libs.plugins.nexusPublish)
 }
 
@@ -43,6 +44,7 @@ allprojects {
   apply(plugin = "java-library")
   apply(plugin = "maven-publish")
   apply(plugin = "com.diffplug.spotless")
+  apply(plugin = "org.javamodularity.moduleplugin")
 
   repositories {
     mavenCentral()
@@ -69,8 +71,8 @@ allprojects {
   }
 
   tasks.withType<JavaCompile>().configureEach {
-    sourceCompatibility = JavaVersion.VERSION_1_8.toString()
-    targetCompatibility = JavaVersion.VERSION_1_8.toString()
+    sourceCompatibility = JavaVersion.VERSION_11.toString()
+    targetCompatibility = JavaVersion.VERSION_11.toString()
 
     options.encoding = "UTF-8"
     options.isIncremental = true

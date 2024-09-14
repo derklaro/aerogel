@@ -28,7 +28,9 @@ dependencies {
   api(projects.aerogel)
   testImplementation(libs.lombok)
   testImplementation(libs.javapoet)
-  testImplementation(libs.compileTesting)
+  testImplementation(libs.compileTesting) {
+    exclude("com.google.auto.value", "auto-value")
+  }
 }
 
 java {

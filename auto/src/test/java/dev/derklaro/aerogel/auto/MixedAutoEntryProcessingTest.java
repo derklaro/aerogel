@@ -28,13 +28,11 @@ import com.google.testing.compile.Compilation;
 import com.google.testing.compile.Compiler;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeSpec;
 import dev.derklaro.aerogel.auto.annotation.Factory;
 import dev.derklaro.aerogel.auto.annotation.Provides;
 import dev.derklaro.aerogel.auto.util.CompilationUtil;
 import dev.derklaro.aerogel.auto.util.TestJavaClassBuilder;
-import jakarta.inject.Named;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
@@ -57,20 +55,14 @@ public class MixedAutoEntryProcessingTest {
       .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
       .addParameter(String.class, "a")
       .addParameter(int.class, "b")
-      .addParameter(ParameterSpec.builder(boolean[][].class, "c")
-        .addAnnotation(AnnotationSpec.builder(Named.class).addMember("value", "$S", "world").build())
-        .build())
-      .addParameter(ParameterSpec.builder(String[][][].class, "d")
-        .addAnnotation(AnnotationSpec.builder(Named.class).addMember("value", "$S", "test").build())
-        .build())
+      .addParameter(boolean[][].class, "c")
+      .addParameter(String[][][].class, "d")
       .addCode("return $S;", "Hello, World!");
     MethodSpec.Builder factoryMethod2 = MethodSpec.methodBuilder("factoryTest2")
       .returns(MethodHandle.class)
       .addAnnotation(Factory.class)
       .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-      .addParameter(ParameterSpec.builder(long[].class, "a")
-        .addAnnotation(AnnotationSpec.builder(Named.class).addMember("value", "$S", "hello").build())
-        .build())
+      .addParameter(long[].class, "a")
       .addCode("return null;");
 
     AnnotationSpec providesAnnotation1 = AnnotationSpec.builder(Provides.class)

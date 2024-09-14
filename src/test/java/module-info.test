@@ -1,0 +1,2 @@
+--add-reads
+  aerogel=jakarta.inject.tck

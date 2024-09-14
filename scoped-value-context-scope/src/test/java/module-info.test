@@ -1,0 +1,5 @@
+--add-reads
+  aerogel.scopedvalues=jakarta.inject.tck
+
+--add-opens
+  aerogel.scopedvalues/dev.derklaro.scopedvalue=aerogel
