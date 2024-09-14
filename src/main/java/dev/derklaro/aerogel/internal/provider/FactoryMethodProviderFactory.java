@@ -86,7 +86,7 @@ public final class FactoryMethodProviderFactory<T> implements ProviderFactory<T>
     public @Nullable T get(@NotNull InjectionContext context) {
       try {
         Object[] paramValues = this.paramProvider.get(context);
-        Object constructedInstance = this.methodHandle.invokeExact(paramValues);
+        Object constructedInstance = this.methodHandle.invokeExact((Object) null, paramValues);
         context.requestMemberInjectionSameBinding(constructedInstance);
         return (T) constructedInstance;
       } catch (PassThroughException exception) {
