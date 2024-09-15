@@ -57,7 +57,7 @@ public final class AutoEntryAnnotationProcessor extends AbstractProcessor {
   // options that are used by this processor
   private static final String OPTION_NAME_OUTPUT_FILE = "aerogelAutoFileName";
   private static final String OPTION_NAME_EMIT_OUTPUT_FILE_IF_EMPTY = "aerogelEmitAutoFileIfEmpty";
-  private static final Set<String> SUPPORTED_OPTIONS = new HashSet<String>(2, 1.0f) {
+  private static final Set<String> SUPPORTED_OPTIONS = new HashSet<>(2, 1.0f) {
     {
       this.add(OPTION_NAME_OUTPUT_FILE);
       this.add(OPTION_NAME_EMIT_OUTPUT_FILE_IF_EMPTY);

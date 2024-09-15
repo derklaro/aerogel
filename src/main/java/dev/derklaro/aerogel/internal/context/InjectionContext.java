@@ -174,7 +174,7 @@ public final class InjectionContext {
     this.root = this;
     this.knownProxies = new ArrayList<>();
     this.requestedMemberInjections = new LinkedHashSet<>();
-    this.overrides = Collections.unmodifiableMap(new HashMap<>(overrides));
+    this.overrides = Map.copyOf(overrides);
   }
 
   /**
