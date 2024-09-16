@@ -1,7 +1,7 @@
 Aerogel ![Build Status](https://github.com/derklaro/aerogel/actions/workflows/ci.yml/badge.svg) ![Central Release Version](https://img.shields.io/maven-central/v/dev.derklaro.aerogel/aerogel)
 ===========
 
-A lightweight dependency injection framework for Java 8 - 21 which aims for stability, performance and reliability.
+A lightweight dependency injection framework for Java 11 - 22 which aims for stability, performance and reliability.
 Aerogel is fully compliant with [JSR 330](https://jcp.org/en/jsr/detail?id=330) and the [Jakarta Dependency Injection
 Specification](https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html) and supports bidirectional proxies to break
 circular references.
@@ -9,12 +9,12 @@ circular references.
 ### How to (Core)
 
 The api for aerogel is directly packaged with the internal core to run the framework. The following annotations are used
-for the core injection framework:
+for the core injection:
 
 - `@Inject`: the core annotation when trying to inject. Applied to a constructor it indicates which constructor should
   be used for class creating, applied to class members it indicates which members should be injected after a successful
   construction.
-- `@Name`: a build-in qualifier annotation which - applied to a parameter or field - sets an extra name property in an
+- `@Named`: a build-in qualifier annotation which - applied to a parameter or field - sets an extra name property in an
   element allowing multiple instances of a type to be distinguished (a name annotation can be generated and applied to
   an element using the Qualifiers utility class).
 - `@ProvidedBy`: an annotation which - applied to a type - signals the injector that the requested instance is not
@@ -27,12 +27,7 @@ for the core injection framework:
   times within a specified context.
 - `@Singleton`: A scope which signals an injector that an instance of the class should only get created once per
   injector chain. The annotation is respected on all types as well as factory method binding types.
-- `@PostConstruct`: An annotation which gets applied to a non-static method which takes no arguments and will be called
-  after class and member injection was done. There can be zero to unlimited post constructs methods in a class.
-- `@Order`: An annotation which defines in which order member injection or post construct methods should be done. In
-  general member injection is done in two steps:
-  - All fields and methods annotated as `@Inject` are injected
-  - All methods annotated as `@PostConstruct` are called
+- `@Order`: An annotation which defines in which order method injection should be done.
 
 All libraries of aerogel are published to maven central:
 
@@ -49,32 +44,51 @@ dependencies {
 You can now start building your application based on the input:
 
 ```java
-import dev.derklaro.aerogel.Element;
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.binding.BindingBuilder;
-import dev.derklaro.aerogel.util.Qualifiers;
-import dev.derklaro.aerogel.util.Scopes;
+import dev.derklaro.aerogel.binding.UninstalledBinding;
+import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
+import jakarta.inject.Named;
+import jakarta.inject.Qualifier;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 public final class Application {
 
   public static void main(String[] args) {
-    // creates a new injector without any binding
+    // creates a new injector without any binding and a root binding builder instance. While
+    // the binding builder instance is obtained from an injector, the constructed bindings are
+    // not bound to that injector. The injector is only required to give access to the scopes
+    // which can be used within the binding builder
     Injector injector = Injector.newInjector();
-    // binds all types of 'int' to '1234'
-    injector.install(BindingBuilder.create().bind(int.class).toInstance(1234));
-    // binds all types of 'int' which are annotated as @Name("serverPort") to '25656'
-    injector.install(BindingBuilder.create()
-      .bind(Element.forType(int.class).requireAnnotation(Qualifiers.named("serverPort")))
-      .toInstance(25656));
-    // binds all types of 'String' which are annotated as @Greeting to "Hello there :)"
-    injector.install(BindingBuilder.create()
-      .bind(Element.forType(String.class).requireAnnotation(Greeting.class))
-      .toInstance("Hello there :)"));
-    // binds all types of String which are annotated as @GoodBye to a static singleton factory method in this class
-    injector.install(BindingBuilder.create()
-      .bind(Element.forType(String.class).requireAnnotation(GoodBye.class))
-      .scoped(Scopes.SINGLETON)
-      .toFactory(Application.class, "goodbye", String.class));
+    RootBindingBuilder rootBindingBuilder = injector.createBindingBuilder();
+
+    // a binding that matches all types of int and Integer. All bindings that are targeting a
+    // primitive type will automatically target their boxed variant as well.
+    UninstalledBinding<Integer> generalIntBinding = rootBindingBuilder.bind(int.class).toInstance(1234);
+    injector.installBinding(generalIntBinding);
+
+    // a binding that only matches int and Integer types that are also annotated with @Named("serverPort")
+    UninstalledBinding<Integer> namedIntBinding = rootBindingBuilder.bind(int.class)
+      .qualifiedWithName("serverPort")
+      .toInstance(8080);
+    injector.installBinding(namedIntBinding);
+
+    // a string binding which matches all Strings that are annotated with @GoodBye
+    UninstalledBinding<String> stringBinding = rootBindingBuilder.bind(String.class)
+      .qualifiedWith(GoodBye.class)
+      .toInstance("Bye!");
+    injector.installBinding(stringBinding);
+
+    // it's also possible to bind to qualifier annotation instances which is required when the qualifier
+    // annotation has properties. In that case the builder can also construct instances of annotations
+    // using the approach shown below
+    UninstalledBinding<String> namedStringBinding = rootBindingBuilder.bind(String.class)
+      .buildQualifier(Named.class).property(Named::value).returns("world").require()
+      .toInstance("Hello World!");
+    injector.installBinding(namedStringBinding);
 
     // dynamically creates the instance of 'ApplicationEntryPoint' using all previously installed bindings and creates
     // all bindings if possible dynamically when requested. A dynamic injection is only possible if no special needs
@@ -82,7 +96,6 @@ public final class Application {
     // for the type of the parameter in combination with @GoodBye the injection fails. If there are no special requirements
     // added to a parameter the injector tries to create a dynamic binding in the runtime.
     ApplicationEntryPoint aep = injector.instance(ApplicationEntryPoint.class);
-    // Bootstrap our application!
     aep.bootstrap();
   }
 
@@ -90,6 +103,15 @@ public final class Application {
   // 'String' type in combination with @Greeting to the injector
   private static String goodbye(@Greeting String greetingMessage) {
     return greetingMessage + " but now you have to go :/";
+  }
+
+  // a custom qualifier annotation
+  @Qualifier
+  @Documented
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target({ElementType.PARAMETER, ElementType.FIELD})
+  public @interface GoodBye {
+
   }
 }
 ```
@@ -115,25 +137,6 @@ be overridden using an annotation processor option called `aerogelAutoFileName` 
 options when calling the compiler by using: `-A<option>=<value>`. For example to put the auto bindings file into
 the `META-INF` directory and naming it `testing.abc` you would use `-AaerogelAutoFileName=META-INF/testing.abc`). This
 file can be loaded using the build-in loader and will automatically create all necessary bindings.
-
-The default auto annotation entries are expandable by providing the entries as services. There are two different types
-of entries which need to be registered through the service loading api (See
-the [Java Documentation](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/ServiceLoader.html) to
-get an entrypoint how services are working (you can start reading at `Developing service providers`)):
-
-* `AutoProcessingEntry`: must be available during the compile time and will be used to parse the bindings from elements
-  which are annotated with the handled annotations of the entry.
-* `AutoAnnotationReader`: must be available in the runtime and is the counterpart to a processing entry. The reader will
-  be called when an autoconfiguration entry with the name of the reader is encountered and will reverse the written data
-  back to a binding constructor which can be installed into an injector.
-
-Auto entries are always prefixed with their name to make the later identification in the runtime easier. For that
-purpose the `writeUTF` method
-of [DataOutputStream](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/io/DataOutputStream.html) is
-used. All other values can be written dynamically to the stream by the entries themselves. Note that own implementations
-are required to consume all the data written to the stream (even if not needed) in order to ensure that the next entry
-can be decoded correctly. It is a good practice to write a data version to the stream and ensure backwards compatibility
-with old emitted entries.
 
 At the moment there are two default annotations:
 
@@ -168,8 +171,8 @@ tasks.withType<JavaCompile> {
 We can for example do something like this:
 
 ```java
-import dev.derklaro.aerogel.auto.Factory;
-import dev.derklaro.aerogel.auto.Provides;
+import dev.derklaro.aerogel.auto.annotation.Factory;
+import dev.derklaro.aerogel.auto.annotation.Provides;
 
 public final class Bindings {
 
@@ -195,30 +198,36 @@ Bindings can now get loaded in the runtime:
 
 ```java
 import dev.derklaro.aerogel.Injector;
-import dev.derklaro.aerogel.auto.runtime.AutoAnnotationRegistry;
+import dev.derklaro.aerogel.auto.AerogelAutoModule;
+import dev.derklaro.aerogel.auto.LazyBindingCollection;
+import java.io.IOException;
+import java.io.InputStream;
 
 public final class Application {
 
-  public static void main(String[] args) {
-    // creates a new injector without any binding
+  public static void main(String[] args) throws IOException {
+    // installs the bindings from auto-config.aero (generated at compile time)
+    // into the given target injector. A lazy binding collection can be installed
+    // multiple times into different injectors. The class loader provided to the
+    // `deserializeBindings` methods will be used to locate types (such as declaring
+    // classes of methods or types of method parameters)
     Injector injector = Injector.newInjector();
-    // creates a new registry instance
-    AutoAnnotationRegistry registry = AutoAnnotationRegistry.newRegistry();
-    // loads and installs all bindings from the file which were emitted
-    registry.installBindings(Application.class.getClassLoader(), "autoconfigure/bindings.aero", injector);
-    // we can now add more bindings, start the application...
+    try (InputStream stream = Application.class.getClassLoader().getResourceAsStream("auto-config.aero")) {
+      AerogelAutoModule autoModule = AerogelAutoModule.newInstance();
+      LazyBindingCollection bindings = autoModule.deserializeBindings(stream, Application.class.getClassLoader());
+      bindings.installBindings(injector);
+    }
   }
 }
 ```
 
-### How to (Kotlin Extensions)
+### How to (Scoped Values Injection Context Scope)
 
-The kotlin extension module is basically a nice-to-have collection of inline features mostly related to generics so that
-there is no need for kotlin developers to actually convert the kotlin type to a java type. There are some restriction
-when it comes to the kotlin type resolving. For primitive types the wrapper class is resolved instead of the primitive
-type. This may lead to some weird behaviours when primitive types are requested but wrapper types were bound.
-
-Add the kotlin extensions module as follows (you still need to add the core module as shown above):
+The scoped values injection context scope module makes use of the ScopedValue api which is currently in preview (see
+[JEP 481](https://openjdk.org/jeps/481) for details). The module is only compatible with the latest released java
+version. When placed on the classpath ScopedValues are used for keeping track of an injection context during
+construction
+rather than using ThreadLocals. The module is discovered using the SPI, so no additional configuration has to be done.
 
 ```kotlin
 repositories {
@@ -226,37 +235,7 @@ repositories {
 }
 
 dependencies {
-  implementation("dev.derklaro.aerogel", "aerogel-kotlin-extensions", "<VERSION>")
-}
-```
-
-There are now replacements for everything which works with generics. Here are some examples:
-
-```kotlin
-import dev.derklaro.aerogel.binding.BindingBuilder
-import dev.derklaro.aerogel.kotlin.element
-import dev.derklaro.aerogel.kotlin.instance
-import dev.derklaro.aerogel.util.Qualifiers
-
-fun main() {
-  val injector = Injector.newInjector()
-  injector
-    // binds an element of type 'String' annotated with @Name("Hello World") to "Hello World! :)"  
-    .install(
-      BindingBuilder.create()
-        .bind(element<String>().requireAnnotation(Qualifiers.named("Hello World")))
-        .toInstance("Hello World! :)")
-    )
-    // binds an element of type 'String' annotated with @Name("Hello there") to "Hello People!"  
-    .install(
-      BindingBuilder.create()
-        .bind(element<String>().requireAnnotation(Qualifiers.named("Hello there")))
-        .toInstance("Hello People!")
-    )
-
-  // gets the instance of the application entrypoint from the injector
-  val entryPoint = injector.instance<ApplicationEntryPoint>()
-  entryPoint.start()
+  implementation("dev.derklaro.aerogel", "aerogel-scoped-value-context-scope", "<VERSION>")
 }
 ```
 
@@ -304,17 +283,8 @@ JSR 330
 --------
 
 Aerogel is fully compatible with all requirements of an injector defined
-in [JSR 330](https://jcp.org/en/jsr/detail?id=330). The Jakarta inject api is shaded into the final artifact of aerogel.
-Here is a list of each jakarta type and its equivalents in aerogel:
-
-| jakarta.inject | aerogel    |
-|----------------|------------|
-| @Inject        | @Inject    |
-| @Singleton     | @Singleton |
-| @Qualifier     | @Qualifier |
-| @Named         | @Name      |
-| @Scope         | @Scope     |
-| Provider       | Provider   |
+in [JSR 330](https://jcp.org/en/jsr/detail?id=330). The `jakarta.inject` annotations and types are fully supported,
+there are no custom annotations in this library which are an identical drop-in replacement for them.
 
 Instance construction
 --------
