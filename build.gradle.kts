@@ -93,7 +93,7 @@ allprojects {
     options.encoding = "UTF-8"
     options.memberLevel = JavadocMemberLevel.PRIVATE
     options.links(
-      "https://docs.oracle.com/en/java/javase/22/docs/api/",
+      "https://docs.oracle.com/en/java/javase/23/docs/api/",
       "https://javadoc.io/doc/org.jetbrains/annotations/${rootProject.libs.versions.annotations.get()}/",
       "https://javadoc.io/doc/io.leangen.geantyref/geantyref/${rootProject.libs.versions.geantyref.get()}/",
       "https://javadoc.io/doc/org.apiguardian/apiguardian-api/${rootProject.libs.versions.apiGuardian.get()}/",

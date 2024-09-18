@@ -1,7 +1,7 @@
 Aerogel ![Build Status](https://github.com/derklaro/aerogel/actions/workflows/ci.yml/badge.svg) ![Central Release Version](https://img.shields.io/maven-central/v/dev.derklaro.aerogel/aerogel)
 ===========
 
-A lightweight dependency injection framework for Java 11 - 22 which aims for stability, performance and reliability.
+A lightweight dependency injection framework for Java 11 - 23 which aims for stability, performance and reliability.
 Aerogel is fully compliant with [JSR 330](https://jcp.org/en/jsr/detail?id=330) and the [Jakarta Dependency Injection
 Specification](https://jakarta.ee/specifications/cdi/2.0/cdi-spec-2.0.html) and supports bidirectional proxies to break
 circular references.

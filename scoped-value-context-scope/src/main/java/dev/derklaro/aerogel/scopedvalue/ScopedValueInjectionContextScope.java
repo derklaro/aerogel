@@ -70,6 +70,6 @@ final class ScopedValueInjectionContextScope implements InjectionContextScope {
    */
   @Override
   public <T> @UnknownNullability T executeScoped(@NotNull Supplier<T> operation) {
-    return this.contextScopeCarrier.get(operation);
+    return this.contextScopeCarrier.call(operation::get);
   }
 }
