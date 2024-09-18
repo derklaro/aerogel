@@ -1,2 +1,2 @@
 --add-reads
-  aerogel.auto=compile.testing,jakarta.inject,io.leangen.geantyref,com.squareup.javapoet,io.github.ascopes.jct
+  aerogel.auto=compile.testing,jakarta.inject,io.leangen.geantyref,com.squareup.javapoet
