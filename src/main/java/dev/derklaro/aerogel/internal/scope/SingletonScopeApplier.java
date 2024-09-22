@@ -29,6 +29,7 @@ import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.context.InjectionContext;
 import dev.derklaro.aerogel.internal.util.NullMask;
+import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.jetbrains.annotations.NotNull;
@@ -43,7 +44,7 @@ public final class SingletonScopeApplier implements ScopeApplier {
 
   @Override
   public @NotNull <T> ProviderWithContext<T> applyScope(
-    @NotNull BindingKey<T> key,
+    @NotNull List<BindingKey<? extends T>> keys,
     @NotNull ProviderWithContext<T> original
   ) {
     return new SingletonScopeProvider<>(original);

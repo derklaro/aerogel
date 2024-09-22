@@ -72,7 +72,7 @@ public class ScopedValueContextKeptInScopeTest {
       InjectionContextScope scope = InjectionContextProvider.provider().enterContextScope(
         injector,
         someClassBinding,
-        Collections.singletonMap(worldStringBinding.key(), () -> "World!"));
+        Collections.singletonMap(worldStringBinding.mainKey(), () -> "World!"));
 
       SomeClass someClass = resolveInstanceScoped(scope);
       Assertions.assertNotNull(someClass);

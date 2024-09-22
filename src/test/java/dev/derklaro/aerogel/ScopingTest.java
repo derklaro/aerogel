@@ -35,6 +35,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Proxy;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -340,7 +341,10 @@ public class ScopingTest {
     private final Object returnVal;
     public CustomScopeApplier(Object returnVal) { this.returnVal = returnVal; }
     @Override @NotNull
-    public <T> ProviderWithContext<T> applyScope(@NotNull BindingKey<T> $, @NotNull ProviderWithContext<T> $$) {
+    public <T> ProviderWithContext<T> applyScope(
+      @NotNull List<BindingKey<? extends T>> $,
+      @NotNull ProviderWithContext<T> $$
+    ) {
       //noinspection unchecked
       return ($$$) -> (T) this.returnVal; // trust me
     }

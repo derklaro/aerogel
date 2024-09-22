@@ -27,6 +27,7 @@ package dev.derklaro.aerogel.internal.scope;
 import dev.derklaro.aerogel.ScopeApplier;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 public final class UnscopedScopeApplier implements ScopeApplier {
@@ -38,7 +39,7 @@ public final class UnscopedScopeApplier implements ScopeApplier {
 
   @Override
   public @NotNull <T> ProviderWithContext<T> applyScope(
-    @NotNull BindingKey<T> key,
+    @NotNull List<BindingKey<? extends T>> keys,
     @NotNull ProviderWithContext<T> original
   ) {
     return original;

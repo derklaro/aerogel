@@ -32,33 +32,45 @@ import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.provider.ProviderFactory;
+import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 public final class UninstalledBindingImpl<T> implements UninstalledBinding<T> {
 
-  private final BindingKey<T> bindingKey;
+  private final List<BindingKey<? extends T>> bindingKeys;
   private final ScopeApplier scopeApplier;
   private final BindingOptions bindingOptions;
 
   private final ProviderFactory<T> providerFactory;
 
   public UninstalledBindingImpl(
-    @NotNull BindingKey<T> bindingKey,
+    @NotNull List<BindingKey<? extends T>> bindingKeys,
     @Nullable ScopeApplier scopeApplier,
     @NotNull BindingOptions bindingOptions,
     @NotNull ProviderFactory<T> providerFactory
   ) {
-    this.bindingKey = bindingKey;
+    this.bindingKeys = bindingKeys;
     this.scopeApplier = scopeApplier;
     this.bindingOptions = bindingOptions;
     this.providerFactory = providerFactory;
   }
 
   @Override
-  public @NotNull BindingKey<T> key() {
-    return this.bindingKey;
+  public @NotNull BindingKey<? extends T> mainKey() {
+    return this.bindingKeys.get(0);
+  }
+
+  @Override
+  public @NotNull @Unmodifiable List<BindingKey<? extends T>> keys() {
+    return this.bindingKeys;
+  }
+
+  @Override
+  public boolean supportsKey(@NotNull BindingKey<?> key) {
+    return this.bindingKeys.contains(key);
   }
 
   @Override
@@ -73,14 +85,14 @@ public final class UninstalledBindingImpl<T> implements UninstalledBinding<T> {
 
   @Override
   public @NotNull UninstalledBinding<T> withScope(@Nullable ScopeApplier scope) {
-    return new UninstalledBindingImpl<>(this.bindingKey, scope, this.bindingOptions, this.providerFactory);
+    return new UninstalledBindingImpl<>(this.bindingKeys, scope, this.bindingOptions, this.providerFactory);
   }
 
   @Override
   public @NotNull InstalledBinding<T> prepareForInstallation(@NotNull Injector injector) {
     ProviderWithContext<T> provider = this.providerFactory.constructProvider();
     if (this.scopeApplier != null) {
-      provider = this.scopeApplier.applyScope(this.bindingKey, provider);
+      provider = this.scopeApplier.applyScope(this.bindingKeys, provider);
     }
 
     return new InstalledBindingImpl<>(injector, this, provider);

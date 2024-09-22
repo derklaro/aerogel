@@ -27,10 +27,12 @@ package dev.derklaro.aerogel.binding;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.ScopeApplier;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import java.util.List;
 import java.util.Optional;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * A binding that is installed to an injector and ready to provide instances for injection requests. Installed bindings
@@ -44,13 +46,31 @@ import org.jetbrains.annotations.NotNull;
 public interface InstalledBinding<T> {
 
   /**
-   * Get the key of this binding. Elements that are matching this key (for example constructor parameters) can be
-   * provided by this binding.
+   * Get the main binding key of this binding, that is, the key that was used when the binding build process was
+   * initially started.
    *
-   * @return the key of this binding.
+   * @return the main binding key of this binding.
    */
   @NotNull
-  BindingKey<T> key();
+  BindingKey<? extends T> mainKey();
+
+  /**
+   * Get the keys of this binding. Elements that are matching one of the keys (for example constructor parameters) can
+   * be provided by this binding.
+   *
+   * @return the keys of this binding.
+   */
+  @NotNull
+  @Unmodifiable
+  List<BindingKey<? extends T>> keys();
+
+  /**
+   * Get if the given key can be provided by this binding.
+   *
+   * @param key the key to test.
+   * @return true if the key can be provided by this binding, false otherwise.
+   */
+  boolean supportsKey(@NotNull BindingKey<?> key);
 
   /**
    * Get the injector into which this binding was installed.

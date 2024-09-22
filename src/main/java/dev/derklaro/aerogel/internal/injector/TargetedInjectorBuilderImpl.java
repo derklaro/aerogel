@@ -68,7 +68,10 @@ final class TargetedInjectorBuilderImpl implements TargetedInjectorBuilder {
     TargetedInjectorImpl injector = validateInjectorPresence(refInjector);
 
     InstalledBinding<?> installedBinding = binding.prepareForInstallation(injector);
-    this.bindingRegistry.register(binding.key(), installedBinding);
+    for (BindingKey<? extends T> key : binding.keys()) {
+      this.bindingRegistry.register(key, installedBinding);
+    }
+
     return this;
   }
 

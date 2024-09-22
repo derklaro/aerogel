@@ -26,6 +26,7 @@ package dev.derklaro.aerogel;
 
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import java.util.List;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.CheckReturnValue;
 import org.jetbrains.annotations.NotNull;
@@ -47,12 +48,14 @@ public interface ScopeApplier {
    * Returns a new provider with this scope applied to it. If necessary, the method may obtain an instance from the
    * given provider.
    *
-   * @param key      the key of the binding that requests the scoping.
+   * @param keys     the keys of the binding that requests the scoping.
    * @param original the original provider to apply this scope to.
    * @param <T>      the type of value returned by the provider.
    * @return a new provider that scopes the given provider.
    */
   @NotNull
   @CheckReturnValue
-  <T> ProviderWithContext<T> applyScope(@NotNull BindingKey<T> key, @NotNull ProviderWithContext<T> original);
+  <T> ProviderWithContext<T> applyScope(
+    @NotNull List<BindingKey<? extends T>> keys,
+    @NotNull ProviderWithContext<T> original);
 }

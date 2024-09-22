@@ -27,7 +27,6 @@ package dev.derklaro.aerogel;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.QualifiableBindingBuilder;
-import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.builder.ScopeableBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.scope.SingletonScopeApplier;
@@ -47,7 +46,10 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.AbstractCollection;
+import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,8 +65,8 @@ public class BindingsTest {
   void testSimpleBindingCreation() {
     Injector injector = Injector.newInjector();
     UninstalledBinding<?> binding = injector.createBindingBuilder().bind(String.class).toInstance("Hello World!");
-    Assertions.assertEquals(String.class, binding.key().type());
-    Assertions.assertFalse(binding.key().qualifierAnnotationType().isPresent());
+    Assertions.assertEquals(String.class, binding.mainKey().type());
+    Assertions.assertFalse(binding.mainKey().qualifierAnnotationType().isPresent());
     Assertions.assertFalse(binding.scope().isPresent());
   }
 
@@ -73,15 +75,15 @@ public class BindingsTest {
     Injector injector = Injector.newInjector();
     UninstalledBinding<?> binding = injector.createBindingBuilder().bind(int.class).toInstance(1);
     Assertions.assertFalse(binding.scope().isPresent());
-    Assertions.assertEquals(Integer.class, binding.key().type());
+    Assertions.assertEquals(Integer.class, binding.mainKey().type());
 
     UninstalledBinding<?> withSingletonScope = binding.withScope(SingletonScopeApplier.INSTANCE);
-    Assertions.assertEquals(Integer.class, withSingletonScope.key().type());
+    Assertions.assertEquals(Integer.class, withSingletonScope.mainKey().type());
     Assertions.assertTrue(withSingletonScope.scope().isPresent());
     Assertions.assertSame(SingletonScopeApplier.INSTANCE, withSingletonScope.scope().get());
 
     UninstalledBinding<?> withUnscopedScope = withSingletonScope.withScope(UnscopedScopeApplier.INSTANCE);
-    Assertions.assertEquals(Integer.class, withUnscopedScope.key().type());
+    Assertions.assertEquals(Integer.class, withUnscopedScope.mainKey().type());
     Assertions.assertTrue(withUnscopedScope.scope().isPresent());
     Assertions.assertSame(UnscopedScopeApplier.INSTANCE, withUnscopedScope.scope().get());
   }
@@ -91,19 +93,19 @@ public class BindingsTest {
     Injector injector = Injector.newInjector();
     UninstalledBinding<?> binding = injector.createBindingBuilder().bind(int.class).toInstance(1);
     Assertions.assertFalse(binding.scope().isPresent());
-    Assertions.assertEquals(Integer.class, binding.key().type());
+    Assertions.assertEquals(Integer.class, binding.mainKey().type());
 
     UninstalledBinding<?> withSingletonScope = binding.withScope(SingletonScopeApplier.INSTANCE);
     Assertions.assertTrue(withSingletonScope.scope().isPresent());
     Assertions.assertSame(SingletonScopeApplier.INSTANCE, withSingletonScope.scope().get());
-    Assertions.assertSame(binding.key(), withSingletonScope.key());
+    Assertions.assertSame(binding.mainKey(), withSingletonScope.mainKey());
   }
 
   @Test
   void testLookupPassedToBinding() {
     Injector injector = Injector.newInjector();
     UninstalledBinding<?> binding = injector.createBindingBuilder().bind(String.class).toInstance("Hello World!");
-    Assertions.assertEquals(String.class, binding.key().type());
+    Assertions.assertEquals(String.class, binding.mainKey().type());
     Assertions.assertTrue(binding.options().memberLookup().isPresent());
     Assertions.assertEquals("InjectorOptions", binding.options().memberLookup().get().lookupClass().getSimpleName());
 
@@ -112,12 +114,12 @@ public class BindingsTest {
       .bind(String.class)
       .memberLookup(lookup)
       .toInstance("Hello :)");
-    Assertions.assertEquals(String.class, bindingWithLookup.key().type());
+    Assertions.assertEquals(String.class, bindingWithLookup.mainKey().type());
     Assertions.assertTrue(bindingWithLookup.options().memberLookup().isPresent());
     Assertions.assertSame(lookup, bindingWithLookup.options().memberLookup().get());
 
     UninstalledBinding<?> withLookupAndScope = bindingWithLookup.withScope(SingletonScopeApplier.INSTANCE);
-    Assertions.assertEquals(String.class, withLookupAndScope.key().type());
+    Assertions.assertEquals(String.class, withLookupAndScope.mainKey().type());
     Assertions.assertTrue(withLookupAndScope.scope().isPresent());
     Assertions.assertSame(SingletonScopeApplier.INSTANCE, withLookupAndScope.scope().get());
     Assertions.assertTrue(withLookupAndScope.options().memberLookup().isPresent());
@@ -131,7 +133,7 @@ public class BindingsTest {
       .bind(int.class)
       .qualifiedWith(NoMemberQualifier.class)
       .toInstance(1);
-    BindingKey<?> key = binding.key();
+    BindingKey<?> key = binding.mainKey();
     Assertions.assertEquals(Integer.class, key.type());
     Assertions.assertFalse(key.qualifierAnnotation().isPresent());
     Assertions.assertTrue(key.qualifierAnnotationType().isPresent());
@@ -156,7 +158,7 @@ public class BindingsTest {
       .bind(String.class)
       .qualifiedWithName("world")
       .toInstance("World!");
-    BindingKey<?> key = binding.key();
+    BindingKey<?> key = binding.mainKey();
     Assertions.assertEquals(String.class, key.type());
     Assertions.assertTrue(key.qualifierAnnotationType().isPresent());
     Assertions.assertEquals(Named.class, key.qualifierAnnotationType().get());
@@ -173,7 +175,7 @@ public class BindingsTest {
       .bind(String.class)
       .qualifiedWith(qualifierAnnotation)
       .toInstance("World!");
-    BindingKey<?> key = binding.key();
+    BindingKey<?> key = binding.mainKey();
     Assertions.assertEquals(String.class, key.type());
     Assertions.assertTrue(key.qualifierAnnotationType().isPresent());
     Assertions.assertEquals(NoMemberQualifier.class, key.qualifierAnnotationType().get());
@@ -192,7 +194,7 @@ public class BindingsTest {
       .bind(String.class)
       .qualifiedWith(qualifierAnnotation)
       .toInstance("World!");
-    BindingKey<?> key = binding.key();
+    BindingKey<?> key = binding.mainKey();
     Assertions.assertEquals(String.class, key.type());
     Assertions.assertTrue(key.qualifierAnnotationType().isPresent());
     Assertions.assertEquals(MemberQualifier.class, key.qualifierAnnotationType().get());
@@ -219,7 +221,7 @@ public class BindingsTest {
       .bind(String.class)
       .buildQualifier(NoMemberQualifier.class).require()
       .toInstance("Hello World");
-    BindingKey<?> key = binding.key();
+    BindingKey<?> key = binding.mainKey();
     Assertions.assertEquals(String.class, key.type());
     Assertions.assertTrue(key.qualifierAnnotationType().isPresent());
     Assertions.assertEquals(NoMemberQualifier.class, key.qualifierAnnotationType().get());
@@ -237,7 +239,7 @@ public class BindingsTest {
       .property(MemberQualifier::retention).returns(12345)
       .require()
       .toInstance("Hello World");
-    BindingKey<?> key = binding.key();
+    BindingKey<?> key = binding.mainKey();
     Assertions.assertEquals(String.class, key.type());
     Assertions.assertTrue(key.qualifierAnnotationType().isPresent());
     Assertions.assertEquals(MemberQualifier.class, key.qualifierAnnotationType().get());
@@ -354,7 +356,7 @@ public class BindingsTest {
       .property(MemberQualifier::retention).returns(12345)
       .require()
       .toInstance("World :)");
-    BindingKey<?> key = binding.key();
+    BindingKey<?> key = binding.mainKey();
     Assertions.assertTrue(key.qualifierAnnotationType().isPresent());
     Assertions.assertEquals(MemberQualifier.class, key.qualifierAnnotationType().get());
     Assertions.assertTrue(key.qualifierAnnotation().isPresent());
@@ -392,7 +394,7 @@ public class BindingsTest {
       .property(MemberQualifier::retention).returns(12345)
       .require()
       .toInstance("World :)");
-    BindingKey<?> key = binding.key();
+    BindingKey<?> key = binding.mainKey();
     Assertions.assertTrue(key.qualifierAnnotationType().isPresent());
     Assertions.assertEquals(MemberQualifier.class, key.qualifierAnnotationType().get());
     Assertions.assertTrue(key.qualifierAnnotation().isPresent());
@@ -496,7 +498,7 @@ public class BindingsTest {
     Injector injector = Injector.newInjector();
     Method factoryMethod = BindingsTest.class.getMethod("factoryForString");
     UninstalledBinding<?> binding = injector.createBindingBuilder().bind(String.class).toFactoryMethod(factoryMethod);
-    Assertions.assertEquals(String.class, binding.key().type());
+    Assertions.assertEquals(String.class, binding.mainKey().type());
   }
 
   @Test
@@ -504,7 +506,7 @@ public class BindingsTest {
     Injector injector = Injector.newInjector();
     Method factoryMethod = BindingsTest.class.getMethod("factoryForInt");
     UninstalledBinding<?> binding = injector.createBindingBuilder().bind(int.class).toFactoryMethod(factoryMethod);
-    Assertions.assertEquals(Integer.class, binding.key().type());
+    Assertions.assertEquals(Integer.class, binding.mainKey().type());
   }
 
   @Test
@@ -530,7 +532,7 @@ public class BindingsTest {
     Injector injector = Injector.newInjector();
     Provider<String> stringProvider = new ProviderForString();
     UninstalledBinding<?> binding = injector.createBindingBuilder().bind(String.class).toProvider(stringProvider);
-    Assertions.assertEquals(String.class, binding.key().type());
+    Assertions.assertEquals(String.class, binding.mainKey().type());
   }
 
   @Test
@@ -539,7 +541,7 @@ public class BindingsTest {
     UninstalledBinding<?> binding = injector.createBindingBuilder()
       .bind(String.class)
       .toProvider(ProviderForString.class);
-    Assertions.assertEquals(String.class, binding.key().type());
+    Assertions.assertEquals(String.class, binding.mainKey().type());
   }
 
   @Test
@@ -557,7 +559,7 @@ public class BindingsTest {
     UninstalledBinding<?> binding = injector.createBindingBuilder()
       .bind(UnscopedClass.class)
       .toConstructor(constructor);
-    Assertions.assertEquals(UnscopedClass.class, binding.key().type());
+    Assertions.assertEquals(UnscopedClass.class, binding.mainKey().type());
   }
 
   @Test
@@ -566,7 +568,7 @@ public class BindingsTest {
     UninstalledBinding<?> binding = injector.createBindingBuilder()
       .bind(Provider.class)
       .toConstructingClass(ProviderForString.class);
-    Assertions.assertEquals(Provider.class, binding.key().type());
+    Assertions.assertEquals(Provider.class, binding.mainKey().type());
   }
 
   @Test
@@ -583,7 +585,7 @@ public class BindingsTest {
     Type listStringType = TypeFactory.parameterizedClass(List.class, String.class);
     QualifiableBindingBuilder<List<String>> bindingBuilder = injector.createBindingBuilder().bind(listStringType);
     UninstalledBinding<List<String>> binding = bindingBuilder.toInstance(new ArrayList<>());
-    Assertions.assertEquals(listStringType, binding.key().type());
+    Assertions.assertEquals(listStringType, binding.mainKey().type());
   }
 
   @Test
@@ -603,7 +605,7 @@ public class BindingsTest {
     Method factoryMethod = BindingsTest.class.getMethod("factorForSetString");
     QualifiableBindingBuilder<Set<String>> bindingBuilder = injector.createBindingBuilder().bind(typeToken);
     UninstalledBinding<Set<String>> binding = bindingBuilder.toFactoryMethod(factoryMethod);
-    Assertions.assertEquals(typeToken.getType(), binding.key().type());
+    Assertions.assertEquals(typeToken.getType(), binding.mainKey().type());
   }
 
   @Test
@@ -614,7 +616,7 @@ public class BindingsTest {
     Method factoryMethod = BindingsTest.class.getMethod("factorForSetString");
     ScopeableBindingBuilder<Set<String>> bindingBuilder = injector.createBindingBuilder().bind(setStringBindingKey);
     UninstalledBinding<Set<String>> binding = bindingBuilder.toFactoryMethod(factoryMethod);
-    Assertions.assertEquals(setStringType, binding.key().type());
+    Assertions.assertEquals(setStringType, binding.mainKey().type());
   }
 
   @Test
@@ -634,10 +636,42 @@ public class BindingsTest {
     Object instanceB = injector.instance(Object.class);
     Assertions.assertSame(instanceA, instanceB);
 
-    Object instanceC = injector.instance(cascadedBinding.key());
-    Object instanceD = injector.instance(cascadedBinding.key());
+    Object instanceC = injector.instance(cascadedBinding.mainKey());
+    Object instanceD = injector.instance(cascadedBinding.mainKey());
     Assertions.assertSame(instanceC, instanceD);
     Assertions.assertSame(instanceA, instanceC);
+  }
+
+  @Test
+  @SuppressWarnings("rawtypes")
+  void testBindingMultipleKeysToOneBinding() {
+    Injector injector = Injector.newInjector();
+    Type listWildcardType = TypeFactory.parameterizedClass(List.class, TypeFactory.unboundWildcard());
+    BindingKey<AbstractList> abstractListWithQualifier = BindingKey
+      .of(AbstractList.class)
+      .withQualifier(NoMemberQualifier.class);
+    UninstalledBinding<Collection> binding = injector.createBindingBuilder()
+      .bind(Collection.class)
+      .andBind(ArrayList.class)
+      .andBind(listWildcardType)
+      .andBind(abstractListWithQualifier)
+      .andBind(TypeToken.get(AbstractCollection.class))
+      .scopedWithSingleton()
+      .toProvider(() -> new ArrayList());
+    injector.installBinding(binding);
+
+    Collection colA = injector.instance(Collection.class);
+    Collection colB = injector.instance(ArrayList.class);
+    Collection colC = injector.instance(listWildcardType);
+    Collection colD = injector.instance(abstractListWithQualifier);
+    Collection colE = injector.instance(TypeToken.get(AbstractCollection.class));
+    Assertions.assertSame(colA, colB);
+    Assertions.assertSame(colA, colC);
+    Assertions.assertSame(colA, colD);
+    Assertions.assertSame(colA, colE);
+
+    BindingKey<AbstractList> abstractListWithoutQualifier = abstractListWithQualifier.withoutQualifier();
+    Assertions.assertThrows(IllegalArgumentException.class, () -> injector.binding(abstractListWithoutQualifier));
   }
 
   // @formatter:off
@@ -654,8 +688,11 @@ public class BindingsTest {
   @Singleton public static final class SingletonClass {}
   public static final class ValidScopeScopeApplier implements ScopeApplier {
     @Override @NotNull
-    public<T> ProviderWithContext<T> applyScope(@NotNull BindingKey<T> key, @NotNull ProviderWithContext<T> original) {
-      return SingletonScopeApplier.INSTANCE.applyScope(key, original);
+    public<T> ProviderWithContext<T> applyScope(
+      @NotNull List<BindingKey<? extends T>> keys,
+      @NotNull ProviderWithContext<T> original
+    ) {
+      return SingletonScopeApplier.INSTANCE.applyScope(keys, original);
     }
   }
   public static final class ProviderForString implements Provider<String> {

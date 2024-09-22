@@ -29,7 +29,7 @@ import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.AdvancedBindingBuilder;
 import dev.derklaro.aerogel.binding.builder.BindingAnnotationBuilder;
-import dev.derklaro.aerogel.binding.builder.QualifiableBindingBuilder;
+import dev.derklaro.aerogel.binding.builder.KeyableBindingBuilder;
 import dev.derklaro.aerogel.binding.builder.ScopeableBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.annotation.InjectAnnotationUtil;
@@ -48,6 +48,7 @@ import dev.derklaro.aerogel.internal.scope.SingletonScopeApplier;
 import dev.derklaro.aerogel.internal.scope.UnscopedScopeApplier;
 import dev.derklaro.aerogel.registry.Registry;
 import io.leangen.geantyref.GenericTypeReflector;
+import io.leangen.geantyref.TypeToken;
 import jakarta.inject.Named;
 import jakarta.inject.Provider;
 import java.lang.annotation.Annotation;
@@ -56,15 +57,18 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T> {
+final class ConcreteBindingBuilderImpl<T> implements KeyableBindingBuilder<T> {
 
   private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
   // ==== must be set
-  private final BindingKey<T> bindingKey;
+  private final List<BindingKey<? extends T>> bindingKeys;
   private final Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry;
 
   // ==== set lazily when required
@@ -72,23 +76,54 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
   private final BindingOptionsImpl options;
 
   public ConcreteBindingBuilderImpl(
-    @NotNull BindingKey<T> bindingKey,
+    @NotNull List<BindingKey<? extends T>> bindingKeys,
     @NotNull BindingOptionsImpl bindingOptions,
     @NotNull Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry
   ) {
-    this(bindingKey, scopeRegistry, null, bindingOptions);
+    this(bindingKeys, scopeRegistry, null, bindingOptions);
   }
 
   public ConcreteBindingBuilderImpl(
-    @NotNull BindingKey<T> bindingKey,
+    @NotNull List<BindingKey<? extends T>> bindingKeys,
     @NotNull Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry,
     @Nullable ScopeApplier scope,
     @NotNull BindingOptionsImpl options
   ) {
-    this.bindingKey = bindingKey;
+    this.bindingKeys = bindingKeys;
     this.scopeRegistry = scopeRegistry;
     this.scope = scope;
     this.options = options;
+  }
+
+  @Override
+  public @NotNull KeyableBindingBuilder<T> andBind(@NotNull Type type) {
+    BindingKey<? extends T> key = BindingKey.of(type);
+    return this.andBind(key);
+  }
+
+  @Override
+  public @NotNull KeyableBindingBuilder<T> andBind(@NotNull Class<? extends T> type) {
+    BindingKey<? extends T> key = BindingKey.of(type);
+    return this.andBind(key);
+  }
+
+  @Override
+  public @NotNull KeyableBindingBuilder<T> andBind(@NotNull TypeToken<? extends T> typeToken) {
+    BindingKey<? extends T> key = BindingKey.of(typeToken);
+    return this.andBind(key);
+  }
+
+  @Override
+  public @NotNull KeyableBindingBuilder<T> andBind(@NotNull BindingKey<? extends T> bindingKey) {
+    if (this.bindingKeys.contains(bindingKey)) {
+      throw new IllegalArgumentException("Binding key " + bindingKey + " already bound in builder");
+    }
+
+    // we can keep the list mutable during the binding process, but need to make
+    // the list immutable when the binding process finishes
+    List<BindingKey<? extends T>> targetKeys = new ArrayList<>(this.bindingKeys);
+    targetKeys.add(bindingKey);
+    return new ConcreteBindingBuilderImpl<>(targetKeys, this.scopeRegistry, this.scope, this.options);
   }
 
   @Override
@@ -98,16 +133,20 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
 
   @Override
   public @NotNull ScopeableBindingBuilder<T> qualifiedWith(@NotNull Annotation qualifierAnnotation) {
-    BindingKey<T> newKey = this.bindingKey.withQualifier(qualifierAnnotation);
-    return new ConcreteBindingBuilderImpl<>(newKey, this.scopeRegistry, this.scope, this.options);
+    List<BindingKey<? extends T>> bindingKeys = this.bindingKeys.stream()
+      .map(key -> key.withQualifier(qualifierAnnotation))
+      .collect(Collectors.toList());
+    return new ConcreteBindingBuilderImpl<>(bindingKeys, this.scopeRegistry, this.scope, this.options);
   }
 
   @Override
   public @NotNull ScopeableBindingBuilder<T> qualifiedWith(
     @NotNull Class<? extends Annotation> qualifierAnnotationType
   ) {
-    BindingKey<T> newKey = this.bindingKey.withQualifier(qualifierAnnotationType);
-    return new ConcreteBindingBuilderImpl<>(newKey, this.scopeRegistry, this.scope, this.options);
+    List<BindingKey<? extends T>> bindingKeys = this.bindingKeys.stream()
+      .map(key -> key.withQualifier(qualifierAnnotationType))
+      .collect(Collectors.toList());
+    return new ConcreteBindingBuilderImpl<>(bindingKeys, this.scopeRegistry, this.scope, this.options);
   }
 
   @Override
@@ -121,7 +160,7 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
   @Override
   public @NotNull AdvancedBindingBuilder<T> unscoped() {
     return new ConcreteBindingBuilderImpl<>(
-      this.bindingKey,
+      this.bindingKeys,
       this.scopeRegistry,
       UnscopedScopeApplier.INSTANCE,
       this.options);
@@ -130,7 +169,7 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
   @Override
   public @NotNull AdvancedBindingBuilder<T> scopedWithSingleton() {
     return new ConcreteBindingBuilderImpl<>(
-      this.bindingKey,
+      this.bindingKeys,
       this.scopeRegistry,
       SingletonScopeApplier.INSTANCE,
       this.options);
@@ -138,7 +177,7 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
 
   @Override
   public @NotNull AdvancedBindingBuilder<T> scopedWith(@NotNull ScopeApplier scopeApplier) {
-    return new ConcreteBindingBuilderImpl<>(this.bindingKey, this.scopeRegistry, scopeApplier, this.options);
+    return new ConcreteBindingBuilderImpl<>(this.bindingKeys, this.scopeRegistry, scopeApplier, this.options);
   }
 
   @Override
@@ -153,19 +192,19 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
   @Override
   public @NotNull AdvancedBindingBuilder<T> memberLookup(@NotNull MethodHandles.Lookup lookup) {
     BindingOptionsImpl options = this.options.withMemberLookup(lookup);
-    return new ConcreteBindingBuilderImpl<>(this.bindingKey, this.scopeRegistry, this.scope, options);
+    return new ConcreteBindingBuilderImpl<>(this.bindingKeys, this.scopeRegistry, this.scope, options);
   }
 
   @Override
   public @NotNull UninstalledBinding<T> toInstance(@NotNull T instance) {
     ScopeApplier scope = this.resolveScopeApplier(instance.getClass().getAnnotations());
     ProviderFactory<T> providerFactory = InstanceProviderFactory.ofInstance(instance);
-    return new UninstalledBindingImpl<>(this.bindingKey, scope, this.options, providerFactory);
+    return this.createFinalBinding(scope, providerFactory);
   }
 
   @Override
   public @NotNull UninstalledBinding<T> toFactoryMethod(@NotNull Method factoryMethod) {
-    Type targetType = this.bindingKey.type();
+    Type targetType = this.bindingKeys.get(0).type(); // first key is the main key given while starting the build
     Type returnType = GenericTypeReflector.box(factoryMethod.getGenericReturnType());
     if (!Modifier.isStatic(factoryMethod.getModifiers()) || !GenericTypeReflector.isSuperType(targetType, returnType)) {
       throw new IllegalArgumentException("Factory method must be static and return a subtype of " + targetType);
@@ -175,13 +214,13 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
     ProviderFactory<T> providerFactory = FactoryMethodProviderFactory.fromMethod(factoryMethod, lookup);
 
     ScopeApplier scope = this.resolveScopeApplier(factoryMethod);
-    return new UninstalledBindingImpl<>(this.bindingKey, scope, this.options, providerFactory);
+    return this.createFinalBinding(scope, providerFactory);
   }
 
   @Override
   public @NotNull UninstalledBinding<T> toProvider(@NotNull Provider<? extends T> provider) {
     ProviderFactory<T> providerFactory = DelegatingProviderFactory.toProvider(provider);
-    return new UninstalledBindingImpl<>(this.bindingKey, this.scope, this.options, providerFactory);
+    return this.createFinalBinding(this.scope, providerFactory);
   }
 
   @Override
@@ -192,13 +231,13 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
 
     MethodHandles.Lookup lookup = this.resolveMemberLookup();
     ProviderFactory<T> providerFactory = ConstructingDelegatingProviderFactory.fromProviderClass(providerType, lookup);
-    return new UninstalledBindingImpl<>(this.bindingKey, this.scope, this.options, providerFactory);
+    return this.createFinalBinding(this.scope, providerFactory);
   }
 
   @Override
   public @NotNull UninstalledBinding<T> toProvider(@NotNull ProviderWithContext<? extends T> provider) {
     ProviderFactory<T> providerFactory = DelegatingContextualProviderFactory.toProvider(provider);
-    return new UninstalledBindingImpl<>(this.bindingKey, this.scope, this.options, providerFactory);
+    return this.createFinalBinding(this.scope, providerFactory);
   }
 
   @Override
@@ -207,7 +246,7 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
     ProviderFactory<T> providerFactory = ConstructorProviderFactory.fromConstructor(constructor, lookup);
 
     ScopeApplier scope = this.resolveScopeApplier(constructor.getDeclaringClass().getAnnotations());
-    return new UninstalledBindingImpl<>(this.bindingKey, scope, this.options, providerFactory);
+    return this.createFinalBinding(scope, providerFactory);
   }
 
   @Override
@@ -220,25 +259,34 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
     ProviderFactory<T> providerFactory = ConstructorProviderFactory.fromClass(implementationType, lookup);
 
     ScopeApplier scope = this.resolveScopeApplier(implementationType.getAnnotations());
-    return new UninstalledBindingImpl<>(this.bindingKey, scope, this.options, providerFactory);
+    return this.createFinalBinding(scope, providerFactory);
   }
 
   @Override
   public @NotNull UninstalledBinding<T> toConstructingSelf() {
+    BindingKey<? extends T> mainBindingKey = this.bindingKeys.get(0);
     //noinspection unchecked
-    Class<? extends T> rawTargetClass = (Class<? extends T>) GenericTypeReflector.erase(this.bindingKey.type());
+    Class<? extends T> rawTargetClass = (Class<? extends T>) GenericTypeReflector.erase(mainBindingKey.type());
     return this.toConstructingClass(rawTargetClass);
   }
 
   @Override
   public @NotNull UninstalledBinding<T> cascadeTo(@NotNull UninstalledBinding<? extends T> other) {
-    return this.cascadeTo(other.key());
+    return this.cascadeTo(other.mainKey());
   }
 
   @Override
   public @NotNull UninstalledBinding<T> cascadeTo(@NotNull BindingKey<? extends T> other) {
     ProviderFactory<T> providerFactory = CascadingProviderFactory.cascadeTo(other);
-    return new UninstalledBindingImpl<>(this.bindingKey, this.scope, this.options, providerFactory);
+    return this.createFinalBinding(this.scope, providerFactory);
+  }
+
+  private @NotNull UninstalledBinding<T> createFinalBinding(
+    @Nullable ScopeApplier scope,
+    @NotNull ProviderFactory<T> providerFactory
+  ) {
+    List<BindingKey<? extends T>> bindingKeys = List.copyOf(this.bindingKeys);
+    return new UninstalledBindingImpl<>(bindingKeys, scope, this.options, providerFactory);
   }
 
   private @NotNull MethodHandles.Lookup resolveMemberLookup() {

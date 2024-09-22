@@ -233,7 +233,10 @@ public final class InjectorImpl implements Injector {
   @Override
   public @NotNull <T> Injector installBinding(@NotNull UninstalledBinding<T> binding) {
     InstalledBinding<?> installedBinding = binding.prepareForInstallation(this);
-    this.bindingRegistry.register(binding.key(), installedBinding);
+    for (BindingKey<? extends T> key : binding.keys()) {
+      this.bindingRegistry.register(key, installedBinding);
+    }
+
     return this;
   }
 

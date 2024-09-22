@@ -28,8 +28,7 @@ import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.auto.LazyBindingCollection;
 import dev.derklaro.aerogel.auto.internal.CombinedLazyBindingCollection;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
-import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
-import java.util.Arrays;
+import dev.derklaro.aerogel.binding.builder.KeyableBindingBuilder;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
@@ -45,16 +44,14 @@ final class ProvidesLazyBindingCollection implements LazyBindingCollection {
 
   @Override
   public void installBindings(@NotNull Injector injector) {
-    UninstalledBinding<?>[] bindings = this.constructBindingArray(injector);
-    for (UninstalledBinding<?> binding : bindings) {
-      injector.installBinding(binding);
-    }
+    UninstalledBinding<?> binding = this.constructBinding(injector);
+    injector.installBinding(binding);
   }
 
   @Override
   public @NotNull List<UninstalledBinding<?>> constructBindings(@NotNull Injector injector) {
-    UninstalledBinding<?>[] bindings = this.constructBindingArray(injector);
-    return Arrays.asList(bindings);
+    UninstalledBinding<?> binding = this.constructBinding(injector);
+    return List.of(binding);
   }
 
   @Override
@@ -63,17 +60,21 @@ final class ProvidesLazyBindingCollection implements LazyBindingCollection {
   }
 
   @SuppressWarnings("unchecked")
-  private @NotNull UninstalledBinding<?>[] constructBindingArray(@NotNull Injector injector) {
-    int providedTypeCount = this.providedTypes.length;
-    UninstalledBinding<?>[] bindings = new UninstalledBinding<?>[providedTypeCount];
+  private @NotNull UninstalledBinding<?> constructBinding(@NotNull Injector injector) {
+    // bind the main key first
+    Class<Object> mainType = (Class<Object>) this.providedTypes[0];
+    KeyableBindingBuilder<Object> bindingBuilder = injector.createBindingBuilder().bind(mainType);
 
-    RootBindingBuilder rootBindingBuilder = injector.createBindingBuilder();
-    for (int index = 0; index < providedTypeCount; index++) {
-      Class<Object> providedType = (Class<Object>) this.providedTypes[index];
-      UninstalledBinding<?> binding = rootBindingBuilder.bind(providedType).toConstructingClass(this.implementation);
-      bindings[index] = binding;
+    // check if there are additional keys that need to be bound as well
+    int providedTypeCount = this.providedTypes.length;
+    if (providedTypeCount > 1) {
+      for (int index = 1; index < providedTypeCount; index++) {
+        Class<Object> providedType = (Class<Object>) this.providedTypes[index];
+        bindingBuilder = bindingBuilder.andBind(providedType);
+      }
     }
 
-    return bindings;
+    // target the builder to the final implementing class
+    return bindingBuilder.toConstructingClass(this.implementation);
   }
 }

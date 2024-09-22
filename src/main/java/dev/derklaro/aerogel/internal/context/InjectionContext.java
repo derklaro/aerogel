@@ -219,7 +219,7 @@ public final class InjectionContext {
 
     // check if the root context has an overridden value available if the associated element is known
     // delegate the newly created context directly to the overridden value
-    Provider<?> overridden = this.findOverriddenProvider(binding.key());
+    Provider<?> overridden = this.findOverriddenProvider(binding);
     if (overridden != null) {
       context.state = STATE_DELEGATED;
       context.delegate = overridden.get();
@@ -235,7 +235,7 @@ public final class InjectionContext {
   // Note: only for calls from InjectionContextProvider, use enterSubcontextScope elsewhere
   public @NotNull InjectionContext enterSubcontext(@NotNull InstalledBinding<?> binding) {
     // check if the root context has an overridden value available if the associated element is known
-    Provider<?> overridden = this.findOverriddenProvider(binding.key());
+    Provider<?> overridden = this.findOverriddenProvider(binding);
     if (overridden != null) {
       // create a sub context which just returns the given instance
       InjectionContext subcontext = new InjectionContext(this.root, binding, this.contextProvider);
@@ -255,7 +255,7 @@ public final class InjectionContext {
       }
 
       // this is a circular call, check if we can proxy this leaf first
-      Class<?> ourRawType = GenericTypeReflector.erase(this.binding.key().type());
+      Class<?> ourRawType = GenericTypeReflector.erase(this.binding.mainKey().type());
       if (ourRawType.isInterface()) {
         // yes, this is proxyable
         if (this.createdProxy == null) {
@@ -283,7 +283,7 @@ public final class InjectionContext {
       }
 
       // check if the known leaf node is proxyable
-      Class<?> leafRawType = GenericTypeReflector.erase(knownLeaf.binding.key().type());
+      Class<?> leafRawType = GenericTypeReflector.erase(knownLeaf.binding.mainKey().type());
       if (leafRawType.isInterface()) {
         // create a marker context which holds the proxy for the leaf type
         InjectionContext subcontext = new InjectionContext(this.root, binding, this.contextProvider);
@@ -327,7 +327,7 @@ public final class InjectionContext {
         }
 
         // [ <type> (<-- here) ]
-        treeInfoBuilder.append("[ ").append(ctx.binding.key().type());
+        treeInfoBuilder.append("[ ").append(ctx.binding.mainKey().type());
         if (ctx == knownLeaf) {
           treeInfoBuilder.append(" <-- here");
         }
@@ -337,8 +337,8 @@ public final class InjectionContext {
       // build the full error message and throw the exception
       throw new IllegalStateException(String.format(
         "Detected cyclic dependency while constructing %s. See traverse tree for more info: %s",
-        this.root.binding.key().type(),
-        treeInfoBuilder.append(" >--> [ ").append(this.binding.key().type()).append(" ]")));
+        this.root.binding.mainKey().type(),
+        treeInfoBuilder.append(" >--> [ ").append(this.binding.mainKey().type()).append(" ]")));
     }
 
     // nothing special to do, just construct a brand-new sub context
@@ -423,7 +423,7 @@ public final class InjectionContext {
   }
 
   public void requestMemberInjectionSameBinding(@Nullable Object constructedValue) {
-    Type bindingKeyType = this.binding.key().type();
+    Type bindingKeyType = this.binding.mainKey().type(); // use main key as target
     Class<?> constructedType = constructedValue != null
       ? constructedValue.getClass()
       : GenericTypeReflector.erase(bindingKeyType);
@@ -597,14 +597,21 @@ public final class InjectionContext {
   }
 
   /**
-   * Tries to resolve an overridden provider for the given element.
+   * Tries to resolve an overridden provider for the given binding.
    *
-   * @param key the element to get the provider for.
-   * @return the overridden provider, or null if no provider override is registered that matches the given element.
+   * @param binding the binding to find an overridden provider for.
+   * @return the overridden provider, or null if no provider override is registered that matches the given binding.
    */
-  public @Nullable Provider<?> findOverriddenProvider(@NotNull BindingKey<?> key) {
+  public @Nullable Provider<?> findOverriddenProvider(@NotNull InstalledBinding<?> binding) {
     // overrides are provided to the root injector only
-    return this.root.overrides.get(key);
+    for (BindingKey<?> key : binding.keys()) {
+      Provider<?> override = this.root.overrides.get(key);
+      if (override != null) {
+        return override;
+      }
+    }
+
+    return null;
   }
 
   /**

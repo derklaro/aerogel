@@ -31,8 +31,10 @@ import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import java.util.List;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
 final class InstalledBindingImpl<T> implements InstalledBinding<T> {
 
@@ -52,8 +54,18 @@ final class InstalledBindingImpl<T> implements InstalledBinding<T> {
   }
 
   @Override
-  public @NotNull BindingKey<T> key() {
-    return this.source.key();
+  public @NotNull BindingKey<? extends T> mainKey() {
+    return this.source.mainKey();
+  }
+
+  @Override
+  public @NotNull @Unmodifiable List<BindingKey<? extends T>> keys() {
+    return this.source.keys();
+  }
+
+  @Override
+  public boolean supportsKey(@NotNull BindingKey<?> key) {
+    return this.source.supportsKey(key);
   }
 
   @Override

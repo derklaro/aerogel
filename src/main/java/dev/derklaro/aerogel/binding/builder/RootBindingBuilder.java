@@ -150,7 +150,7 @@ public interface RootBindingBuilder {
    * @see #bind(TypeToken)
    */
   @NotNull
-  <T> QualifiableBindingBuilder<T> bind(@NotNull Type type);
+  <T> KeyableBindingBuilder<T> bind(@NotNull Type type);
 
   /**
    * Starts the bind process for a new binding that targets the given type. This method should only be used if the type
@@ -164,7 +164,7 @@ public interface RootBindingBuilder {
    * @see #bind(TypeToken)
    */
   @NotNull
-  <T> QualifiableBindingBuilder<T> bind(@NotNull Class<T> type);
+  <T> KeyableBindingBuilder<T> bind(@NotNull Class<T> type);
 
   /**
    * Starts the bind process for a new binding that targets the type wrapped in the given type token. This method allows
@@ -179,16 +179,15 @@ public interface RootBindingBuilder {
    * @return a new binding builder to construct a binding for the given type.
    */
   @NotNull
-  <T> QualifiableBindingBuilder<T> bind(@NotNull TypeToken<T> typeToken);
+  <T> KeyableBindingBuilder<T> bind(@NotNull TypeToken<T> typeToken);
 
   /**
-   * Starts the bind process for a new binding that targets the type wrapped in the given binding key. If this method is
-   * used, no qualifier annotation can be set on the builder as the annotation should be defined on the binding key.
+   * Starts the bind process for a new binding that targets the type wrapped in the given binding key.
    *
    * @param bindingKey the binding key that wraps the type that the constructed binding should target.
    * @param <T>        the type that the constructed binding should target.
    * @return a new binding builder to construct a binding for the given type.
    */
   @NotNull
-  <T> ScopeableBindingBuilder<T> bind(@NotNull BindingKey<T> bindingKey);
+  <T> KeyableBindingBuilder<T> bind(@NotNull BindingKey<T> bindingKey);
 }
