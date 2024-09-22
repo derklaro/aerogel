@@ -36,6 +36,7 @@ import dev.derklaro.aerogel.internal.annotation.InjectAnnotationUtil;
 import dev.derklaro.aerogel.internal.binding.BindingOptionsImpl;
 import dev.derklaro.aerogel.internal.binding.UninstalledBindingImpl;
 import dev.derklaro.aerogel.internal.binding.annotation.BindingAnnotationBuilderImpl;
+import dev.derklaro.aerogel.internal.provider.CascadingProviderFactory;
 import dev.derklaro.aerogel.internal.provider.ConstructingDelegatingProviderFactory;
 import dev.derklaro.aerogel.internal.provider.ConstructorProviderFactory;
 import dev.derklaro.aerogel.internal.provider.DelegatingContextualProviderFactory;
@@ -227,6 +228,17 @@ final class ConcreteBindingBuilderImpl<T> implements QualifiableBindingBuilder<T
     //noinspection unchecked
     Class<? extends T> rawTargetClass = (Class<? extends T>) GenericTypeReflector.erase(this.bindingKey.type());
     return this.toConstructingClass(rawTargetClass);
+  }
+
+  @Override
+  public @NotNull UninstalledBinding<T> cascadeTo(@NotNull UninstalledBinding<? extends T> other) {
+    return this.cascadeTo(other.key());
+  }
+
+  @Override
+  public @NotNull UninstalledBinding<T> cascadeTo(@NotNull BindingKey<? extends T> other) {
+    ProviderFactory<T> providerFactory = CascadingProviderFactory.cascadeTo(other);
+    return new UninstalledBindingImpl<>(this.bindingKey, this.scope, this.options, providerFactory);
   }
 
   private @NotNull MethodHandles.Lookup resolveMemberLookup() {

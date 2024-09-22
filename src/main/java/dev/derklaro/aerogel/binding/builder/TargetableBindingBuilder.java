@@ -26,6 +26,7 @@ package dev.derklaro.aerogel.binding.builder;
 
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
+import dev.derklaro.aerogel.binding.key.BindingKey;
 import jakarta.inject.Provider;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -161,4 +162,26 @@ public interface TargetableBindingBuilder<T> {
    */
   @NotNull
   UninstalledBinding<T> toConstructingSelf();
+
+  /**
+   * Constructs a new binding that uses the key of the given binding to find a binding in the contextual injector to
+   * cascade the construction call to. This can be used to, for example, have multiple types bound to the same singleton
+   * target type.
+   *
+   * @param other the binding to which construction calls should be cascaded.
+   * @return a new binding that cascades all construction calls to the given other binding.
+   */
+  @NotNull
+  UninstalledBinding<T> cascadeTo(@NotNull UninstalledBinding<? extends T> other);
+
+  /**
+   * Constructs a new binding that uses the given key to find a binding in the contextual injector to cascade the
+   * construction call to. This can be used to, for example, have multiple types bound to the same singleton target
+   * type.
+   *
+   * @param other the binding key to which construction calls should be cascaded.
+   * @return a new binding that cascades all construction calls to the binding associated with the given key.
+   */
+  @NotNull
+  UninstalledBinding<T> cascadeTo(@NotNull BindingKey<? extends T> other);
 }

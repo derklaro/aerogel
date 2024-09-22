@@ -27,6 +27,7 @@ package dev.derklaro.aerogel;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.QualifiableBindingBuilder;
+import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.builder.ScopeableBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.scope.SingletonScopeApplier;
@@ -614,6 +615,29 @@ public class BindingsTest {
     ScopeableBindingBuilder<Set<String>> bindingBuilder = injector.createBindingBuilder().bind(setStringBindingKey);
     UninstalledBinding<Set<String>> binding = bindingBuilder.toFactoryMethod(factoryMethod);
     Assertions.assertEquals(setStringType, binding.key().type());
+  }
+
+  @Test
+  void testCascadedBindingKeepsCharacteristicsOfCascadedTarget() {
+    Injector injector = Injector.newInjector();
+    UninstalledBinding<Object> singletonObjectBinding = injector.createBindingBuilder()
+      .bind(Object.class)
+      .scopedWithSingleton()
+      .toProvider(Object::new);
+    UninstalledBinding<Object> cascadedBinding = injector.createBindingBuilder()
+      .bind(Object.class)
+      .qualifiedWithName("cascaded")
+      .cascadeTo(singletonObjectBinding);
+    injector.installBinding(singletonObjectBinding).installBinding(cascadedBinding);
+
+    Object instanceA = injector.instance(Object.class);
+    Object instanceB = injector.instance(Object.class);
+    Assertions.assertSame(instanceA, instanceB);
+
+    Object instanceC = injector.instance(cascadedBinding.key());
+    Object instanceD = injector.instance(cascadedBinding.key());
+    Assertions.assertSame(instanceC, instanceD);
+    Assertions.assertSame(instanceA, instanceC);
   }
 
   // @formatter:off
