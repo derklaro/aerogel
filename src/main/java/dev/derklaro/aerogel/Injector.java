@@ -335,4 +335,11 @@ public interface Injector {
    */
   @NotNull
   Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry();
+
+  /**
+   * Closes this injector. Depending on the implementation this can do multiple things. A targeted injector for example
+   * cleans up all it's registered bindings in parent injectors. An injector whose close method was invoked can be used
+   * after as usual.
+   */
+  void close();
 }

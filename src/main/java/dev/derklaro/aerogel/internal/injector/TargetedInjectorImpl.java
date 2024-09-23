@@ -173,8 +173,9 @@ final class TargetedInjectorImpl implements Injector {
 
     // construct a new jit binding for the type and register it to the non-targeted injector in the hierarchy
     InstalledBinding<?> jitBinding = this.jitBindingFactory.createJitBinding(key);
-    this.nonTargetedInjector.bindingRegistry().register(key, jitBinding);
-    return (InstalledBinding<T>) jitBinding;
+    InstalledBinding<?> wrappedBinding = new TargetedInjectorBindingWrapper.InstalledWrapper<>(this, jitBinding);
+    this.nonTargetedInjector.bindingRegistry().register(key, wrappedBinding);
+    return (InstalledBinding<T>) wrappedBinding;
   }
 
   @Override
@@ -192,13 +193,15 @@ final class TargetedInjectorImpl implements Injector {
 
   @Override
   public @NotNull Injector installBinding(@NotNull DynamicBinding binding) {
-    this.parent.installBinding(binding);
+    DynamicBinding wrappedBinding = new TargetedInjectorBindingWrapper.DynamicWrapper(this, binding);
+    this.parent.installBinding(wrappedBinding);
     return this;
   }
 
   @Override
   public @NotNull <T> Injector installBinding(@NotNull UninstalledBinding<T> binding) {
-    this.parent.installBinding(binding);
+    UninstalledBinding<?> wrappedBinding = new TargetedInjectorBindingWrapper<>(binding, this);
+    this.parent.installBinding(wrappedBinding);
     return this;
   }
 
@@ -215,5 +218,32 @@ final class TargetedInjectorImpl implements Injector {
   @Override
   public @NotNull Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry() {
     return this.parent.scopeRegistry();
+  }
+
+  @Override
+  public void close() {
+    // removes all bindings that were registered from this injector into the parent binding
+    // registry. this uses the wrapper classes to determine if this injector is the owner
+    // of the binding in the registry
+
+    Registry.WithKeyMapping<BindingKey<?>, InstalledBinding<?>> bindingRegistry = this.nonTargetedInjector.bindingRegistry();
+    bindingRegistry.unregister(binding -> {
+      if (binding instanceof TargetedInjectorBindingWrapper.InstalledWrapper<?>) {
+        TargetedInjectorBindingWrapper.InstalledWrapper<?> wrapper = (TargetedInjectorBindingWrapper.InstalledWrapper<?>) binding;
+        return wrapper.originalInjector == this;
+      } else {
+        return false;
+      }
+    });
+
+    Registry.WithoutKeyMapping<BindingKey<?>, DynamicBinding> dynamicBindingRegistry = this.nonTargetedInjector.dynamicBindingRegistry();
+    dynamicBindingRegistry.unregister(binding -> {
+      if (binding instanceof TargetedInjectorBindingWrapper.DynamicWrapper) {
+        TargetedInjectorBindingWrapper.DynamicWrapper wrapper = (TargetedInjectorBindingWrapper.DynamicWrapper) binding;
+        return wrapper.originalInjector == this;
+      } else {
+        return false;
+      }
+    });
   }
 }

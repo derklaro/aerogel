@@ -440,6 +440,34 @@ public class InjectorTest {
     Assertions.assertNotSame(instance1, instance2);
   }
 
+  @Test
+  void testTargetedInjectorUnregistersRegisteredBindingsOnClose() {
+    Injector injector = Injector.newInjector();
+    UninstalledBinding<String> stringBinding = injector.createBindingBuilder()
+      .bind(String.class)
+      .toInstance("Hello");
+    UninstalledBinding<Integer> intBinding = injector.createBindingBuilder()
+      .bind(int.class)
+      .toInstance(123);
+
+    Injector targetedInjector = injector.createTargetedInjectorBuilder()
+      .installBinding(stringBinding)
+      .build();
+    targetedInjector.installBinding(intBinding);
+
+    // ensure bindings are present and in correct injector
+    InstalledBinding<String> sb = targetedInjector.binding(BindingKey.of(String.class));
+    Assertions.assertSame(targetedInjector, sb.installedInjector());
+    InstalledBinding<Integer> ib = targetedInjector.binding(BindingKey.of(Integer.class));
+    Assertions.assertSame(injector, ib.installedInjector());
+
+    // call close, the int binding should be removed from parent injector now
+    targetedInjector.close();
+    InstalledBinding<String> sbr = targetedInjector.binding(BindingKey.of(String.class));
+    Assertions.assertSame(targetedInjector, sbr.installedInjector());
+    Assertions.assertTrue(targetedInjector.existingBinding(BindingKey.of(Integer.class)).isEmpty());
+  }
+
   // @formatter:off
   @ProvidedBy(TestItfImpl.class) public interface TestItf {}
   @ProvidedBy(TestItfImpl.class) public interface ProvidedByNonSubclass {}

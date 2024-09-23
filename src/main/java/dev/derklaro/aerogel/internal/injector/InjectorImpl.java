@@ -254,4 +254,8 @@ public final class InjectorImpl implements Injector {
   public @NotNull Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry() {
     return this.scopeRegistry;
   }
+
+  @Override
+  public void close() {
+  }
 }
