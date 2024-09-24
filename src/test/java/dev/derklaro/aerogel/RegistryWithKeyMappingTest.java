@@ -50,14 +50,6 @@ public class RegistryWithKeyMappingTest {
   }
 
   @Test
-  void testDuplicateRegistrationThrowsError() {
-    Registry.WithKeyMapping<String, String> registry = Registry.createRegistryWithKeys();
-    Assertions.assertDoesNotThrow(() -> registry.register("test", "world"));
-    Assertions.assertThrows(IllegalArgumentException.class, () -> registry.register("test", "lol"));
-    Assertions.assertDoesNotThrow(() -> registry.register("Test", "world"));
-  }
-
-  @Test
   void testChildRegistryCanAccessParentRegistry() {
     Registry.WithKeyMapping<String, String> registry = Registry.createRegistryWithKeys();
     registry.register("hello", "world");

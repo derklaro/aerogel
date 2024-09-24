@@ -192,7 +192,6 @@ public interface Registry<K, V> {
      *
      * @param key   the key to associate with the given value.
      * @param value the value to associated with the given key.
-     * @throws IllegalArgumentException      if the given key is already mapped to a value in this registry.
      * @throws UnsupportedOperationException if this registry is frozen.
      */
     void register(@NotNull K key, @NotNull V value);
@@ -246,7 +245,6 @@ public interface Registry<K, V> {
      * Registers the given value into this registry.
      *
      * @param value the value to register.
-     * @throws IllegalArgumentException      if the given value is already registered in this registry.
      * @throws UnsupportedOperationException if this registry is frozen.
      */
     void register(@NotNull V value);

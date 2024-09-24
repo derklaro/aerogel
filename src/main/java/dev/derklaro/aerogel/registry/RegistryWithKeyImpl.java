@@ -82,10 +82,7 @@ final class RegistryWithKeyImpl<K, V> implements Registry.WithKeyMapping<K, V> {
    */
   @Override
   public void register(@NotNull K key, @NotNull V value) {
-    V previous = this.backingMap.putIfAbsent(key, value);
-    if (previous != null) {
-      throw new IllegalArgumentException("Key " + key + " already registered in registry");
-    }
+    this.backingMap.putIfAbsent(key, value);
   }
 
   /**

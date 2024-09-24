@@ -98,10 +98,7 @@ final class RegistryWithoutKeyImpl<K, V> implements Registry.WithoutKeyMapping<K
    */
   @Override
   public void register(@NotNull V value) {
-    Boolean prev = this.backingMap.putIfAbsent(value, Boolean.TRUE);
-    if (prev != null) {
-      throw new IllegalArgumentException("Registry did already contain value " + value);
-    }
+    this.backingMap.putIfAbsent(value, Boolean.TRUE);
   }
 
   /**
