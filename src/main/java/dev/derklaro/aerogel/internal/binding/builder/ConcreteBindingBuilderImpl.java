@@ -80,10 +80,10 @@ final class ConcreteBindingBuilderImpl<T> implements KeyableBindingBuilder<T> {
     @NotNull BindingOptionsImpl bindingOptions,
     @NotNull Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry
   ) {
-    this(bindingKeys, scopeRegistry, null, bindingOptions);
+    this(new ArrayList<>(bindingKeys), scopeRegistry, null, bindingOptions);
   }
 
-  public ConcreteBindingBuilderImpl(
+  private ConcreteBindingBuilderImpl(
     @NotNull List<BindingKey<? extends T>> bindingKeys,
     @NotNull Registry.WithKeyMapping<Class<? extends Annotation>, ScopeApplier> scopeRegistry,
     @Nullable ScopeApplier scope,
@@ -197,6 +197,7 @@ final class ConcreteBindingBuilderImpl<T> implements KeyableBindingBuilder<T> {
 
   @Override
   public @NotNull UninstalledBinding<T> toInstance(@NotNull T instance) {
+    this.addBindingTarget(instance.getClass()); // bind the implementation type as well
     ScopeApplier scope = this.resolveScopeApplier(instance.getClass().getAnnotations());
     ProviderFactory<T> providerFactory = InstanceProviderFactory.ofInstance(instance);
     return this.createFinalBinding(scope, providerFactory);
@@ -210,6 +211,7 @@ final class ConcreteBindingBuilderImpl<T> implements KeyableBindingBuilder<T> {
       throw new IllegalArgumentException("Factory method must be static and return a subtype of " + targetType);
     }
 
+    this.addBindingTarget(factoryMethod.getReturnType()); // bind the implementation type as well
     MethodHandles.Lookup lookup = this.resolveMemberLookup();
     ProviderFactory<T> providerFactory = FactoryMethodProviderFactory.fromMethod(factoryMethod, lookup);
 
@@ -242,6 +244,7 @@ final class ConcreteBindingBuilderImpl<T> implements KeyableBindingBuilder<T> {
 
   @Override
   public @NotNull UninstalledBinding<T> toConstructor(@NotNull Constructor<? extends T> constructor) {
+    this.addBindingTarget(constructor.getDeclaringClass()); // bind the implementation type as well
     MethodHandles.Lookup lookup = this.resolveMemberLookup();
     ProviderFactory<T> providerFactory = ConstructorProviderFactory.fromConstructor(constructor, lookup);
 
@@ -255,6 +258,7 @@ final class ConcreteBindingBuilderImpl<T> implements KeyableBindingBuilder<T> {
       throw new IllegalArgumentException("Cannot construct abstract type " + implementationType.getName());
     }
 
+    this.addBindingTarget(implementationType); // bind the implementation type as well
     MethodHandles.Lookup lookup = this.resolveMemberLookup();
     ProviderFactory<T> providerFactory = ConstructorProviderFactory.fromClass(implementationType, lookup);
 
@@ -287,6 +291,14 @@ final class ConcreteBindingBuilderImpl<T> implements KeyableBindingBuilder<T> {
   ) {
     List<BindingKey<? extends T>> bindingKeys = List.copyOf(this.bindingKeys);
     return new UninstalledBindingImpl<>(bindingKeys, scope, this.options, providerFactory);
+  }
+
+  private void addBindingTarget(@NotNull Class<?> type) {
+    //noinspection unchecked
+    BindingKey<? extends T> targetKey = (BindingKey<? extends T>) this.bindingKeys.get(0).withType(type);
+    if (!this.bindingKeys.contains(targetKey)) {
+      this.bindingKeys.add(targetKey);
+    }
   }
 
   private @NotNull MethodHandles.Lookup resolveMemberLookup() {
