@@ -182,20 +182,22 @@ public final class InjectionContext {
    *
    * @param root            the root context.
    * @param binding         the binding that requested this context.
+   * @param overrides       the overridden instances whose delegates are present immediately.
    * @param contextProvider the provider that constructed this context.
    */
   private InjectionContext(
     @NotNull InjectionContext root,
     @NotNull InstalledBinding<?> binding,
+    @NotNull Map<BindingKey<?>, Provider<?>> overrides,
     @NotNull InjectionContextProvider contextProvider
   ) {
     this.root = root;
     this.binding = binding;
+    this.overrides = Map.copyOf(overrides);
     this.contextProvider = contextProvider;
 
     // just use the empty variants as we're not the root
     this.injector = null;
-    this.overrides = null;
     this.knownProxies = Collections.emptyList();
     this.requestedMemberInjections = Collections.emptySet();
   }
@@ -213,6 +215,11 @@ public final class InjectionContext {
     } else {
       // copy this injection context into a new root context, preserving the given overrides
       Map<BindingKey<?>, Provider<?>> overriddenProviders = new HashMap<>(overrides);
+      InjectionContext ctx = this;
+      do {
+        overriddenProviders.putAll(ctx.overrides);
+      } while ((ctx = ctx.prev) != null);
+
       overriddenProviders.putAll(this.overrides);
       context = new InjectionContext(injector, binding, overriddenProviders, contextProvider);
     }
@@ -228,17 +235,29 @@ public final class InjectionContext {
     return context;
   }
 
+  public @NotNull InstalledBinding<?> binding(@NotNull BindingKey<?> key) {
+    Provider<?> overridden = this.findOverriddenProvider(key);
+    if (overridden != null) {
+      return new OverriddenInstalledBinding(this.injector(), key, overridden);
+    } else {
+      return this.injector().binding(key);
+    }
+  }
+
   public @NotNull InjectionContextScope enterSubcontextScope(@NotNull InstalledBinding<?> binding) {
     return this.contextProvider.enterContextScope(this.injector(), binding);
   }
 
   // Note: only for calls from InjectionContextProvider, use enterSubcontextScope elsewhere
-  public @NotNull InjectionContext enterSubcontext(@NotNull InstalledBinding<?> binding) {
+  public @NotNull InjectionContext enterSubcontext(
+    @NotNull InstalledBinding<?> binding,
+    @NotNull Map<BindingKey<?>, Provider<?>> overrides
+  ) {
     // check if the root context has an overridden value available if the associated element is known
     Provider<?> overridden = this.findOverriddenProvider(binding);
     if (overridden != null) {
       // create a sub context which just returns the given instance
-      InjectionContext subcontext = new InjectionContext(this.root, binding, this.contextProvider);
+      InjectionContext subcontext = new InjectionContext(this.root, binding, overrides, this.contextProvider);
       subcontext.state = STATE_DELEGATED;
       subcontext.delegate = overridden.get();
       return subcontext.init(this);
@@ -286,7 +305,7 @@ public final class InjectionContext {
       Class<?> leafRawType = GenericTypeReflector.erase(knownLeaf.binding.mainKey().type());
       if (leafRawType.isInterface()) {
         // create a marker context which holds the proxy for the leaf type
-        InjectionContext subcontext = new InjectionContext(this.root, binding, this.contextProvider);
+        InjectionContext subcontext = new InjectionContext(this.root, binding, overrides, this.contextProvider);
         subcontext.virtual = true;
         subcontext.state = STATE_PROXIED;
         subcontext.init(this);
@@ -342,7 +361,7 @@ public final class InjectionContext {
     }
 
     // nothing special to do, just construct a brand-new sub context
-    InjectionContext subcontext = new InjectionContext(this.root, binding, this.contextProvider);
+    InjectionContext subcontext = new InjectionContext(this.root, binding, overrides, this.contextProvider);
     return subcontext.init(this);
   }
 
@@ -603,13 +622,36 @@ public final class InjectionContext {
    * @return the overridden provider, or null if no provider override is registered that matches the given binding.
    */
   public @Nullable Provider<?> findOverriddenProvider(@NotNull InstalledBinding<?> binding) {
-    // overrides are provided to the root injector only
-    for (BindingKey<?> key : binding.keys()) {
-      Provider<?> override = this.root.overrides.get(key);
+    InjectionContext context = this;
+    do {
+      Map<BindingKey<?>, Provider<?>> overrides = context.overrides;
+      if (!overrides.isEmpty()) {
+        for (BindingKey<?> key : binding.keys()) {
+          Provider<?> override = overrides.get(key);
+          if (override != null) {
+            return override;
+          }
+        }
+      }
+    } while ((context = context.prev) != null);
+
+    return null;
+  }
+
+  /**
+   * Tries to resolve an overridden provider for the given binding key.
+   *
+   * @param key the key to find an overridden provider for.
+   * @return the overridden provider for the given key or null if no override was found.
+   */
+  public @Nullable Provider<?> findOverriddenProvider(@NotNull BindingKey<?> key) {
+    InjectionContext context = this;
+    do {
+      Provider<?> override = context.overrides.get(key);
       if (override != null) {
         return override;
       }
-    }
+    } while ((context = context.prev) != null);
 
     return null;
   }

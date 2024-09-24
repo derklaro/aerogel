@@ -29,6 +29,8 @@ import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
 import io.leangen.geantyref.AnnotationFormatException;
 import io.leangen.geantyref.TypeFactory;
 import io.leangen.geantyref.TypeToken;
@@ -39,6 +41,8 @@ import jakarta.inject.Singleton;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.Collections;
+import java.util.Map;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -468,6 +472,48 @@ public class InjectorTest {
     Assertions.assertTrue(targetedInjector.existingBinding(BindingKey.of(Integer.class)).isEmpty());
   }
 
+  @Test
+  void testOverriddenProvidersKeptInScopeDuringFullInjectionLifetime() {
+    Injector injector = Injector.newInjector();
+    UninstalledBinding<String> stringBinding = injector.createBindingBuilder()
+      .bind(String.class)
+      .qualifiedWithName("test1")
+      .toInstance("Hello World!");
+    injector.installBinding(stringBinding);
+
+    Map<BindingKey<?>, Provider<?>> overrides = Map.of(BindingKey.of(String.class), () -> "World!");
+    InstalledBinding<?> binding = injector.binding(BindingKey.of(OverriddenProvidersTestClass.class));
+    InjectionContextScope scope = InjectionContextProvider.provider().enterContextScope(injector, binding, overrides);
+    Object constructedInstance = scope.executeScoped(() -> {
+      try {
+        return scope.context().resolveInstance();
+      } finally {
+        scope.context().finishConstruction();
+      }
+    });
+
+    OverriddenProvidersTestClass instance = Assertions.assertInstanceOf(OverriddenProvidersTestClass.class, constructedInstance);
+    Assertions.assertEquals("World!", instance.test0);
+    Assertions.assertEquals("Hello World!", instance.test1);
+    Assertions.assertEquals("World!", instance.ctorTest0);
+    Assertions.assertEquals("Hello World!", instance.ctorTest1);
+    Assertions.assertEquals("World!", instance.methodTest0);
+    Assertions.assertEquals("Hello World!", instance.methodTest1);
+
+    Consumer<OverriddenProvidersTestSubClass> subClassValidator = sub -> {
+      Assertions.assertEquals("World!", sub.test0);
+      Assertions.assertEquals("Hello World!", sub.test1);
+      Assertions.assertEquals("World!", sub.ctorTest0);
+      Assertions.assertEquals("Hello World!", sub.ctorTest1);
+      Assertions.assertEquals("World!", sub.methodTest0);
+      Assertions.assertEquals("Hello World!", sub.methodTest1);
+    };
+
+    subClassValidator.accept(instance.fieldSub);
+    subClassValidator.accept(instance.ctorSub);
+    subClassValidator.accept(instance.methodSub);
+  }
+
   // @formatter:off
   @ProvidedBy(TestItfImpl.class) public interface TestItf {}
   @ProvidedBy(TestItfImpl.class) public interface ProvidedByNonSubclass {}
@@ -477,6 +523,37 @@ public class InjectorTest {
   public static final class InjectableClass {
     private final String test;
     @Inject public InjectableClass(@Named("test") String test) { this.test = test; }
+  }
+  public static final class OverriddenProvidersTestClass {
+    @Inject String test0;
+    @Inject @Named("test1") String test1;
+    @Inject OverriddenProvidersTestSubClass fieldSub;
+    String ctorTest0;
+    String ctorTest1;
+    OverriddenProvidersTestSubClass ctorSub;
+    String methodTest0;
+    String methodTest1;
+    OverriddenProvidersTestSubClass methodSub;
+    @Inject OverriddenProvidersTestClass(String test0, @Named("test1") String test1, OverriddenProvidersTestSubClass sub) {
+      this.ctorTest0 = test0; this.ctorTest1 = test1; this.ctorSub = sub;
+    }
+    @Inject void method(String test0, @Named("test1") String test1, OverriddenProvidersTestSubClass sub) {
+      this.methodTest0 = test0; this.methodTest1 = test1; this.methodSub = sub;
+    }
+  }
+  public static final class OverriddenProvidersTestSubClass {
+    @Inject String test0;
+    @Inject @Named("test1") String test1;
+    String ctorTest0;
+    String ctorTest1;
+    String methodTest0;
+    String methodTest1;
+    @Inject OverriddenProvidersTestSubClass(String test0, @Named("test1") String test1) {
+      this.ctorTest0 = test0; this.ctorTest1 = test1;
+    }
+    @Inject void method(String test0, @Named("test1") String test1) {
+      this.methodTest0 = test0; this.methodTest1 = test1;
+    }
   }
   // @formatter:on
 }

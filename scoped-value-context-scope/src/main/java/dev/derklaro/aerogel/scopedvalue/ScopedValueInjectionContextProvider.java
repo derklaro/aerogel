@@ -73,7 +73,7 @@ public final class ScopedValueInjectionContextProvider implements InjectionConte
         return new ScopedValueInjectionContextScope(newContext, this.scopeScopedValue);
       } else {
         // we're already in an existing root context, enter a subcontext of that one
-        InjectionContext subcontext = currentContext.enterSubcontext(binding);
+        InjectionContext subcontext = currentContext.enterSubcontext(binding, overrides);
         return new ScopedValueInjectionContextScope(subcontext, this.scopeScopedValue);
       }
     } else {

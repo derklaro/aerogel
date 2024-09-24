@@ -26,6 +26,8 @@ package dev.derklaro.aerogel.internal.member;
 
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.key.BindingKey;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
+import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
 import dev.derklaro.aerogel.internal.provider.ParameterProviderFactory;
 import dev.derklaro.aerogel.internal.util.MethodHandleUtil;
 import dev.derklaro.aerogel.internal.util.UnreflectionUtil;
@@ -37,15 +39,30 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import org.jetbrains.annotations.NotNull;
 
-interface InjectableMember {
+abstract class InjectableMember {
+
+  private static @NotNull Provider<?> resolveProviderForKey(@NotNull Injector injector, @NotNull BindingKey<?> key) {
+    // try to get an overridden provider from the current injection scope first before
+    // trying to get a provider from the injector. that way overrides are preserved
+    // when doing member injection rather than being replaced by the usual binding
+    InjectionContextScope currentScope = InjectionContextProvider.provider().currentScope();
+    if (currentScope != null) {
+      Provider<?> overridden = currentScope.context().findOverriddenProvider(key);
+      if (overridden != null) {
+        return overridden;
+      }
+    }
+
+    return injector.provider(key);
+  }
 
   @NotNull
-  MemberInjectionExecutor provideInjectionExecutor(
+  public abstract MemberInjectionExecutor provideInjectionExecutor(
     @NotNull Injector injector,
     @NotNull MethodHandles.Lookup lookup
   ) throws Exception;
 
-  final class InjectableField implements InjectableMember {
+  static final class InjectableField extends InjectableMember {
 
     private final Field field;
     private final boolean isStatic;
@@ -70,10 +87,10 @@ interface InjectableMember {
       MethodHandle setter = UnreflectionUtil.unreflectFieldSetter(this.field, lookup);
 
       // resolve the provider for the field and generify the setter method handle
-      Provider<?> fieldProvider = injector.provider(this.key);
       MethodHandle genericSetter = MethodHandleUtil.generifyFieldSetter(setter, this.isStatic);
       return constructedInstance -> {
         if ((!this.isStatic && constructedInstance != null) || (this.isStatic && this.tracker.markInjected())) {
+          Provider<?> fieldProvider = InjectableMember.resolveProviderForKey(injector, key);
           Object fieldValue = fieldProvider.get();
           genericSetter.invokeExact(constructedInstance, fieldValue);
         }
@@ -81,7 +98,7 @@ interface InjectableMember {
     }
   }
 
-  final class InjectableMethod implements InjectableMember {
+  static final class InjectableMethod extends InjectableMember {
 
     private static final Object[] NO_PARAMS = new Object[0];
 
@@ -128,7 +145,7 @@ interface InjectableMember {
       Object[] paramInstances = new Object[paramKeyCount];
       for (int keyIndex = 0; keyIndex < paramKeyCount; keyIndex++) {
         BindingKey<?> key = this.paramKeys[keyIndex];
-        Provider<?> paramProvider = injector.provider(key);
+        Provider<?> paramProvider = InjectableMember.resolveProviderForKey(injector, key);
         paramInstances[keyIndex] = paramProvider.get();
       }
 

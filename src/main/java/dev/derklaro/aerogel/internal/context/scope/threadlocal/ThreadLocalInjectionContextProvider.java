@@ -73,7 +73,7 @@ public final class ThreadLocalInjectionContextProvider implements InjectionConte
         return new ThreadLocalInjectionContextScope(newContext, this.scopeThreadLocal);
       } else {
         // we're already in an existing root context, enter a subcontext of that one
-        InjectionContext subcontext = currentContext.enterSubcontext(binding);
+        InjectionContext subcontext = currentContext.enterSubcontext(binding, overrides);
         return new ThreadLocalInjectionContextScope(subcontext, this.scopeThreadLocal);
       }
     } else {
