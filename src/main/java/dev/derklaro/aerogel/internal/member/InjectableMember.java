@@ -90,7 +90,7 @@ abstract class InjectableMember {
       MethodHandle genericSetter = MethodHandleUtil.generifyFieldSetter(setter, this.isStatic);
       return constructedInstance -> {
         if ((!this.isStatic && constructedInstance != null) || (this.isStatic && this.tracker.markInjected())) {
-          Provider<?> fieldProvider = InjectableMember.resolveProviderForKey(injector, key);
+          Provider<?> fieldProvider = InjectableMember.resolveProviderForKey(injector, this.key);
           Object fieldValue = fieldProvider.get();
           genericSetter.invokeExact(constructedInstance, fieldValue);
         }
