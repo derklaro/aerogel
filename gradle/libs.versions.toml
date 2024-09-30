@@ -13,10 +13,10 @@ annotations = "24.1.0"
 jakartaInject = "2.0.1"
 
 # testing
-junit = "5.11.0"
+junit = "5.11.1"
 lombok = "1.18.34"
 javapoet = "1.13.0"
-junitLauncher = "1.11.0"
+junitLauncher = "1.11.1"
 compileTesting = "0.21.0"
 
 
