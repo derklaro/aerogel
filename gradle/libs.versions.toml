@@ -3,7 +3,7 @@
 # plugins
 modularity = "1.8.15"
 nexusPublish = "2.0.0"
-spotless = "7.0.0.BETA2"
+spotless = "7.0.0.BETA4"
 checkstyleTools = "10.18.2"
 
 # dependencies
