@@ -24,7 +24,6 @@
 
 package dev.derklaro.aerogel;
 
-import dev.derklaro.aerogel.internal.ConstructionException;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -34,7 +33,8 @@ public class UnbreakableCircularDependencyTest {
   @Test
   void unbreakableCycleShouldThrowException() {
     Injector injector = Injector.newInjector();
-    Assertions.assertThrows(ConstructionException.class, () -> injector.instance(A.class));
+    Exception thrown = Assertions.assertThrows(RuntimeException.class, () -> injector.instance(A.class));
+    Assertions.assertTrue(thrown.getMessage().startsWith("Detected cyclic dependency while constructing"));
   }
 
   private static final class A {
