@@ -67,9 +67,11 @@ public class ThreadLocalContextKeptInScopeTest {
 
     // with override
     {
-      InstalledBinding<SomeClass> someClassBinding = injector.binding(BindingKey.of(SomeClass.class));
+      BindingKey<SomeClass> someClassBindingKey = BindingKey.of(SomeClass.class);
+      InstalledBinding<SomeClass> someClassBinding = injector.binding(someClassBindingKey);
       InjectionContextScope scope = InjectionContextProvider.provider().enterContextScope(
         injector,
+        someClassBindingKey,
         someClassBinding,
         Collections.singletonMap(worldStringBinding.mainKey(), () -> "World!"));
 

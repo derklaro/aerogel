@@ -89,6 +89,10 @@ public final class InjectionContext {
    * The binding instance that requested the construction of the element.
    */
   private final InstalledBinding<?> binding;
+  /**
+   * The key for which this in context was created, must be associated with the binding.
+   */
+  private final BindingKey<?> requestingKey;
 
   /**
    * The context provider that tracks this scope, null if no provider is responsible for this scope.
@@ -157,18 +161,21 @@ public final class InjectionContext {
    * Constructs a new root injection context.
    *
    * @param injector        the injector that is associated with the context.
+   * @param requestingKey   the key that was initially used to retrieve the associated binding.
    * @param binding         the binding that requested this context.
    * @param overrides       the overridden instances whose delegates are present immediately.
    * @param contextProvider the context provider that is tracking the context.
    */
   public InjectionContext(
     @NotNull Injector injector,
+    @NotNull BindingKey<?> requestingKey,
     @NotNull InstalledBinding<?> binding,
     @NotNull Map<BindingKey<?>, Provider<?>> overrides,
     @NotNull InjectionContextProvider contextProvider
   ) {
     this.injector = injector;
     this.binding = binding;
+    this.requestingKey = requestingKey;
     this.contextProvider = contextProvider;
 
     this.root = this;
@@ -181,18 +188,21 @@ public final class InjectionContext {
    * Constructs a new sub injection context of the given root context.
    *
    * @param root            the root context.
+   * @param requestingKey   the key that was initially used to retrieve the associated binding.
    * @param binding         the binding that requested this context.
    * @param overrides       the overridden instances whose delegates are present immediately.
    * @param contextProvider the provider that constructed this context.
    */
   private InjectionContext(
     @NotNull InjectionContext root,
+    @NotNull BindingKey<?> requestingKey,
     @NotNull InstalledBinding<?> binding,
     @NotNull Map<BindingKey<?>, Provider<?>> overrides,
     @NotNull InjectionContextProvider contextProvider
   ) {
     this.root = root;
     this.binding = binding;
+    this.requestingKey = requestingKey;
     this.overrides = Map.copyOf(overrides);
     this.contextProvider = contextProvider;
 
@@ -204,6 +214,7 @@ public final class InjectionContext {
 
   public @NotNull InjectionContext copyAsRoot(
     @NotNull Injector injector,
+    @NotNull BindingKey<?> requestingKey,
     @NotNull InstalledBinding<?> binding,
     @NotNull Map<BindingKey<?>, Provider<?>> overrides,
     @NotNull InjectionContextProvider contextProvider
@@ -211,7 +222,7 @@ public final class InjectionContext {
     InjectionContext context;
     if (this.overrides == null || this.overrides.isEmpty()) {
       // if this context has no overrides just return a new context using the given overrides
-      context = new InjectionContext(injector, binding, overrides, contextProvider);
+      context = new InjectionContext(injector, requestingKey, binding, overrides, contextProvider);
     } else {
       // copy this injection context into a new root context, preserving the given overrides
       Map<BindingKey<?>, Provider<?>> overriddenProviders = new HashMap<>(overrides);
@@ -221,7 +232,7 @@ public final class InjectionContext {
       } while ((ctx = ctx.prev) != null);
 
       overriddenProviders.putAll(this.overrides);
-      context = new InjectionContext(injector, binding, overriddenProviders, contextProvider);
+      context = new InjectionContext(injector, requestingKey, binding, overriddenProviders, contextProvider);
     }
 
     // check if the root context has an overridden value available if the associated element is known
@@ -244,12 +255,16 @@ public final class InjectionContext {
     }
   }
 
-  public @NotNull InjectionContextScope enterSubcontextScope(@NotNull InstalledBinding<?> binding) {
-    return this.contextProvider.enterContextScope(this.injector(), binding);
+  public @NotNull InjectionContextScope enterSubcontextScope(
+    @NotNull BindingKey<?> requestingKey,
+    @NotNull InstalledBinding<?> binding
+  ) {
+    return this.contextProvider.enterContextScope(this.injector(), requestingKey, binding);
   }
 
   // Note: only for calls from InjectionContextProvider, use enterSubcontextScope elsewhere
   public @NotNull InjectionContext enterSubcontext(
+    @NotNull BindingKey<?> requestingKey,
     @NotNull InstalledBinding<?> binding,
     @NotNull Map<BindingKey<?>, Provider<?>> overrides
   ) {
@@ -257,7 +272,12 @@ public final class InjectionContext {
     Provider<?> overridden = this.findOverriddenProvider(binding);
     if (overridden != null) {
       // create a sub context which just returns the given instance
-      InjectionContext subcontext = new InjectionContext(this.root, binding, overrides, this.contextProvider);
+      InjectionContext subcontext = new InjectionContext(
+        this.root,
+        requestingKey,
+        binding,
+        overrides,
+        this.contextProvider);
       subcontext.state = STATE_DELEGATED;
       subcontext.delegate = overridden.get();
       return subcontext.init(this);
@@ -274,7 +294,7 @@ public final class InjectionContext {
       }
 
       // this is a circular call, check if we can proxy this leaf first
-      Class<?> ourRawType = GenericTypeReflector.erase(this.binding.mainKey().type());
+      Class<?> ourRawType = GenericTypeReflector.erase(this.requestingKey.type());
       if (ourRawType.isInterface()) {
         // yes, this is proxyable
         if (this.createdProxy == null) {
@@ -285,7 +305,7 @@ public final class InjectionContext {
           } else {
             // proxy the type as a try to break the circular reference
             Runnable proxyRemoveListener = new LeafWaitingConstructionRemoveTask(knownLeaf);
-            InjectionTimeProxy itp = InjectionTimeProxy.make(ourRawType, proxyRemoveListener, this.binding);
+            InjectionTimeProxy itp = InjectionTimeProxy.make(proxyRemoveListener, this.binding);
             this.setProxy(itp);
 
             // add a note to the leaf context that it should resume the construction
@@ -302,10 +322,15 @@ public final class InjectionContext {
       }
 
       // check if the known leaf node is proxyable
-      Class<?> leafRawType = GenericTypeReflector.erase(knownLeaf.binding.mainKey().type());
+      Class<?> leafRawType = GenericTypeReflector.erase(requestingKey.type());
       if (leafRawType.isInterface()) {
         // create a marker context which holds the proxy for the leaf type
-        InjectionContext subcontext = new InjectionContext(this.root, binding, overrides, this.contextProvider);
+        InjectionContext subcontext = new InjectionContext(
+          this.root,
+          requestingKey,
+          binding,
+          overrides,
+          this.contextProvider);
         subcontext.virtual = true;
         subcontext.state = STATE_PROXIED;
         subcontext.init(this);
@@ -321,7 +346,7 @@ public final class InjectionContext {
 
           // proxy the other type as a try to break the circular reference
           Runnable proxyRemoveListener = new LeafConstructionListenerRemoveTask(knownLeaf, listener);
-          InjectionTimeProxy itp = InjectionTimeProxy.make(leafRawType, proxyRemoveListener, binding);
+          InjectionTimeProxy itp = InjectionTimeProxy.make(proxyRemoveListener, binding);
           subcontext.setProxy(itp);
         }
 
@@ -361,7 +386,12 @@ public final class InjectionContext {
     }
 
     // nothing special to do, just construct a brand-new sub context
-    InjectionContext subcontext = new InjectionContext(this.root, binding, overrides, this.contextProvider);
+    InjectionContext subcontext = new InjectionContext(
+      this.root,
+      requestingKey,
+      binding,
+      overrides,
+      this.contextProvider);
     return subcontext.init(this);
   }
 

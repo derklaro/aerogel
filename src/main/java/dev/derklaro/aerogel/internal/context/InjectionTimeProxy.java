@@ -25,7 +25,9 @@
 package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.binding.InstalledBinding;
+import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.util.NullMask;
+import io.leangen.geantyref.GenericTypeReflector;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -52,8 +54,7 @@ final class InjectionTimeProxy {
   private Runnable removeListener;
 
   /**
-   * Constructs a new injection time proxy instance. For internal use only. Instances should only be constructed using
-   * {@link #make(Class, Runnable, InstalledBinding)}.
+   * Constructs a new injection time proxy instance. For internal use only.
    *
    * @param proxy             the created proxy instance.
    * @param removeListener    the callback to execute when the delegate gets set.
@@ -74,20 +75,25 @@ final class InjectionTimeProxy {
   }
 
   /**
-   * Creates a proxy instance for the given interface type.
+   * Creates a proxy instance for the given binding implementing all of its proxyable keys.
    *
-   * @param interfaceClass the interface type to proxy.
    * @param removeListener the listener to execute when the delegate instance is present.
    * @param binding        the binding to which the proxy belongs.
    * @return a wrapper around the constructed proxy instance.
    */
   public static @NotNull InjectionTimeProxy make(
-    @NotNull Class<?> interfaceClass,
     @NotNull Runnable removeListener,
     @NotNull InstalledBinding<?> binding
   ) {
+    Class<?>[] proxyableTypes = binding.keys().stream()
+      .map(BindingKey::type)
+      .map(GenericTypeReflector::erase)
+      .filter(Class::isInterface)
+      .toArray(Class[]::new);
+    Class<?> mainType = proxyableTypes[0]; // also ensures that at least one proxyable type is given
+
     DelegatingInvocationHandler handler = new DelegatingInvocationHandler();
-    Object proxy = Proxy.newProxyInstance(interfaceClass.getClassLoader(), new Class<?>[]{interfaceClass}, handler);
+    Object proxy = Proxy.newProxyInstance(mainType.getClassLoader(), proxyableTypes, handler);
     return new InjectionTimeProxy(proxy, removeListener, binding, handler);
   }
 

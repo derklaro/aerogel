@@ -26,6 +26,7 @@ package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.binding.InstalledBinding;
+import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
 import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
 import jakarta.inject.Provider;
@@ -40,14 +41,17 @@ public final class ContextualBindingResolver {
     this.targetInjector = targetInjector;
   }
 
-  public @NotNull <T> Provider<T> constructProvider(@NotNull InstalledBinding<T> binding) {
-    return () -> this.resolveInstance(binding);
+  public @NotNull <T> Provider<T> constructProvider(
+    @NotNull BindingKey<?> requestingKey,
+    @NotNull InstalledBinding<T> binding
+  ) {
+    return () -> this.resolveInstance(requestingKey, binding);
   }
 
   @SuppressWarnings("unchecked")
-  public @Nullable <T> T resolveInstance(@NotNull InstalledBinding<T> binding) {
+  public @Nullable <T> T resolveInstance(@NotNull BindingKey<?> requestingKey, @NotNull InstalledBinding<T> binding) {
     InjectionContextProvider provider = InjectionContextProvider.provider();
-    InjectionContextScope scope = provider.enterContextScope(this.targetInjector, binding);
+    InjectionContextScope scope = provider.enterContextScope(this.targetInjector, requestingKey, binding);
     InjectionContext context = scope.context();
     return scope.executeScoped(() -> {
       try {

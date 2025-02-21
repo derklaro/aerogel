@@ -482,8 +482,10 @@ public class InjectorTest {
     injector.installBinding(stringBinding);
 
     Map<BindingKey<?>, Provider<?>> overrides = Map.of(BindingKey.of(String.class), () -> "World!");
-    InstalledBinding<?> binding = injector.binding(BindingKey.of(OverriddenProvidersTestClass.class));
-    InjectionContextScope scope = InjectionContextProvider.provider().enterContextScope(injector, binding, overrides);
+    BindingKey<?> key = BindingKey.of(OverriddenProvidersTestClass.class);
+    InstalledBinding<?> binding = injector.binding(key);
+    InjectionContextScope scope = InjectionContextProvider.provider()
+      .enterContextScope(injector, key, binding, overrides);
     Object constructedInstance = scope.executeScoped(() -> {
       try {
         return scope.context().resolveInstance();
@@ -492,7 +494,9 @@ public class InjectorTest {
       }
     });
 
-    OverriddenProvidersTestClass instance = Assertions.assertInstanceOf(OverriddenProvidersTestClass.class, constructedInstance);
+    OverriddenProvidersTestClass instance = Assertions.assertInstanceOf(
+      OverriddenProvidersTestClass.class,
+      constructedInstance);
     Assertions.assertEquals("World!", instance.test0);
     Assertions.assertEquals("Hello World!", instance.test1);
     Assertions.assertEquals("World!", instance.ctorTest0);

@@ -103,7 +103,7 @@ public final class ParameterProviderFactory implements ProviderFactory<Object[]>
       for (int keyIndex = 0; keyIndex < paramKeyCount; keyIndex++) {
         BindingKey<?> key = this.keys[keyIndex];
         InstalledBinding<?> binding = context.binding(key);
-        InjectionContextScope scope = context.enterSubcontextScope(binding);
+        InjectionContextScope scope = context.enterSubcontextScope(key, binding);
         Object paramInstance = scope.executeScoped(() -> scope.context().resolveInstance());
         paramInstances[keyIndex] = paramInstance;
       }

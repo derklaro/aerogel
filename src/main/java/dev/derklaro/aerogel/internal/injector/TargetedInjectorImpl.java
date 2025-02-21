@@ -142,13 +142,13 @@ final class TargetedInjectorImpl implements Injector {
   @Override
   public @Nullable <T> T instance(@NotNull BindingKey<T> key) {
     InstalledBinding<T> binding = this.binding(key);
-    return this.contextualBindingResolver.resolveInstance(binding);
+    return this.contextualBindingResolver.resolveInstance(key, binding);
   }
 
   @Override
   public @NotNull <T> Provider<T> provider(@NotNull BindingKey<T> key) {
     InstalledBinding<T> binding = this.binding(key);
-    return this.contextualBindingResolver.constructProvider(binding);
+    return this.contextualBindingResolver.constructProvider(key, binding);
   }
 
   @Override

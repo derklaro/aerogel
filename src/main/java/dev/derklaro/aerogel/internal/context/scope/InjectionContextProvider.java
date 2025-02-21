@@ -61,13 +61,18 @@ public interface InjectionContextProvider {
   InjectionContextScope currentScope();
 
   @NotNull
-  default InjectionContextScope enterContextScope(@NotNull Injector injector, @NotNull InstalledBinding<?> binding) {
-    return this.enterContextScope(injector, binding, Collections.emptyMap());
+  default InjectionContextScope enterContextScope(
+    @NotNull Injector injector,
+    @NotNull BindingKey<?> requestingKey,
+    @NotNull InstalledBinding<?> binding
+  ) {
+    return this.enterContextScope(injector, requestingKey, binding, Collections.emptyMap());
   }
 
   @NotNull
   InjectionContextScope enterContextScope(
     @NotNull Injector injector,
+    @NotNull BindingKey<?> requestingKey,
     @NotNull InstalledBinding<?> binding,
     @NotNull Map<BindingKey<?>, Provider<?>> overrides);
 }

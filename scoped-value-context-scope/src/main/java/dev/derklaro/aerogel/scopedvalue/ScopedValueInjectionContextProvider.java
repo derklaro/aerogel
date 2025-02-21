@@ -61,6 +61,7 @@ public final class ScopedValueInjectionContextProvider implements InjectionConte
   @Override
   public @NotNull InjectionContextScope enterContextScope(
     @NotNull Injector injector,
+    @NotNull BindingKey<?> requestingKey,
     @NotNull InstalledBinding<?> binding,
     @NotNull Map<BindingKey<?>, Provider<?>> overrides
   ) {
@@ -69,16 +70,16 @@ public final class ScopedValueInjectionContextProvider implements InjectionConte
       InjectionContext currentContext = currentScope.context();
       if (currentScope.context().obsolete()) {
         // the current root context is obsolete, copy the necessary information from it into a new root context
-        InjectionContext newContext = currentContext.copyAsRoot(injector, binding, overrides, this);
+        InjectionContext newContext = currentContext.copyAsRoot(injector, requestingKey, binding, overrides, this);
         return new ScopedValueInjectionContextScope(newContext, this.scopeScopedValue);
       } else {
         // we're already in an existing root context, enter a subcontext of that one
-        InjectionContext subcontext = currentContext.enterSubcontext(binding, overrides);
+        InjectionContext subcontext = currentContext.enterSubcontext(requestingKey, binding, overrides);
         return new ScopedValueInjectionContextScope(subcontext, this.scopeScopedValue);
       }
     } else {
       // no context yet, construct a new root context
-      InjectionContext newContext = new InjectionContext(injector, binding, overrides, this);
+      InjectionContext newContext = new InjectionContext(injector, requestingKey, binding, overrides, this);
       return new ScopedValueInjectionContextScope(newContext, this.scopeScopedValue);
     }
   }
