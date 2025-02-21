@@ -22,58 +22,40 @@
  * THE SOFTWARE.
  */
 
-package dev.derklaro.aerogel.internal;
+package dev.derklaro.aerogel.internal.context;
 
+import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.internal.PassThroughException;
+import java.util.Arrays;
 import org.apiguardian.api.API;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * Represents an exception which, when caught, should be rethrown as-is without further wrapping. This exception type
- * has never a stacktrace available.
+ * Exception thrown when a cyclic dependency gets detected during construction.
  *
+ * @author Pasqual Koschmieder
  * @since 2.0
  */
-@API(status = API.Status.INTERNAL, since = "2.0")
-public class PassThroughException extends RuntimeException {
+@API(status = API.Status.INTERNAL, since = "3.0")
+final class UnbreakableCyclicDependencyException extends PassThroughException {
 
   /**
-   * Constructs a new instance of this exception, protected to ensure that only overrides are possible.
+   * The package name to filter from the exception stack trace.
    */
-  protected PassThroughException() {
-  }
+  private static final String PACKAGE_PREFIX = Injector.class.getPackageName();
 
-  /**
-   * Constructs a new instance of this exception, protected to ensure that only overrides are possible.
-   *
-   * @param cause the cause which should be available for later retrieval.
-   */
-  protected PassThroughException(@NotNull Throwable cause) {
-    super(cause);
-  }
-
-  /**
-   * Constructs a new instance of this exception, protected to ensure that only overrides are possible.
-   *
-   * @param message the message describing why the exception occurred.
-   */
-  protected PassThroughException(@NotNull String message) {
+  public UnbreakableCyclicDependencyException(@NotNull String message) {
     super(message);
-  }
 
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull Throwable fillInStackTrace() {
-    return this;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public @NotNull Throwable initCause(@Nullable Throwable cause) {
-    return this;
+    // filter and set the stack trace of the exception
+    StackTraceElement[] currentThreadStack = new RuntimeException().getStackTrace();
+    for (int index = 0; index < currentThreadStack.length; index++) {
+      StackTraceElement traceElement = currentThreadStack[index];
+      if (!traceElement.getClassName().startsWith(PACKAGE_PREFIX)) {
+        StackTraceElement[] relevantStack = Arrays.copyOfRange(currentThreadStack, index, currentThreadStack.length);
+        this.setStackTrace(relevantStack);
+        break;
+      }
+    }
   }
 }

@@ -371,7 +371,7 @@ public final class InjectionContext {
         }
 
         // [ <type> (<-- here) ]
-        treeInfoBuilder.append("[ ").append(ctx.binding.mainKey().type());
+        treeInfoBuilder.append("[ ").append(ctx.requestingKey.type());
         if (ctx == knownLeaf) {
           treeInfoBuilder.append(" <-- here");
         }
@@ -379,10 +379,10 @@ public final class InjectionContext {
       } while ((ctx = ctx.next) != null);
 
       // build the full error message and throw the exception
-      throw new IllegalStateException(String.format(
+      throw new UnbreakableCyclicDependencyException(String.format(
         "Detected cyclic dependency while constructing %s. See traverse tree for more info: %s",
-        this.root.binding.mainKey().type(),
-        treeInfoBuilder.append(" >--> [ ").append(this.binding.mainKey().type()).append(" ]")));
+        this.root.requestingKey.type(),
+        treeInfoBuilder.append(" >--> [ ").append(requestingKey.type()).append(" ]")));
     }
 
     // nothing special to do, just construct a brand-new sub context
