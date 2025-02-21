@@ -533,14 +533,12 @@ public final class InjectionContext {
   }
 
   private @Nullable InjectionContext findCreatedLeaf(@NotNull InstalledBinding<?> binding) {
-    InjectionContext leaf = this.prev;
-    if (leaf != null) {
-      do {
-        if (leaf.binding == binding) {
-          return leaf;
-        }
-      } while ((leaf = leaf.prev) != null);
-    }
+    InjectionContext leaf = this;
+    do {
+      if (leaf.binding == binding) {
+        return leaf;
+      }
+    } while ((leaf = leaf.prev) != null);
 
     return null;
   }
