@@ -7,7 +7,7 @@ spotless = "7.0.0.BETA2"
 checkstyleTools = "10.18.2"
 
 # dependencies
-geantyref = "2.0.0"
+geantyref = "2.0.1"
 apiGuardian = "1.1.2"
 annotations = "25.0.0"
 jakartaInject = "2.0.1"
