@@ -25,6 +25,7 @@
 package dev.derklaro.aerogel.internal.context;
 
 import dev.derklaro.aerogel.Injector;
+import dev.derklaro.aerogel.ScopeApplier;
 import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.key.BindingKey;
@@ -543,12 +544,24 @@ public final class InjectionContext {
     return null;
   }
 
+  /**
+   * Finds a reusable proxy when a circular reference is detected. This method is only relevant for singleton
+   * construction as non-singleton instances should always end up with a new proxy (and consequently with a new
+   * delegated instance) of the target type.
+   *
+   * @param binding the binding to find a reusable proxy for.
+   * @return null if either the given binding is not using a singleton scope or no reusable proxy is found.
+   */
   private @Nullable InjectionTimeProxy findReusableProxy(@NotNull InstalledBinding<?> binding) {
+    ScopeApplier usedScope = binding.scope().orElse(null);
+    if (!(usedScope instanceof ScopeApplier.Singleton)) {
+      return null;
+    }
+
     List<InjectionTimeProxy> knownProxies = this.root.knownProxies;
     if (!knownProxies.isEmpty()) {
       for (InjectionTimeProxy itp : knownProxies) {
-        // a proxy is re-usable if the same provider constructed the proxy + the delegate is present
-        if (itp.binding == binding && !itp.undelegated()) {
+        if (itp.binding == binding) {
           return itp;
         }
       }

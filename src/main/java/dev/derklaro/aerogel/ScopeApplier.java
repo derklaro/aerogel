@@ -58,4 +58,14 @@ public interface ScopeApplier {
   <T> ProviderWithContext<T> applyScope(
     @NotNull List<BindingKey<? extends T>> keys,
     @NotNull ProviderWithContext<T> original);
+
+  /**
+   * Marker interface to indicate that the scope applies some sort of singleton and that instances created during
+   * construction should be unique.
+   */
+  @FunctionalInterface
+  @API(status = API.Status.STABLE, since = "3.0")
+  interface Singleton extends ScopeApplier {
+
+  }
 }

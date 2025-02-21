@@ -35,7 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class SingletonScopeApplier implements ScopeApplier {
+public final class SingletonScopeApplier implements ScopeApplier.Singleton {
 
   public static final ScopeApplier INSTANCE = new SingletonScopeApplier();
 
