@@ -60,6 +60,14 @@ public interface InjectionContextProvider {
   @Nullable
   InjectionContextScope currentScope();
 
+  /**
+   * Enters a new context scope or a subcontext of the current scope, depending on the current context.
+   *
+   * @param injector      the injector used for the current construction, only used for new context scopes.
+   * @param requestingKey the key used to resolve the given binding.
+   * @param binding       the binding of the type that should be constructed using the context scope.
+   * @return a new or sub injection context scope depending on the current context.
+   */
   @NotNull
   default InjectionContextScope enterContextScope(
     @NotNull Injector injector,
@@ -69,6 +77,15 @@ public interface InjectionContextProvider {
     return this.enterContextScope(injector, requestingKey, binding, Collections.emptyMap());
   }
 
+  /**
+   * Enters a new context scope or a subcontext of the current scope, depending on the current context.
+   *
+   * @param injector      the injector used for the current construction, only used for new context scopes.
+   * @param requestingKey the key used to resolve the given binding.
+   * @param binding       the binding of the type that should be constructed using the context scope.
+   * @param overrides     the bindings to override in the context.
+   * @return a new or sub injection context scope depending on the current context.
+   */
   @NotNull
   InjectionContextScope enterContextScope(
     @NotNull Injector injector,
