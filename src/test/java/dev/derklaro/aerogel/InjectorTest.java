@@ -29,8 +29,6 @@ import dev.derklaro.aerogel.binding.InstalledBinding;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
-import dev.derklaro.aerogel.internal.context.scope.InjectionContextProvider;
-import dev.derklaro.aerogel.internal.context.scope.InjectionContextScope;
 import io.leangen.geantyref.AnnotationFormatException;
 import io.leangen.geantyref.TypeFactory;
 import io.leangen.geantyref.TypeToken;
@@ -41,7 +39,6 @@ import jakarta.inject.Singleton;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.Map;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -481,18 +478,10 @@ public class InjectorTest {
       .toInstance("Hello World!");
     injector.installBinding(stringBinding);
 
-    Map<BindingKey<?>, Provider<?>> overrides = Map.of(BindingKey.of(String.class), () -> "World!");
     BindingKey<?> key = BindingKey.of(OverriddenProvidersTestClass.class);
-    InstalledBinding<?> binding = injector.binding(key);
-    InjectionContextScope scope = InjectionContextProvider.provider()
-      .enterContextScope(injector, key, binding, overrides);
-    Object constructedInstance = scope.executeScoped(() -> {
-      try {
-        return scope.context().resolveInstance();
-      } finally {
-        scope.context().finishConstruction();
-      }
-    });
+    Object constructedInstance = injector.createInjectionRequest(key)
+      .override(String.class, "World!")
+      .construct();
 
     OverriddenProvidersTestClass instance = Assertions.assertInstanceOf(
       OverriddenProvidersTestClass.class,

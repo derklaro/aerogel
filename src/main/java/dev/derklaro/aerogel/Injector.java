@@ -240,8 +240,8 @@ public interface Injector {
 
   /**
    * Get a provider for the binding associated with the given key. The provider can be used to obtain instances of the
-   * type wrapped in the given binding key.When possible, a direct method call should be avoided in favor of injecting a
-   * provider directly.
+   * type wrapped in the given binding key. When possible, a direct method call should be avoided in favor of injecting
+   * a provider directly.
    *
    * @param key the key of the binding to get a provider for.
    * @param <T> the model of the type to construct using the provider.
@@ -252,6 +252,19 @@ public interface Injector {
    */
   @NotNull
   <T> Provider<T> provider(@NotNull BindingKey<T> key);
+
+  /**
+   * Creates an injection request for the binding associated with the given key.
+   *
+   * @param key the key of the binding to create an injection request for.
+   * @param <T> the model of the type to construct.
+   * @return an injection request to construct instances of the type wrapped in the given key.
+   * @throws NullPointerException     if the given key is null.
+   * @throws IllegalStateException    if a JIT binding couldn't be created for the type.
+   * @throws IllegalArgumentException if a JIT binding creation fails due to a user configuration issue.
+   */
+  @NotNull
+  <T> InjectionRequest<T> createInjectionRequest(@NotNull BindingKey<T> key);
 
   /**
    * Gets a binding that is known to this injector tree for the given key or tries to create a JIT binding if no such

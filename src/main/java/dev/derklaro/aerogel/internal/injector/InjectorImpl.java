@@ -24,6 +24,7 @@
 
 package dev.derklaro.aerogel.internal.injector;
 
+import dev.derklaro.aerogel.InjectionRequest;
 import dev.derklaro.aerogel.Injector;
 import dev.derklaro.aerogel.MemberInjector;
 import dev.derklaro.aerogel.ScopeApplier;
@@ -35,7 +36,6 @@ import dev.derklaro.aerogel.binding.builder.RootBindingBuilder;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.binding.BindingOptionsImpl;
 import dev.derklaro.aerogel.internal.binding.builder.RootBindingBuilderImpl;
-import dev.derklaro.aerogel.internal.context.ContextualBindingResolver;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
 import dev.derklaro.aerogel.internal.scope.SingletonScopeApplier;
 import dev.derklaro.aerogel.internal.util.MapUtil;
@@ -56,7 +56,6 @@ public final class InjectorImpl implements Injector {
   private final Injector parent;
   private final InjectorOptions injectorOptions;
   private final JitBindingFactory jitBindingFactory;
-  private final ContextualBindingResolver contextualBindingResolver;
 
   private final Map<Class<?>, MemberInjector<?>> memberInjectorCache = MapUtil.newConcurrentMap();
 
@@ -106,7 +105,6 @@ public final class InjectorImpl implements Injector {
     this.parent = parent;
     this.injectorOptions = injectorOptions;
     this.jitBindingFactory = new JitBindingFactory(this);
-    this.contextualBindingResolver = new ContextualBindingResolver(this);
 
     this.scopeRegistry = scopeRegistry;
     this.bindingRegistry = bindingRegistry;
@@ -181,14 +179,20 @@ public final class InjectorImpl implements Injector {
 
   @Override
   public @Nullable <T> T instance(@NotNull BindingKey<T> key) {
-    InstalledBinding<T> binding = this.binding(key);
-    return this.contextualBindingResolver.resolveInstance(key, binding);
+    InjectionRequest<T> injectionRequest = this.createInjectionRequest(key);
+    return injectionRequest.construct();
   }
 
   @Override
   public @NotNull <T> Provider<T> provider(@NotNull BindingKey<T> key) {
+    InjectionRequest<T> injectionRequest = this.createInjectionRequest(key);
+    return injectionRequest.createProvider();
+  }
+
+  @Override
+  public @NotNull <T> InjectionRequest<T> createInjectionRequest(@NotNull BindingKey<T> key) {
     InstalledBinding<T> binding = this.binding(key);
-    return this.contextualBindingResolver.constructProvider(key, binding);
+    return new InjectionRequestImpl<>(this, key, binding);
   }
 
   @Override
