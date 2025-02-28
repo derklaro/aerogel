@@ -4,7 +4,7 @@
 spotless = "7.0.2"
 modularity = "1.8.15"
 nexusPublish = "2.0.0"
-checkstyleTools = "10.21.2"
+checkstyleTools = "10.21.3"
 
 # dependencies
 geantyref = "2.0.1"
