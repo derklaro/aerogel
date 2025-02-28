@@ -50,6 +50,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
+ * Context used during injection to keep a clean tree of the classes being constructed.
+ *
  * @author Pasqual Koschmieder
  * @since 2.0
  */
@@ -213,6 +215,17 @@ public final class InjectionContext {
     this.requestedMemberInjections = Collections.emptySet();
   }
 
+  /**
+   * Copies this injection context into a new root context, adding some of the current options from this context into
+   * the new context (such as overrides).
+   *
+   * @param injector        the injector to associate with the new context.
+   * @param requestingKey   the key that requested the construction of the new root context.
+   * @param binding         the binding associated with the new context.
+   * @param overrides       the overrides to add for the newly created context.
+   * @param contextProvider the provider that constructs the new context.
+   * @return a copy of this injection context as a root context.
+   */
   public @NotNull InjectionContext copyAsRoot(
     @NotNull Injector injector,
     @NotNull BindingKey<?> requestingKey,
@@ -247,6 +260,12 @@ public final class InjectionContext {
     return context;
   }
 
+  /**
+   * Get a binding that is associated with the given key, either from an override or the associated injector.
+   *
+   * @param key the key to get a binding of.
+   * @return the first known binding associated with the given key.
+   */
   public @NotNull InstalledBinding<?> binding(@NotNull BindingKey<?> key) {
     Provider<?> overridden = this.findOverriddenProvider(key);
     if (overridden != null) {
@@ -256,6 +275,13 @@ public final class InjectionContext {
     }
   }
 
+  /**
+   * Enters a subcontext scope of this injection context for the given binding.
+   *
+   * @param requestingKey the main requested key associated with the binding.
+   * @param binding       the binding of the value to construct using the context.
+   * @return a subcontext of this context for the given binding.
+   */
   public @NotNull InjectionContextScope enterSubcontextScope(
     @NotNull BindingKey<?> requestingKey,
     @NotNull InstalledBinding<?> binding
@@ -263,6 +289,15 @@ public final class InjectionContext {
     return this.contextProvider.enterContextScope(this.injector(), requestingKey, binding);
   }
 
+  /**
+   * Enters a subcontext of this injection context for the given binding. Should only be called from injection context
+   * provider implementations.
+   *
+   * @param requestingKey the main requested key associated with the binding.
+   * @param binding       the binding of the value to construct using the context.
+   * @param overrides     the overrides to set in the new injection context.
+   * @return a subcontext of this context for the given binding.
+   */
   // Note: only for calls from InjectionContextProvider, use enterSubcontextScope elsewhere
   public @NotNull InjectionContext enterSubcontext(
     @NotNull BindingKey<?> requestingKey,
@@ -396,6 +431,11 @@ public final class InjectionContext {
     return subcontext.init(this);
   }
 
+  /**
+   * Constructs the instance of the type associated with the provided binding.
+   *
+   * @return an instance of the type associated with the provided binding.
+   */
   public @Nullable Object resolveInstance() {
     int currentState = this.state;
     if (currentState == STATE_READY) {
@@ -442,6 +482,11 @@ public final class InjectionContext {
     throw new IllegalStateException("Unable to handle context state: " + currentState);
   }
 
+  /**
+   * Delegates this context and all known proxies to the given singleton instance.
+   *
+   * @param singletonBindingValue the singleton instance to delegate to.
+   */
   public void delegateToContextualSingleton(@Nullable Object singletonBindingValue) {
     // mark this context as delegated
     this.state = STATE_DELEGATED;
@@ -463,6 +508,11 @@ public final class InjectionContext {
     }
   }
 
+  /**
+   * Adds the given construction listener to this context.
+   *
+   * @param listener the listener to add.
+   */
   public void addConstructionListener(@NotNull BiConsumer<InjectionContext, Object> listener) {
     Queue<BiConsumer<InjectionContext, Object>> constructionFinishListeners = this.constructionFinishListeners;
     if (constructionFinishListeners == null) {
@@ -472,8 +522,13 @@ public final class InjectionContext {
     constructionFinishListeners.add(listener);
   }
 
+  /**
+   * Requests member injection for the binding associated with this context.
+   *
+   * @param constructedValue the value that was constructed.
+   */
   public void requestMemberInjectionSameBinding(@Nullable Object constructedValue) {
-    Type bindingKeyType = this.binding.mainKey().type(); // use main key as target
+    Type bindingKeyType = this.requestingKey.type();
     Class<?> constructedType = constructedValue != null
       ? constructedValue.getClass()
       : GenericTypeReflector.erase(bindingKeyType);
@@ -481,6 +536,13 @@ public final class InjectionContext {
     this.requestMemberInjection(constructedType, constructedValue, lookup);
   }
 
+  /**
+   * Requests member injection for some type after the full construction cycle finished.
+   *
+   * @param type     the type to inject members into.
+   * @param instance the constructed instance of the type.
+   * @param lookup   the member lookup to use during field/method access.
+   */
   public void requestMemberInjection(
     @NotNull Class<?> type,
     @Nullable Object instance,
@@ -490,6 +552,11 @@ public final class InjectionContext {
     this.root.requestedMemberInjections.add(request);
   }
 
+  /**
+   * Validates that the construction was finished successfully and executes final cleanup tasks.
+   *
+   * @throws IllegalStateException if the method gets called on a non-root context, or a proxy didn't get a delegate.
+   */
   public void finishConstruction() {
     // ensure that we are the root context
     if (this.root != this) {
@@ -527,12 +594,24 @@ public final class InjectionContext {
     }
   }
 
+  /**
+   * Inits this context, setting it as the child of the given parent context.
+   *
+   * @param parent the parent context to set.
+   * @return this context, for chaining.
+   */
   private @NotNull InjectionContext init(@NotNull InjectionContext parent) {
     this.prev = parent;
     parent.next = this;
     return this;
   }
 
+  /**
+   * Finds an injection context in the chain for the given binding, null if none exists.
+   *
+   * @param binding the binding to find an existing injection context.
+   * @return the existing injection context for the given binding, if one exists.
+   */
   private @Nullable InjectionContext findCreatedLeaf(@NotNull InstalledBinding<?> binding) {
     InjectionContext leaf = this;
     do {
@@ -637,6 +716,11 @@ public final class InjectionContext {
     }
   }
 
+  /**
+   * Validates that all known proxies were delegated with a constructed instance.
+   *
+   * @throws IllegalStateException if at least one proxy was found without a delegate.
+   */
   private void validateAllProxiesAreDelegated() {
     // ensure that there are no proxies without a delegate
     List<InjectionTimeProxy> knownProxies = this.knownProxies;
