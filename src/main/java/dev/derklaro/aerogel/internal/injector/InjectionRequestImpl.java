@@ -86,51 +86,58 @@ final class InjectionRequestImpl<T> implements InjectionRequest<T> {
 
   @Override
   public @NotNull <V> InjectionRequest<T> override(@NotNull Type type, @Nullable V value) {
-    return this.override(type, () -> value);
+    Provider<? extends V> valueProvider = () -> value;
+    return this.overrideProvider(type, valueProvider);
   }
 
   @Override
-  public @NotNull <V> InjectionRequest<T> override(@NotNull Class<? extends V> type, @Nullable V value) {
-    return this.override(type, () -> value);
+  public @NotNull <V> InjectionRequest<T> override(@NotNull Class<V> type, @Nullable V value) {
+    Provider<? extends V> valueProvider = () -> value;
+    return this.overrideProvider(type, valueProvider);
   }
 
   @Override
-  public @NotNull <V> InjectionRequest<T> override(@NotNull TypeToken<? extends V> key, @Nullable V value) {
-    return this.override(key, () -> value);
+  public @NotNull <V> InjectionRequest<T> override(@NotNull TypeToken<V> key, @Nullable V value) {
+    Provider<? extends V> valueProvider = () -> value;
+    return this.overrideProvider(key, valueProvider);
   }
 
   @Override
-  public @NotNull <V> InjectionRequest<T> override(@NotNull BindingKey<? extends V> key, @Nullable V value) {
-    return this.override(key, () -> value);
+  public @NotNull <V> InjectionRequest<T> override(@NotNull BindingKey<V> key, @Nullable V value) {
+    Provider<? extends V> valueProvider = () -> value;
+    return this.overrideProvider(key, valueProvider);
   }
 
   @Override
-  public @NotNull <V> InjectionRequest<T> override(@NotNull Type type, @NotNull Provider<? extends V> valueProvider) {
-    BindingKey<V> bindingKey = BindingKey.of(type);
-    return this.override(bindingKey, valueProvider);
-  }
-
-  @Override
-  public @NotNull <V> InjectionRequest<T> override(
-    @NotNull Class<? extends V> type,
+  public @NotNull <V> InjectionRequest<T> overrideProvider(
+    @NotNull Type type,
     @NotNull Provider<? extends V> valueProvider
   ) {
     BindingKey<V> bindingKey = BindingKey.of(type);
-    return this.override(bindingKey, valueProvider);
+    return this.overrideProvider(bindingKey, valueProvider);
   }
 
   @Override
-  public @NotNull <V> InjectionRequest<T> override(
-    @NotNull TypeToken<? extends V> type,
+  public @NotNull <V> InjectionRequest<T> overrideProvider(
+    @NotNull Class<V> type,
     @NotNull Provider<? extends V> valueProvider
   ) {
     BindingKey<V> bindingKey = BindingKey.of(type);
-    return this.override(bindingKey, valueProvider);
+    return this.overrideProvider(bindingKey, valueProvider);
   }
 
   @Override
-  public @NotNull <V> InjectionRequest<T> override(
-    @NotNull BindingKey<? extends V> key,
+  public @NotNull <V> InjectionRequest<T> overrideProvider(
+    @NotNull TypeToken<V> type,
+    @NotNull Provider<? extends V> valueProvider
+  ) {
+    BindingKey<V> bindingKey = BindingKey.of(type);
+    return this.overrideProvider(bindingKey, valueProvider);
+  }
+
+  @Override
+  public @NotNull <V> InjectionRequest<T> overrideProvider(
+    @NotNull BindingKey<V> key,
     @NotNull Provider<? extends V> valueProvider
   ) {
     int currentOverridesLength = this.overrides.length;

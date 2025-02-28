@@ -82,7 +82,7 @@ public interface InjectionRequest<T> {
    */
   @NotNull
   @Contract(value = "_, _ -> new", pure = true)
-  <V> InjectionRequest<T> override(@NotNull Class<? extends V> type, @Nullable V value);
+  <V> InjectionRequest<T> override(@NotNull Class<V> type, @Nullable V value);
 
   /**
    * Overrides the given type with the given value in this specific injection request.
@@ -94,7 +94,7 @@ public interface InjectionRequest<T> {
    */
   @NotNull
   @Contract(value = "_, _ -> new", pure = true)
-  <V> InjectionRequest<T> override(@NotNull TypeToken<? extends V> type, @Nullable V value);
+  <V> InjectionRequest<T> override(@NotNull TypeToken<V> type, @Nullable V value);
 
   /**
    * Overrides the given binding key with the given value in this specific injection request.
@@ -106,7 +106,7 @@ public interface InjectionRequest<T> {
    */
   @NotNull
   @Contract(value = "_, _ -> new", pure = true)
-  <V> InjectionRequest<T> override(@NotNull BindingKey<? extends V> key, @Nullable V value);
+  <V> InjectionRequest<T> override(@NotNull BindingKey<V> key, @Nullable V value);
 
   /**
    * Overrides the given type with the given value provider in this specific injection request.
@@ -118,7 +118,7 @@ public interface InjectionRequest<T> {
    */
   @NotNull
   @Contract(value = "_, _ -> new", pure = true)
-  <V> InjectionRequest<T> override(@NotNull Type type, @NotNull Provider<? extends V> valueProvider);
+  <V> InjectionRequest<T> overrideProvider(@NotNull Type type, @NotNull Provider<? extends V> valueProvider);
 
   /**
    * Overrides the given type with the given value provider in this specific injection request.
@@ -130,7 +130,7 @@ public interface InjectionRequest<T> {
    */
   @NotNull
   @Contract(value = "_, _ -> new", pure = true)
-  <V> InjectionRequest<T> override(@NotNull Class<? extends V> type, @NotNull Provider<? extends V> valueProvider);
+  <V> InjectionRequest<T> overrideProvider(@NotNull Class<V> type, @NotNull Provider<? extends V> valueProvider);
 
   /**
    * Overrides the given type with the given value provider in this specific injection request.
@@ -142,7 +142,7 @@ public interface InjectionRequest<T> {
    */
   @NotNull
   @Contract(value = "_, _ -> new", pure = true)
-  <V> InjectionRequest<T> override(@NotNull TypeToken<? extends V> type, @NotNull Provider<? extends V> valueProvider);
+  <V> InjectionRequest<T> overrideProvider(@NotNull TypeToken<V> type, @NotNull Provider<? extends V> valueProvider);
 
   /**
    * Overrides the given binding key with the given value provider in this specific injection request.
@@ -154,7 +154,7 @@ public interface InjectionRequest<T> {
    */
   @NotNull
   @Contract(value = "_, _ -> new", pure = true)
-  <V> InjectionRequest<T> override(@NotNull BindingKey<? extends V> key, @NotNull Provider<? extends V> valueProvider);
+  <V> InjectionRequest<T> overrideProvider(@NotNull BindingKey<V> key, @NotNull Provider<? extends V> valueProvider);
 
   /**
    * Constructs an instance of the associated binding with the settings applied in this injection request.
