@@ -52,7 +52,7 @@ public final class ScopedValueInjectionContextProvider implements InjectionConte
    */
   @Override
   public @Nullable InjectionContextScope currentScope() {
-    return this.scopeScopedValue.orElse(null);
+    return this.scopeScopedValue.isBound() ? this.scopeScopedValue.get() : null;
   }
 
   /**
