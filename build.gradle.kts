@@ -35,7 +35,7 @@ plugins {
 defaultTasks("build", "test")
 
 allprojects {
-  version = "3.0.0-SNAPSHOT"
+  version = "3.0.0"
   group = "dev.derklaro.aerogel"
   description = "A very lightweight jvm dependency injection library"
 
