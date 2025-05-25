@@ -38,7 +38,8 @@ jobs:
         run: ./gradlew clean build test --stacktrace --no-daemon
 
       - name: Publish test summary
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ always() }}
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
-          junit_files: "**/build/test-results/test/TEST-*.xml"
+          files: "**/build/test-results/test/TEST-*.xml"
+          comment_mode: ${{ github.event_name == 'pull_request' && 'always' || 'off' }}
