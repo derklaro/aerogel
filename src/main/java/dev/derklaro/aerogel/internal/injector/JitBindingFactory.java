@@ -32,6 +32,7 @@ import dev.derklaro.aerogel.binding.ProviderWithContext;
 import dev.derklaro.aerogel.binding.UninstalledBinding;
 import dev.derklaro.aerogel.binding.key.BindingKey;
 import dev.derklaro.aerogel.internal.context.InjectionContext;
+import dev.derklaro.aerogel.internal.util.BindingUtil;
 import io.leangen.geantyref.GenericTypeReflector;
 import jakarta.inject.Provider;
 import java.lang.reflect.ParameterizedType;
@@ -52,17 +53,17 @@ final class JitBindingFactory {
   }
 
   public @NotNull InstalledBinding<?> createJitBinding(@NotNull BindingKey<?> key) {
-    // check for special types: Provider & Member injector first
+    // check for provider
+    Type providerComponentType = BindingUtil.extractProviderComponentType(key);
+    if (providerComponentType != null) {
+      BindingKey<?> componentKey = key.withType(providerComponentType);
+      return this.createBinding(key, context -> (Provider<Object>) () -> context.injector().instance(componentKey));
+    }
+
+    // check for special types: Member injector
     Type targetType = key.type();
     if (targetType instanceof ParameterizedType) {
       ParameterizedType parameterized = (ParameterizedType) targetType;
-      if (parameterized.getRawType().equals(Provider.class)) {
-        // target is a provider
-        Type componentType = parameterized.getActualTypeArguments()[0];
-        BindingKey<?> componentKey = key.withType(componentType);
-        return this.createBinding(key, context -> (Provider<Object>) () -> context.injector().instance(componentKey));
-      }
-
       if (parameterized.getRawType().equals(MemberInjector.class)) {
         // target is a member injector
         Type componentType = parameterized.getActualTypeArguments()[0];

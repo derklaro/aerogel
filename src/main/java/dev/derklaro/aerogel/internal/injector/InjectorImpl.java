@@ -38,6 +38,7 @@ import dev.derklaro.aerogel.internal.binding.BindingOptionsImpl;
 import dev.derklaro.aerogel.internal.binding.builder.RootBindingBuilderImpl;
 import dev.derklaro.aerogel.internal.member.DefaultMemberInjector;
 import dev.derklaro.aerogel.internal.scope.SingletonScopeApplier;
+import dev.derklaro.aerogel.internal.util.BindingUtil;
 import dev.derklaro.aerogel.internal.util.MapUtil;
 import dev.derklaro.aerogel.registry.Registry;
 import io.leangen.geantyref.TypeToken;
@@ -216,6 +217,12 @@ public final class InjectorImpl implements Injector {
     InstalledBinding<?> directBinding = this.bindingRegistry.get(key).orElse(null);
     if (directBinding != null) {
       return Optional.of((InstalledBinding<T>) directBinding);
+    }
+
+    // don't check for dynamic bindings if a provider is requested - a jit provider
+    // binding that points to the dynamic binding should be created and registered instead
+    if (BindingUtil.isProvider(key)) {
+      return Optional.empty();
     }
 
     // try to load a binding from the dynamic binding registry
