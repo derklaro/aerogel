@@ -17,7 +17,7 @@ junit = "5.13.1"
 lombok = "1.18.38"
 javapoet = "1.13.0"
 junitLauncher = "1.13.1"
-compileTesting = "0.21.0"
+compileTesting = "0.23.0"
 
 
 [libraries]
