@@ -9,12 +9,12 @@ checkstyleTools = "10.25.0"
 # dependencies
 geantyref = "2.0.1"
 apiGuardian = "1.1.2"
-annotations = "26.0.2"
+annotations = "26.0.2-1"
 jakartaInject = "2.0.1"
 
 # testing
 junit = "5.13.1"
-lombok = "1.18.38"
+lombok = "1.18.42"
 javapoet = "1.13.0"
 junitLauncher = "1.13.1"
 compileTesting = "0.21.0"
