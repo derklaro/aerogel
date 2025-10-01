@@ -28,5 +28,5 @@ plugins {
 
 kotlin.jvmToolchain {
   vendor = JvmVendorSpec.AZUL
-  languageVersion = JavaLanguageVersion.of(21)
+  languageVersion = JavaLanguageVersion.of(17)
 }
