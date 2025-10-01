@@ -223,10 +223,9 @@ public final class Application {
 
 ### How to (Scoped Values Injection Context Scope)
 
-The scoped values injection context scope module makes use of the ScopedValue api which is currently in preview (see
-[JEP 481](https://openjdk.org/jeps/481) for details). The module is only compatible with the latest released java
-version. When placed on the classpath ScopedValues are used for keeping track of an injection context during
-construction
+The scoped values injection context scope module makes use of the ScopedValue api (see
+[JEP 481](https://openjdk.org/jeps/481) for details). The module is only compatible with java version 25 and newer. When 
+placed on the classpath ScopedValues are used for keeping track of an injection context during construction
 rather than using ThreadLocals. The module is discovered using the SPI, so no additional configuration has to be done.
 
 ```kotlin
