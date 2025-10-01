@@ -43,9 +43,7 @@ java {
 }
 
 tasks.withType<Test> {
-  if (JavaVersion.current().isJava9Compatible) {
-    jvmArgs("--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED")
-  }
+  jvmArgs("--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED")
 }
 
-configurePublishing("java", true)
+configurePublishing("java")

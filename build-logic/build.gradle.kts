@@ -26,6 +26,7 @@ plugins {
   `kotlin-dsl`
 }
 
-repositories {
-  gradlePluginPortal()
+kotlin.jvmToolchain {
+  vendor = JvmVendorSpec.AZUL
+  languageVersion = JavaLanguageVersion.of(21)
 }

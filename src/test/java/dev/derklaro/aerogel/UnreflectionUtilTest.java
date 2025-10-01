@@ -31,10 +31,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.EnabledForJreRange;
-import org.junit.jupiter.api.condition.JRE;
 
-@EnabledForJreRange(min = JRE.JAVA_16, disabledReason = "Cannot test for illegal access on those")
 public class UnreflectionUtilTest {
 
   @Test

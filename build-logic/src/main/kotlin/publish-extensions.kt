@@ -24,33 +24,40 @@
 
 import org.gradle.api.Project
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.tasks.javadoc.Javadoc
+import org.gradle.external.javadoc.JavadocMemberLevel
+import org.gradle.external.javadoc.StandardJavadocDocletOptions
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.gradle.plugins.signing.Sign
 import org.gradle.plugins.signing.SigningExtension
 
-fun Project.configurePublishing(publishedComponent: String, withJavadocAndSource: Boolean = false) {
+fun Project.configurePublishing(publishedComponent: String) {
   extensions.configure<PublishingExtension> {
+    val projectName = project.name
+    val projectDescription = project.description
+    val repos = project.repositories
+      .filterIsInstance<MavenArtifactRepository>()
+      .filter { it.url.scheme == "https" }
+      .map { Pair(it.name, it.url.toString()) }
+
     publications.apply {
-      create("maven", MavenPublication::class.java).apply {
+      register<MavenPublication>("maven") {
         from(components.getByName(publishedComponent))
 
-        if (withJavadocAndSource) {
-          artifact(tasks.getByName("sourcesJar"))
-          artifact(tasks.getByName("javadocJar"))
-        }
-
         pom.apply {
-          name.set(project.name)
-          description.set(project.description)
+          name.set(projectName)
+          description.set(projectDescription)
           url.set("https://github.com/derklaro/aerogel")
 
           developers {
             developer {
               id.set("derklaro")
-              email.set("git@derklaro.dev")
+              email.set("me@derklaro.dev")
               timezone.set("Europe/Berlin")
               name.set("Pasqual Koschmieder")
             }
@@ -82,12 +89,10 @@ fun Project.configurePublishing(publishedComponent: String, withJavadocAndSource
 
           withXml {
             val repositories = asNode().appendNode("repositories")
-            project.repositories.forEach {
-              if (it is MavenArtifactRepository && it.url.toString().startsWith("https://")) {
-                val repo = repositories.appendNode("repository")
-                repo.appendNode("id", it.name)
-                repo.appendNode("url", it.url.toString())
-              }
+            repos.forEach {
+              val repo = repositories.appendNode("repository")
+              repo.appendNode("id", it.first)
+              repo.appendNode("url", it.second)
             }
           }
         }
@@ -100,9 +105,35 @@ fun Project.configurePublishing(publishedComponent: String, withJavadocAndSource
     sign(extensions.getByType(PublishingExtension::class.java).publications.getByName("maven"))
   }
 
-  tasks.withType(Sign::class) {
+  val version = this.version
+  tasks.withType<Sign>().configureEach {
     onlyIf {
-      !rootProject.version.toString().endsWith("-SNAPSHOT")
+      !version.toString().endsWith("-SNAPSHOT")
     }
   }
+
+  plugins.withId("java") {
+    extensions.configure<JavaPluginExtension> {
+      withSourcesJar()
+      withJavadocJar()
+    }
+    tasks.withType<Javadoc>().configureEach {
+      val options = options as? StandardJavadocDocletOptions ?: return@configureEach
+      applyJavadocOptions(options)
+    }
+  }
+}
+
+fun applyJavadocOptions(options: StandardJavadocDocletOptions) {
+  options.use()
+  options.encoding = "UTF-8"
+  options.memberLevel = JavadocMemberLevel.PRIVATE
+  options.addBooleanOption("Xdoclint:-missing", true)
+  options.links(
+    "https://docs.oracle.com/en/java/javase/25/docs/api/",
+    "https://javadoc.io/doc/org.jetbrains/annotations/latest/",
+    "https://javadoc.io/doc/io.leangen.geantyref/geantyref/latest/",
+    "https://javadoc.io/doc/org.apiguardian/apiguardian-api/latest/",
+    "https://javadoc.io/doc/jakarta.inject/jakarta.inject-api/latest/",
+  )
 }

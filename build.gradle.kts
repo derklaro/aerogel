@@ -24,11 +24,11 @@
 
 import com.diffplug.gradle.spotless.SpotlessExtension
 import com.diffplug.spotless.LineEnding
+import java.nio.charset.StandardCharsets
 
 plugins {
   id("build-logic")
   alias(libs.plugins.spotless)
-  alias(libs.plugins.modularity)
   alias(libs.plugins.nexusPublish)
 }
 
@@ -44,11 +44,6 @@ allprojects {
   apply(plugin = "java-library")
   apply(plugin = "maven-publish")
   apply(plugin = "com.diffplug.spotless")
-  apply(plugin = "org.javamodularity.moduleplugin")
-
-  repositories {
-    mavenCentral()
-  }
 
   dependencies {
     // exposed dependencies
@@ -65,9 +60,6 @@ allprojects {
 
   tasks.withType<Test>().configureEach {
     useJUnitPlatform()
-    testLogging {
-      events("started", "passed", "skipped", "failed")
-    }
   }
 
   tasks.withType<JavaCompile>().configureEach {
@@ -81,39 +73,20 @@ allprojects {
     options.compilerArgs.add("-Xlint:-options")
   }
 
+  extensions.configure<JavaPluginExtension> {
+    disableAutoTargetJvm()
+  }
+
   tasks.withType<Checkstyle>().configureEach {
     maxErrors = 0
     maxWarnings = 0
     configFile = rootProject.file("checkstyle.xml")
   }
 
-  tasks.withType<Javadoc>().configureEach {
-    val options = options as? StandardJavadocDocletOptions ?: return@configureEach
-    options.use()
-    options.encoding = "UTF-8"
-    options.memberLevel = JavadocMemberLevel.PRIVATE
-    options.links(
-      "https://docs.oracle.com/en/java/javase/24/docs/api/",
-      "https://javadoc.io/doc/org.jetbrains/annotations/${rootProject.libs.versions.annotations.get()}/",
-      "https://javadoc.io/doc/io.leangen.geantyref/geantyref/${rootProject.libs.versions.geantyref.get()}/",
-      "https://javadoc.io/doc/org.apiguardian/apiguardian-api/${rootProject.libs.versions.apiGuardian.get()}/",
-      "https://javadoc.io/doc/jakarta.inject/jakarta.inject-api/${rootProject.libs.versions.jakartaInject.get()}/",
-    )
-  }
-
-  tasks.register<org.gradle.jvm.tasks.Jar>("javadocJar") {
-    archiveClassifier.set("javadoc")
-    from(tasks.getByName("javadoc"))
-  }
-
-  tasks.register<org.gradle.jvm.tasks.Jar>("sourcesJar") {
-    archiveClassifier.set("sources")
-    from(project.the<JavaPluginExtension>().sourceSets["main"].allJava)
-  }
-
   extensions.configure<SpotlessExtension> {
     // we explicitly use unix line ending everywhere and don't want to depend on the git configuration
     lineEndings = LineEnding.UNIX
+    encoding = StandardCharsets.UTF_8
 
     java {
       licenseHeaderFile(rootProject.file("license_header.txt"))
@@ -143,4 +116,4 @@ nexusPublishing {
   useStaging.set(!rootProject.version.toString().endsWith("-SNAPSHOT"))
 }
 
-configurePublishing("java", true)
+configurePublishing("java")

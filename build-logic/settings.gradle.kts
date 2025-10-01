@@ -22,27 +22,15 @@
  * THE SOFTWARE.
  */
 
-description = "Extension for aerogel that uses scoped values for injection context scopes"
-
-dependencies {
-  api(projects.aerogel)
-}
-
-tasks.withType<JavaCompile> {
-  sourceCompatibility = JavaVersion.VERSION_25.toString()
-  targetCompatibility = JavaVersion.VERSION_25.toString()
-}
-
-tasks.withType<Javadoc> {
-  val options = options as? StandardJavadocDocletOptions ?: return@withType
-  options.addStringOption("-release", "25")
-}
-
-extensions.configure<JavaPluginExtension> {
-  toolchain {
-    vendor = JvmVendorSpec.AZUL
-    languageVersion = JavaLanguageVersion.of(25)
+dependencyResolutionManagement {
+  repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+  repositories {
+    mavenCentral()
   }
 }
 
-configurePublishing("java")
+plugins {
+  id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+}
+
+rootProject.name = "build-logic"
