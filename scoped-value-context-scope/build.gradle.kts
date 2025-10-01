@@ -28,28 +28,20 @@ dependencies {
   api(projects.aerogel)
 }
 
-tasks.withType<Test> {
-  jvmArgs("--enable-preview")
-}
-
 tasks.withType<JavaCompile> {
-  sourceCompatibility = JavaVersion.VERSION_24.toString()
-  targetCompatibility = JavaVersion.VERSION_24.toString()
-
-  options.compilerArgs.add("-Xlint:-preview")
-  options.compilerArgs.add("--enable-preview")
+  sourceCompatibility = JavaVersion.VERSION_25.toString()
+  targetCompatibility = JavaVersion.VERSION_25.toString()
 }
 
 tasks.withType<Javadoc> {
   val options = options as? StandardJavadocDocletOptions ?: return@withType
-  options.addStringOption("-release", "24")
-  options.addBooleanOption("-enable-preview", true)
+  options.addStringOption("-release", "25")
 }
 
 extensions.configure<JavaPluginExtension> {
   toolchain {
     vendor = JvmVendorSpec.AZUL
-    languageVersion = JavaLanguageVersion.of(24)
+    languageVersion = JavaLanguageVersion.of(25)
   }
 }
 
