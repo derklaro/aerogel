@@ -8,7 +8,7 @@ checkstyleTools = "11.1.0"
 # dependencies
 geantyref = "2.0.1"
 apiGuardian = "1.1.2"
-annotations = "26.0.2-1"
+annotations = "26.1.0"
 jakartaInject = "2.0.1"
 
 # testing
